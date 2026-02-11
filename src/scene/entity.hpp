@@ -1,7 +1,7 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
-// #include "core/uuid.hpp"
+#include "core/uuid.hpp"
 #include "core/frame_context.hpp"
 
 #include <vector>
@@ -12,16 +12,18 @@ class Component;
 class Scene;
 
 class Entity {
-    // EntityID uuid;
+    EntityID uuid;
     // TODO: Name for debugging/editor
     Scene *scene;
+
+    // TODO: Parent/children?
 
     std::vector<std::unique_ptr<Component>> components;
 
 public:
     bool isActive;
 
-    // Entity(EntityID uuid, Scene *scene, bool isActive = true);
+    Entity(EntityID uuid, Scene *scene, bool isActive = true);
     Entity(Scene *scene, bool isActive = true);
     ~Entity();
 
@@ -50,7 +52,7 @@ public:
     std::vector<Component *> GetComponents();
 
     Scene *GetScene() const;
-    // EntityID GetID() const;
+    EntityID GetID() const;
 };
 
 #endif

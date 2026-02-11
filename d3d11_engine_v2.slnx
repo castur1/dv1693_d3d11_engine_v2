@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="d3d11_engine_v2.vcxproj" />
+  <Project Path="d3d11_engine_v2.vcxproj" Id="4e4f06c3-ae19-42a5-b36f-901e5d31266d" />
 </Solution>

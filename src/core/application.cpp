@@ -47,11 +47,11 @@ bool Application::Initialize() {
     if (!this->renderer.Initialize(this->window.GetHandle()))
         return false;
 
-    if (!this->sceneManager.Initialize())
+    if (!this->assetManager.Initialize(this->renderer.GetDevice()))
         return false;
 
-    //if (!this->assetManager.Initialize(this->renderer.GetDevice()))
-    //    return false;
+    if (!this->sceneManager.Initialize(&this->assetManager))
+        return false;
 
     LogUnindent();
     LogInfo("Initialization complete!\n");
@@ -80,7 +80,7 @@ void Application::Run() {
         Frame_context context{};
         context.deltaTime = elapsed.count();
         context.sceneManager = &this->sceneManager;
-        //context.assetManager = &this->assetManager;
+        context.assetManager = &this->assetManager;
 
         this->Update(context);
         this->Render();

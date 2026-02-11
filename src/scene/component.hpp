@@ -1,7 +1,7 @@
 #ifndef COMPONENT_HPP
 #define COMPONENT_HPP
 
-// #include "scene/component_registry.hpp"
+#include "scene/component_registry.hpp"
 #include "core/frame_context.hpp"
 
 class Renderer;
@@ -20,7 +20,7 @@ public:
     virtual void Update(const Frame_context &context) = 0;
     virtual void Render(Renderer *renderer) = 0;
 
-    // virtual void Reflect(ComponentRegistry::Inspector *inspector) = 0;
+    virtual void Reflect(ComponentRegistry::Inspector *inspector) = 0;
 
     Entity *GetOwner() const { return this->owner; }
 };

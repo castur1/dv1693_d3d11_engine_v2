@@ -131,25 +131,37 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\transform.cpp" />
     <ClCompile Include="src\core\application.cpp" />
     <ClCompile Include="src\core\logging.cpp" />
+    <ClCompile Include="src\core\uuid.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\renderer.cpp" />
+    <ClCompile Include="src\resources\asset_manager.cpp" />
+    <ClCompile Include="src\resources\scene_loader.cpp" />
     <ClCompile Include="src\scene\entity.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
     <ClCompile Include="src\scene\scene_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\transform.hpp" />
     <ClInclude Include="src\core\application.hpp" />
     <ClInclude Include="src\core\frame_context.hpp" />
     <ClInclude Include="src\core\logging.hpp" />
+    <ClInclude Include="src\core\uuid.hpp" />
     <ClInclude Include="src\core\window.hpp" />
     <ClInclude Include="src\rendering\renderer.hpp" />
+    <ClInclude Include="src\resources\asset_manager.hpp" />
+    <ClInclude Include="src\resources\scene_loader.hpp" />
     <ClInclude Include="src\scene\component.hpp" />
+    <ClInclude Include="src\scene\component_registry.hpp" />
     <ClInclude Include="src\scene\entity.hpp" />
     <ClInclude Include="src\scene\scene.hpp" />
     <ClInclude Include="src\scene\scene_manager.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="scenes\demo_0.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

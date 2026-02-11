@@ -3,14 +3,14 @@
 
 #include "core/window.hpp"
 #include "rendering/renderer.hpp"
-// #include "resources/asset_manager.hpp"
+#include "resources/asset_manager.hpp"
 #include "scene/scene_manager.hpp"
 #include "core/frame_context.hpp"
 
 class Application {
     Window window;
     Renderer renderer;
-    // AssetManager assetManager;
+    AssetManager assetManager;
     SceneManager sceneManager;
 
     bool CreateConsole();

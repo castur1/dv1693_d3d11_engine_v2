@@ -1,6 +1,7 @@
 #include "scene.hpp"
 #include "scene/entity.hpp"
 #include "rendering/renderer.hpp"
+#include "core/logging.hpp"
 
 Scene::Scene() {}
 
@@ -21,21 +22,31 @@ void Scene::Render(Renderer *renderer) {
 }
 
 void Scene::Clear() {
-    // this->uuidLookup.clear();
+    this->uuidLookup.clear();
+    this->pendingEntities.clear();
     this->entities.clear();
 }
 
-//Entity *Scene::AddEntity(EntityID uuid, bool isActive) {
-//    this->entities.emplace_back(std::make_unique<Entity>(uuid, this, isActive));
-//    return this->uuidLookup[uuid] = this->entities.back().get();
-//}
+Entity *Scene::AddEntity(EntityID uuid, bool isActive) {
+    if (!uuid.IsValid()) {
+        LogWarn("Invalid entity UUID");
+        return nullptr;
+    }
+
+    this->entities.emplace_back(std::make_unique<Entity>(uuid, this, isActive));
+
+    Entity *entity = this->entities.back().get();
+
+    this->pendingEntities.push_back(entity);
+
+    this->uuidLookup[uuid] = entity;
+
+    return entity;
+}
 
 Entity *Scene::AddEntity(bool isActive) {
-    //EntityID uuid;
-    //return this->AddEntity(uuid, isActive);
-
-    this->entities.emplace_back(std::make_unique<Entity>(this, isActive));
-    return this->entities.back().get();
+    EntityID uuid;
+    return this->AddEntity(uuid, isActive);
 }
 
 std::vector<Entity *> Scene::GetEntities() {
@@ -48,7 +59,7 @@ std::vector<Entity *> Scene::GetEntities() {
     return result;
 }
 
-//Entity *Scene::GetByUUID(EntityID uuid) {
-//    auto iter = this->uuidLookup.find(uuid);
-//    return iter != this->uuidLookup.end() ? iter->second : nullptr;
-//}
+Entity *Scene::GetEntityByUUID(EntityID uuid) {
+    auto iter = this->uuidLookup.find(uuid);
+    return iter != this->uuidLookup.end() ? iter->second : nullptr;
+}

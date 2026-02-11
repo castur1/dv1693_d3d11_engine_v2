@@ -1,8 +1,9 @@
 #include "entity.hpp"
 #include "scene/component.hpp"
+#include "core/logging.hpp"
 
-// Entity::Entity(EntityID uuid, Scene *scene, bool isActive) : uuid(uuid), scene(scene), isActive(isActive) {}
-Entity::Entity(Scene *scene, bool isActive) : /*uuid(),*/ scene(scene), isActive(isActive) {}
+Entity::Entity(EntityID uuid, Scene *scene, bool isActive) : uuid(uuid), scene(scene), isActive(isActive) {}
+Entity::Entity(Scene *scene, bool isActive) : uuid(), scene(scene), isActive(isActive) {}
 
 Entity::~Entity() {}
 
@@ -28,6 +29,11 @@ void Entity::Render(Renderer *renderer) {
 }
 
 Component *Entity::AddComponentRaw(Component *component) {
+    if (!component) {
+        LogWarn("Attempted to add null component to entity");
+        return nullptr;
+    }
+
     this->components.emplace_back(component);
     return this->components.back().get();
 }
@@ -46,6 +52,6 @@ Scene *Entity::GetScene() const {
     return this->scene;
 }
 
-//EntityID Entity::GetID() const {
-//    return this->uuid;
-//}
+EntityID Entity::GetID() const {
+    return this->uuid;
+}

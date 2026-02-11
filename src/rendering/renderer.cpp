@@ -244,6 +244,7 @@ bool Renderer::Resize(int width, int height) {
     if (width <= 0 || height <= 0)
         return false;
 
+    LogInfo("\n");
     LogInfo("Resizing window...\n");
     LogIndent();
 

@@ -5,11 +5,14 @@
 #include "core/frame_context.hpp"
 
 #include <string>
+#include <memory>
 
 class Renderer;
+class SceneLoader;
+class AssetManager;
 
 class SceneManager {
-    // SceneLoader loader;
+    std::unique_ptr<SceneLoader> loader;
 
     Scene currentScene;
     std::string currentSceneName;
@@ -21,7 +24,7 @@ public:
     SceneManager();
     ~SceneManager();
 
-    bool Initialize();
+    bool Initialize(AssetManager *assetManager);
 
     void RequestSceneChange(const std::string &name);
 

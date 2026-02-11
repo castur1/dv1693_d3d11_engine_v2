@@ -1,30 +1,35 @@
 #include "scene_manager.hpp"
 #include "scene/scene.hpp"
 #include "core/logging.hpp"
+#include "resources/scene_loader.hpp"
 
-SceneManager::SceneManager() {}
-SceneManager::~SceneManager() {}
+SceneManager::SceneManager() : loader(nullptr) {}
+
+SceneManager::~SceneManager() {
+    
+}
 
 void SceneManager::ChangeScene(const std::string &name) {
-    LogInfo("Loading scene '%s'...\n", name.c_str());
-    LogIndent();
-
-    //if (!this->loader.Load(this->currentScene, name)) {
-    //    LogUnindent();
-    //    return;
-    //}
+    if (!this->loader->Load(this->currentScene, name)) 
+        return;
 
     this->currentSceneName = name;
-
-    LogUnindent();
 }
 
 void SceneManager::RequestSceneChange(const std::string &name) {
     this->targetSceneName = name;
 }
 
-bool SceneManager::Initialize() {
+bool SceneManager::Initialize(AssetManager *assetManager) {
     LogInfo("Creating scene manager...\n");
+
+    if (!assetManager) {
+        LogError("Asset manager was nullptr");
+        return false;
+    }
+
+    this->loader = std::make_unique<SceneLoader>();
+    this->loader->SetAssetManager(assetManager);
 
     this->RequestSceneChange("demo_0");
 
