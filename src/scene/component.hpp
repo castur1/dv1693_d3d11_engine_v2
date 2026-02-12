@@ -16,9 +16,10 @@ public:
     Component(Entity *owner, bool isActive) : owner(owner), isActive(isActive) {}
     virtual ~Component() = default;
 
-    virtual void OnStart(const Frame_context &context) = 0;
+    virtual void OnStart(const Engine_context &context) = 0;
     virtual void Update(const Frame_context &context) = 0;
     virtual void Render(Renderer *renderer) = 0;
+    virtual void OnDestroy(const Engine_context &context) = 0;
 
     virtual void Reflect(ComponentRegistry::Inspector *inspector) = 0;
 

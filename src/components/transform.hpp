@@ -19,9 +19,10 @@ public:
     Transform(Entity *owner, bool isActive);
     ~Transform();
 
-    void OnStart(const Frame_context &context) override;
+    void OnStart(const Engine_context &context) override;
     void Update(const Frame_context &context) override;
     void Render(Renderer *renderer) override;
+    void OnDestroy(const Engine_context &context) override;
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
         BIND(position);

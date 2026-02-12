@@ -1,5 +1,6 @@
 #include "transform.hpp"
 #include "core/logging.hpp"
+#include "rendering/renderer.hpp"
 
 Transform::Transform(Entity *owner, bool isActive, const XMFLOAT3 &position, const XMFLOAT3 &rotation, const XMFLOAT3 &scale)
     : Component(owner, isActive), position(position), rotation(rotation), scale(scale) {}
@@ -9,10 +10,10 @@ Transform::Transform(Entity *owner, bool isActive)
 
 Transform::~Transform() {}
 
-void Transform::OnStart(const Frame_context &context) {}
-
+void Transform::OnStart(const Engine_context &context) {}
 void Transform::Update(const Frame_context &context) {}
 void Transform::Render(Renderer *renderer) {}
+void Transform::OnDestroy(const Engine_context &context) {}
 
 XMMATRIX Transform::GetWorldMatrix() const {
     XMMATRIX scaleMatrix = XMMatrixScaling(this->scale.x, this->scale.y, this->scale.z);

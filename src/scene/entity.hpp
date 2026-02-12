@@ -27,9 +27,10 @@ public:
     Entity(Scene *scene, bool isActive = true);
     ~Entity();
 
-    void OnStart(const Frame_context &context);
+    void OnStart(const Engine_context &context);
     void Update(const Frame_context &context);
     void Render(Renderer *renderer);
+    void OnDestroy(const Engine_context &context);
 
     template<typename T, typename... Args>
     T *AddComponent(Args&&... args) {
@@ -38,6 +39,8 @@ public:
     }
 
     Component *AddComponentRaw(Component *component);
+
+    // TODO: RemoveComponent
 
     template<typename T>
     T *GetComponent() {

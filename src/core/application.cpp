@@ -1,12 +1,12 @@
 #include "application.hpp"
 #include "core/logging.hpp"
-// #include "scene/component_registry.hpp"
+#include "scene/component_registry.hpp"
 
 #include <Windows.h>
 #include <stdio.h>
 #include <chrono>
 
-Application::Application() {}
+Application::Application() : context{&this->sceneManager, &this->assetManager, this->sceneManager.GetCurrentScene()} {}
 Application::~Application() {}
 
 bool Application::CreateConsole() {
@@ -50,7 +50,7 @@ bool Application::Initialize() {
     if (!this->assetManager.Initialize(this->renderer.GetDevice()))
         return false;
 
-    if (!this->sceneManager.Initialize(&this->assetManager))
+    if (!this->sceneManager.Initialize(this->context))
         return false;
 
     LogUnindent();
@@ -77,10 +77,10 @@ void Application::Run() {
         std::chrono::duration<float> elapsed = currentTime - previousTime;
         previousTime = currentTime;
 
-        Frame_context context{};
-        context.deltaTime = elapsed.count();
-        context.sceneManager = &this->sceneManager;
-        context.assetManager = &this->assetManager;
+        Frame_context context{
+            .deltaTime = elapsed.count(),
+            .engineContext = this->context
+        };
 
         this->Update(context);
         this->Render();
@@ -89,5 +89,7 @@ void Application::Run() {
     LogInfo("\n");
     LogInfo("Shutdown...\n");
 
-    // ComponentRegistry::GetMap().clear();
+    this->sceneManager.Shutdown();
+
+    ComponentRegistry::GetMap().clear();
 }

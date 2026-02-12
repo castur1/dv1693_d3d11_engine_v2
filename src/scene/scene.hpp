@@ -14,8 +14,15 @@ class SceneManager;
 
 class Scene {
     std::vector<std::unique_ptr<Entity>> entities;
-    std::vector<Entity *> pendingEntities;
     std::unordered_map<EntityID, Entity *> uuidLookup;
+
+    std::vector<std::unique_ptr<Entity>> entitiesToAdd;
+    std::vector<Entity *> entitiesToRemove;
+
+    const Engine_context *context;
+
+    void ResolveEntitiesToAdd();
+    void ResolveEntitiesToDestroy();
 
 public:
     Scene();
@@ -29,8 +36,13 @@ public:
     Entity *AddEntity(EntityID uuid, bool isActive = true);
     Entity *AddEntity(bool isActive = true);
 
+    void DestroyEntity(Entity *entity);
+    void DestroyEntity(EntityID uuid);
+
     std::vector<Entity *> GetEntities();
     Entity *GetEntityByUUID(EntityID uuid);
+
+    void SetEngineContext(const Engine_context *context);
 };
 
 #endif

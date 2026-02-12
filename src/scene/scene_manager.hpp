@@ -24,12 +24,15 @@ public:
     SceneManager();
     ~SceneManager();
 
-    bool Initialize(AssetManager *assetManager);
+    bool Initialize(const Engine_context &context);
+    void Shutdown();
 
     void RequestSceneChange(const std::string &name);
 
     void Update(const Frame_context &context);
     void Render(Renderer *renderer);
+
+    Scene *GetCurrentScene();
 };
 
 #endif

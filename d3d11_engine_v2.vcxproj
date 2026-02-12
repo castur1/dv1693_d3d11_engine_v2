@@ -131,6 +131,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\components\camera_controller.cpp" />
+    <ClCompile Include="src\components\model_renderer.cpp" />
     <ClCompile Include="src\components\transform.cpp" />
     <ClCompile Include="src\core\application.cpp" />
     <ClCompile Include="src\core\logging.cpp" />
@@ -145,6 +147,8 @@
     <ClCompile Include="src\scene\scene_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\components\camera_controller.hpp" />
+    <ClInclude Include="src\components\model_renderer.hpp" />
     <ClInclude Include="src\components\transform.hpp" />
     <ClInclude Include="src\core\application.hpp" />
     <ClInclude Include="src\core\frame_context.hpp" />

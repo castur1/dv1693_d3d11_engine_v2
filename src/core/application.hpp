@@ -13,6 +13,8 @@ class Application {
     AssetManager assetManager;
     SceneManager sceneManager;
 
+    const Engine_context context;
+
     bool CreateConsole();
 
     void Update(const Frame_context &context);

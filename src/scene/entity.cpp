@@ -7,7 +7,7 @@ Entity::Entity(Scene *scene, bool isActive) : uuid(), scene(scene), isActive(isA
 
 Entity::~Entity() {}
 
-void Entity::OnStart(const Frame_context &context) {
+void Entity::OnStart(const Engine_context &context) {
     for (auto &component : this->components)
         component->OnStart(context);
 }
@@ -26,6 +26,11 @@ void Entity::Render(Renderer *renderer) {
 
     for (auto &component : this->components)
         component->Render(renderer);
+}
+
+void Entity::OnDestroy(const Engine_context &context) {
+    for (auto &component : this->components)
+        component->OnDestroy(context);
 }
 
 Component *Entity::AddComponentRaw(Component *component) {

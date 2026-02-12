@@ -202,7 +202,7 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         int indent = GetIndentLevel(line);
 
         line = TrimWhitespace(line);
-        if (line.empty() || line.front() == '#')
+        if (line.empty() || line.front() == '#') // Supports comments!
             continue;
 
         if (indent == 0) {
@@ -316,6 +316,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         currentComponent->Reflect(&fieldWriter);
 
     if (currentEntity)
+        LogUnindent();
+
+    if (isInAssetSection)
         LogUnindent();
 
     file.close();

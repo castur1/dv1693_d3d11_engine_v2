@@ -20,20 +20,26 @@ void SceneManager::RequestSceneChange(const std::string &name) {
     this->targetSceneName = name;
 }
 
-bool SceneManager::Initialize(AssetManager *assetManager) {
+bool SceneManager::Initialize(const Engine_context &context) {
     LogInfo("Creating scene manager...\n");
 
-    if (!assetManager) {
+    if (!context.assetManager) {
         LogError("Asset manager was nullptr");
         return false;
     }
 
     this->loader = std::make_unique<SceneLoader>();
-    this->loader->SetAssetManager(assetManager);
+    this->loader->SetAssetManager(context.assetManager);
+
+    this->currentScene.SetEngineContext(&context);
 
     this->RequestSceneChange("demo_0");
 
     return true;
+}
+
+void SceneManager::Shutdown() {
+    this->currentScene.Clear();
 }
 
 void SceneManager::Update(const Frame_context &context) {
@@ -45,4 +51,8 @@ void SceneManager::Update(const Frame_context &context) {
 
 void SceneManager::Render(Renderer *renderer) {
     this->currentScene.Render(renderer);
+}
+
+Scene * SceneManager::GetCurrentScene() {
+    return &this->currentScene;
 }
