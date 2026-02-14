@@ -3,6 +3,13 @@
 
 #include <Windows.h>
 #include <d3d11.h>
+#include <DirectXMath.h>
+
+using namespace DirectX;
+
+struct Draw_command {
+
+};
 
 enum class Sampler_state_type {
     LINEAR_WRAP = 0,

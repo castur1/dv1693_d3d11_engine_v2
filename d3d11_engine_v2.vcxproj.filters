@@ -107,8 +107,15 @@
     <ClInclude Include="src\components\camera_controller.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\resources\model.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\asset_cache.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
+    <Text Include="todo.txt" />
   </ItemGroup>
 </Project>

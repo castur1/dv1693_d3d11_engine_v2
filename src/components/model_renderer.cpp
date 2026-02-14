@@ -16,5 +16,5 @@ void ModelRenderer::Update(const Frame_context &context) {}
 void ModelRenderer::Render(Renderer *renderer) {}
 
 void ModelRenderer::OnDestroy(const Engine_context &context) {
-    LogInfo("Destroyed my parent and thus myself\n");
+    LogInfo("Destroyed my parent and thus myself :D\n");
 }

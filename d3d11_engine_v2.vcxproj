@@ -156,7 +156,9 @@
     <ClInclude Include="src\core\uuid.hpp" />
     <ClInclude Include="src\core\window.hpp" />
     <ClInclude Include="src\rendering\renderer.hpp" />
+    <ClInclude Include="src\resources\asset_cache.hpp" />
     <ClInclude Include="src\resources\asset_manager.hpp" />
+    <ClInclude Include="src\resources\model.hpp" />
     <ClInclude Include="src\resources\scene_loader.hpp" />
     <ClInclude Include="src\scene\component.hpp" />
     <ClInclude Include="src\scene\component_registry.hpp" />
@@ -166,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
+    <Text Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
