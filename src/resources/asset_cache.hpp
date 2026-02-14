@@ -55,7 +55,7 @@ public:
     }
 
     void SetDefaultAsset(T *asset) {
-        this->defaultAsset = std::make_unique<T>(asset);
+        this->defaultAsset = std::unique_ptr<T>(asset);
     }
 
     T *GetDefaultAsset() {

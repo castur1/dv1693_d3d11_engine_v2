@@ -119,9 +119,19 @@
     <ClInclude Include="src\resources\asset_registry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="external\stb_image\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external\tiny_obj_loader\tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
     <Text Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="assets\shaders\ps_default.hlsl" />
+    <FxCompile Include="assets\shaders\vs_default.hlsl" />
   </ItemGroup>
 </Project>

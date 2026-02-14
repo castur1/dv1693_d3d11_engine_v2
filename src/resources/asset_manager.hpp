@@ -21,11 +21,21 @@ class AssetManager {
 
     std::string assetDir;
 
+    void CreateDefaultAssets();
+    Model *CreateDefaultModel();
+    Texture2D *CreateDefaultTexture2D();
+    Material *CreateDefaultMaterial();
+    Pipeline_state *CreateDefaultPipelineState();
+
 public:
     AssetManager();
     ~AssetManager();
 
     bool Initialize(ID3D11Device *device);
+
+    bool LoadFileContents(const std::string &path, void **buffer, size_t *size);
+    bool LoadShaders(const std::string &vertexShaderPath, const std::string &pixelShaderPath,
+        ID3D11VertexShader **vertexShader, ID3D11PixelShader **pixelShader, ID3D11InputLayout **inputLayout);
 
     void MarkAllAssetsUnused();
     void MarkAsUsed(AssetID uuid);

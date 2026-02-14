@@ -58,8 +58,6 @@ struct Texture2D {
 };
 
 struct Material {
-    std::string name;
-
     Pipeline_state *pipelineState;
 
     Texture2D *diffuseTexture;

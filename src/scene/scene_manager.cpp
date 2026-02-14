@@ -4,10 +4,7 @@
 #include "resources/scene_loader.hpp"
 
 SceneManager::SceneManager() : loader(nullptr) {}
-
-SceneManager::~SceneManager() {
-    
-}
+SceneManager::~SceneManager() {}
 
 void SceneManager::ChangeScene(const std::string &name) {
     if (!this->loader->Load(this->currentScene, name)) 
