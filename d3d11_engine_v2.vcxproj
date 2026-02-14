@@ -141,6 +141,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\renderer.cpp" />
     <ClCompile Include="src\resources\asset_manager.cpp" />
+    <ClCompile Include="src\resources\asset_registry.cpp" />
     <ClCompile Include="src\resources\scene_loader.cpp" />
     <ClCompile Include="src\scene\entity.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\rendering\renderer.hpp" />
     <ClInclude Include="src\resources\asset_cache.hpp" />
     <ClInclude Include="src\resources\asset_manager.hpp" />
+    <ClInclude Include="src\resources\asset_registry.hpp" />
     <ClInclude Include="src\resources\model.hpp" />
     <ClInclude Include="src\resources\scene_loader.hpp" />
     <ClInclude Include="src\scene\component.hpp" />

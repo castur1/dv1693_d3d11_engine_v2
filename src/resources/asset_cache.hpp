@@ -74,14 +74,14 @@ public:
     }
 
     void CleanUpUnused() {
-        for (auto iter = this->assets.begin(); iter != this->assets.end();) {
+        for (auto iter = this->cache.begin(); iter != this->cache.end();) {
             if (iter->second.isUsed || iter->second.isPersistent) {
                 ++iter;
                 continue;
             }
 
             LogInfo("Unloading unused asset '%s'\n", iter->first.ToString().c_str());
-            iter = this->assets.erase(iter);
+            iter = this->cache.erase(iter);
         }
     }
 };
