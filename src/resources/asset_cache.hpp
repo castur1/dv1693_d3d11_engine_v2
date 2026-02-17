@@ -36,7 +36,7 @@ public:
         if (iter == this->cache.end())
             return this->defaultAsset.get();
 
-        return iter->second.get();
+        return iter->second.asset.get();
     }
 
     bool Contains(AssetID uuid) {
@@ -45,7 +45,7 @@ public:
 
     T *Add(AssetID uuid, T *asset, bool isPersistent = false) {
         Entry entry{};
-        entry.asset = std::make_unique<T>(asset);
+        entry.asset = std::unique_ptr<T>(asset);
         entry.isUsed = true;
         entry.isPersistent = isPersistent;
 

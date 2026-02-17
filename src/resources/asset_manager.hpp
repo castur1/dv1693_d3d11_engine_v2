@@ -91,9 +91,8 @@ public:
         if (!uuid.IsValid())
             return cache->GetDefault();
 
-        T *cachedAsset = cache->Get(uuid);
-        if (cachedAsset)
-            return cachedAsset;
+        if (cache->Contains(uuid))
+            return cache->Get(uuid);
 
         auto *loader = this->GetLoader<T>();
         if (!loader)

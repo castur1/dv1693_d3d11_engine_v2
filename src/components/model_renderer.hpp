@@ -3,9 +3,13 @@
 
 #include "scene/component.hpp"
 #include "core/uuid.hpp"
+#include "resources/asset_manager.hpp"
+#include "resources/model.hpp"
 
 class ModelRenderer : public Component {
     AssetID modelID;
+
+    AssetHandle<Texture2D> test_textureHandle;
 
 public:
     ModelRenderer(Entity *owner, bool isActive);
