@@ -1,11 +1,11 @@
 #ifndef MODEL_HPP
 #define MODEL_HPP
 
-#include <string>
+#include "resources/asset_manager.hpp"
+
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <memory>
 
 using namespace DirectX;
 
@@ -58,9 +58,9 @@ struct Texture2D {
 };
 
 struct Material {
-    Pipeline_state *pipelineState;
+    AssetHandle<Pipeline_state> pipelineState;
 
-    Texture2D *diffuseTexture;
+    AssetHandle<Texture2D> diffuseTexture;
 
     XMFLOAT3 ambientColour;
     XMFLOAT3 diffuseColour;
@@ -80,7 +80,7 @@ struct Model {
 
     struct Sub_model {
         Mesh mesh;
-        Material *material;
+        AssetHandle<Material> material;
     };
 
     std::vector<Sub_model> subModels;

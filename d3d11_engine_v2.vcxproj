@@ -150,7 +150,11 @@
     <ClCompile Include="src\rendering\renderer.cpp" />
     <ClCompile Include="src\resources\asset_manager.cpp" />
     <ClCompile Include="src\resources\asset_registry.cpp" />
+    <ClCompile Include="src\resources\material_loader.cpp" />
+    <ClCompile Include="src\resources\model_loader.cpp" />
+    <ClCompile Include="src\resources\pipeline_state_loader.cpp" />
     <ClCompile Include="src\resources\scene_loader.cpp" />
+    <ClCompile Include="src\resources\texture2d_loader.cpp" />
     <ClCompile Include="src\scene\entity.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
     <ClCompile Include="src\scene\scene_manager.cpp" />
@@ -168,10 +172,15 @@
     <ClInclude Include="src\core\window.hpp" />
     <ClInclude Include="src\rendering\renderer.hpp" />
     <ClInclude Include="src\resources\asset_cache.hpp" />
+    <ClInclude Include="src\resources\asset_loader.hpp" />
     <ClInclude Include="src\resources\asset_manager.hpp" />
     <ClInclude Include="src\resources\asset_registry.hpp" />
+    <ClInclude Include="src\resources\material_loader.hpp" />
     <ClInclude Include="src\resources\model.hpp" />
+    <ClInclude Include="src\resources\model_loader.hpp" />
+    <ClInclude Include="src\resources\pipeline_state_loader.hpp" />
     <ClInclude Include="src\resources\scene_loader.hpp" />
+    <ClInclude Include="src\resources\texture2d_loader.hpp" />
     <ClInclude Include="src\scene\component.hpp" />
     <ClInclude Include="src\scene\component_registry.hpp" />
     <ClInclude Include="src\scene\entity.hpp" />
@@ -183,13 +192,13 @@
     <Text Include="todo.txt" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="assets\shaders\ps_default.hlsl">
+    <FxCompile Include="src\shaders\ps_default.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="assets\shaders\vs_default.hlsl">
+    <FxCompile Include="src\shaders\vs_default.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

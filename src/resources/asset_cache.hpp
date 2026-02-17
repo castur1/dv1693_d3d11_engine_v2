@@ -7,8 +7,17 @@
 #include <memory>
 #include <unordered_map>
 
+class AssetCacheBase {
+public:
+    virtual ~AssetCacheBase() = default;
+
+    virtual void MarkAllUnused() {}
+    virtual void MarkAsUsed(AssetID uuid) {}
+    virtual void CleanUpUnused() {}
+};
+
 template <typename T>
-class AssetCache {
+class AssetCache : public AssetCacheBase {
     struct Entry {
         std::unique_ptr<T> asset;
         bool isUsed;
@@ -54,11 +63,11 @@ public:
         this->cache.clear();
     }
 
-    void SetDefaultAsset(T *asset) {
+    void SetDefault(T *asset) {
         this->defaultAsset = std::unique_ptr<T>(asset);
     }
 
-    T *GetDefaultAsset() {
+    T *GetDefault() {
         return this->defaultAsset.get();
     }
 
