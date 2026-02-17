@@ -8,8 +8,7 @@
 
 class ModelRenderer : public Component {
     AssetID modelID;
-
-    AssetHandle<Texture2D> test_textureHandle;
+    AssetHandle<Model> modelHandle;
 
 public:
     ModelRenderer(Entity *owner, bool isActive);

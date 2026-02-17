@@ -32,7 +32,7 @@ entity 123a-ffff-3242-0011
   
     component ModelRenderer
         isActive: true
-        modelID: "3103-1b37-cb19-b313"
+        modelID: "0dbc-caa8-2206-5ca7"
 
 assets:
-    3103-1b37-cb19-b313
+    0dbc-caa8-2206-5ca7

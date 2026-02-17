@@ -17,6 +17,7 @@ public:
 
     std::string ToString() const;
     static UUID_ FromString(const std::string &str);
+    static UUID_ FromHash(const std::string &str);
 
     operator uint64_t() const { return this->uuid; }
 

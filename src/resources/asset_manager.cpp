@@ -56,6 +56,14 @@ bool AssetManager::LoadFileContents(const std::string &path, void **buffer, size
     return true;
 }
 
+std::string AssetManager::UUIDToPath(AssetID uuid) {
+    return this->registry.GetPath(uuid);
+}
+
+AssetID AssetManager::PathToUUID(const std::string &path) {
+    return this->registry.GetUUID(path);
+}
+
 void AssetManager::MarkAllAssetsUnused() {
     for (auto &[typeIndex, cache] : this->caches)
         cache->MarkAllUnused();

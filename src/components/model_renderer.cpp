@@ -9,9 +9,15 @@ ModelRenderer::ModelRenderer(Entity *owner, bool isActive)
 ModelRenderer::~ModelRenderer() {}
 
 void ModelRenderer::OnStart(const Engine_context &context) {
-    this->test_textureHandle = context.assetManager->GetHandle<Texture2D>(this->modelID);
-    Texture2D *texture2D = this->test_textureHandle.Get();
-    LogInfo("TEST! width: %d, height: %d\n", texture2D->width, texture2D->height);
+    this->modelHandle = context.assetManager->GetHandle<Model>(this->modelID);
+    Model *model = this->modelHandle.Get();
+    for (int i = 0; i < model->subModels.size(); ++i) {
+        auto &subModel = model->subModels[i];
+
+        Material *material = subModel.material.Get();
+        Texture2D *texture2D = material->diffuseTexture.Get();
+        Pipeline_state *pipelineState = material->pipelineState.Get();
+    }
 }
 
 void ModelRenderer::Update(const Frame_context &context) {}

@@ -40,3 +40,14 @@ UUID_ UUID_::FromString(const std::string &str) {
 
     return UUID_((parts[0] << 48) | (parts[1] << 32) | (parts[2] << 16) | parts[3]);
 }
+
+// FNV-1a 64-bit hash
+UUID_ UUID_::FromHash(const std::string &str) {
+    uint64_t hash = 14695981039346656037ULL;
+    for (char c : str) {
+        hash ^= static_cast<uint64_t>(c);
+        hash *= 1099511628211ULL;
+    }
+
+    return UUID_(hash);
+}

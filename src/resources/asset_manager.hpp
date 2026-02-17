@@ -112,6 +112,21 @@ public:
     }
 
     template <typename T>
+    T *Load(const std::string &path) {
+        AssetID uuid = this->registry.GetUUID(path);
+        return this->Load<T>(uuid);
+    }
+
+    template <typename T>
+    bool Has(const AssetID &uuid) {
+        auto *cache = this->GetCache<T>();
+        if (!cache)
+            return false;
+
+        return cache->Contains(uuid);
+    }
+
+    template <typename T>
     T *GetDefault() {
         auto *cache = this->GetCache<T>();
         if (!cache)
@@ -121,14 +136,19 @@ public:
     }
 
     template <typename T>
-    AssetHandle<T> AddAsset(T *asset) {
+    AssetHandle<T> AddAsset(T *asset, AssetID uuid) {
         auto *cache = this->GetCache<T>();
         if (!cache)
-            return nullptr;
+            return AssetHandle<T>(AssetID::invalid, this);
 
-        AssetID uuid;
         cache->Add(uuid, asset);
         return AssetHandle<T>(uuid, this);
+    }
+
+    template <typename T>
+    AssetHandle<T> AddAsset(T *asset) {
+        AssetID uuid;
+        return this->AddAsset<T>(asset, uuid);
     }
 
     template <typename T>
@@ -141,6 +161,9 @@ public:
     void CleanUpUnused();
 
     bool LoadFileContents(const std::string &path, void **buffer, size_t *size);
+
+    std::string UUIDToPath(AssetID uuid);
+    AssetID PathToUUID(const std::string &path);
 
     void SetAssetDirectory(const std::string &path);
     const std::string &GetAssetDirectory() const;
