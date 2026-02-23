@@ -16,6 +16,8 @@ class AssetManager;
 template <typename T>
 class AssetHandle {
     AssetID uuid;
+    // NOTE: This pointer only valid as long as the asset don't get unloaded.
+    // Right now assets only get unloaded on scene change, so this is fine.
     T *cachedPtr;
 
     AssetManager *assetManager;

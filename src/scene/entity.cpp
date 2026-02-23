@@ -33,6 +33,7 @@ void Entity::OnDestroy(const Engine_context &context) {
         component->OnDestroy(context);
 }
 
+// Ownership transfer; creates unique_ptr
 Component *Entity::AddComponentRaw(Component *component) {
     if (!component) {
         LogWarn("Attempted to add null component to entity");

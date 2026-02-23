@@ -42,6 +42,7 @@ public:
 
     // TODO: RemoveComponent
 
+    // TODO: type_index
     template<typename T>
     T *GetComponent() {
         for (auto &component : this->components) {

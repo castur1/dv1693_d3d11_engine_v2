@@ -1,15 +1,13 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
+#include "rendering/render_queue.hpp"
+#include "rendering/frame_graph.hpp"
+
 #include <Windows.h>
 #include <d3d11.h>
-#include <DirectXMath.h>
 
 using namespace DirectX;
-
-struct Draw_command {
-
-};
 
 enum class Sampler_state_type {
     LINEAR_WRAP = 0,
@@ -25,6 +23,9 @@ class Renderer {
     ID3D11DepthStencilView *depthStencilView;
     ID3D11SamplerState *samplerStates[(int)Sampler_state_type::COUNT];
     D3D11_VIEWPORT viewport;
+
+    RenderQueue renderQueue;
+    FrameGraph frameGraph;
 
     int width;
     int height;
@@ -43,11 +44,12 @@ public:
     Renderer();
     ~Renderer();
 
+    Renderer(const Renderer &other) = delete;
+    Renderer &operator=(const Renderer &other) = delete;
+
     bool Initialize(HWND hWnd);
     bool Resize(int width, int height);
 
-    // void Submit();
-    // void Flush();
     void Begin();
     void End();
 
@@ -61,6 +63,8 @@ public:
 
     void SetClearColour(float r, float g, float b, float a = 1.0f);
     const float *GetClearColour() const;
+
+    RenderQueue &GetRenderQueue();
 };
 
 #endif

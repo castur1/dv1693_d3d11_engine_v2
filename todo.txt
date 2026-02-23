@@ -1,8 +1,4 @@
-Implement the asset manager. I need to add the UUID/metafile system and figure out how to make that
-work with caching model data. I can reuse my OBJ-loader from the last engine, probably. I might need
-to rethink how to handle assets in general.
-
-Frame graph for structuring render passes. 
+Frame graph for structuring render passes
 
 Input manager
 

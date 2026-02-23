@@ -52,7 +52,7 @@ Model *ModelLoader::Load(const std::string &path) {
 
         newMaterial->ambientColour = XMFLOAT3(materials[i].ambient);
 
-        if (materials[i].diffuse[0] == 0.0f && materials[i].diffuse[0] == 0.0f && materials[i].diffuse[0] == 0.0f)
+        if (materials[i].diffuse[0] == 0.0f && materials[i].diffuse[1] == 0.0f && materials[i].diffuse[2] == 0.0f)
             newMaterial->diffuseColour = XMFLOAT3(1.0f, 1.0f, 1.0f);
         else
             newMaterial->diffuseColour = XMFLOAT3(materials[i].diffuse);
@@ -165,6 +165,7 @@ Model *ModelLoader::Load(const std::string &path) {
     HRESULT result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &newModel->vertexBuffer);
     if (FAILED(result)) {
         LogWarn("Failed to create vertex buffer\n");
+        delete newModel;
         return nullptr;
     }
 
@@ -180,6 +181,7 @@ Model *ModelLoader::Load(const std::string &path) {
     result = device->CreateBuffer(&indexBufferDesc, &indexData, &newModel->indexBuffer);
     if (FAILED(result)) {
         LogWarn("Failed to create index buffer\n");
+        delete newModel;
         return nullptr;
     }
 

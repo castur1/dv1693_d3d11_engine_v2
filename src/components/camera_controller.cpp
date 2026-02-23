@@ -1,12 +1,14 @@
 #include "camera_controller.hpp"
 #include "core/logging.hpp"
 #include "scene/scene.hpp"
+#include "scene/scene_manager.hpp"
 
 CameraController::CameraController(Entity *owner, bool isActive) : Component(owner, isActive) {}
 CameraController::~CameraController() {}
 
 void CameraController::OnStart(const Engine_context &context) {
-    context.scene->DestroyEntity(this->GetOwner());
+    Scene *scene = context.sceneManager->GetCurrentScene();
+    scene->DestroyEntity(this->GetOwner());
 }
 
 void CameraController::Update(const Frame_context &context) {}

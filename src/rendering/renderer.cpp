@@ -235,6 +235,8 @@ bool Renderer::Initialize(HWND hWnd) {
 
     this->SetViewport(this->width, this->height);
 
+    this->frameGraph.SetDevice(this->device);
+
     LogUnindent();
 
     return true;
@@ -277,11 +279,11 @@ bool Renderer::Resize(int width, int height) {
     return true;
 }
 
-// void Submit() {}
-
-// void Flush() {}
-
 void Renderer::Begin() {
+    this->renderQueue.Clear();
+
+    // TODO: Remove vvvvv
+
     this->deviceContext->ClearRenderTargetView(this->renderTargetView, this->clearColour);
     this->deviceContext->ClearDepthStencilView(this->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -335,4 +337,8 @@ void Renderer::SetClearColour(float r, float g, float b, float a) {
 
 const float *Renderer::GetClearColour() const {
     return this->clearColour;
+}
+
+RenderQueue &Renderer::GetRenderQueue() {
+    return this->renderQueue;
 }

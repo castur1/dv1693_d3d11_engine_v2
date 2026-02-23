@@ -23,13 +23,13 @@ entity 123a-ffff-3242-0011
     name: "entity_1"
     isActive: true
     parent: null
-  
+
     component Transform
         isActive: true
         position: [4.0, 0.0, 6.0]
         rotation: [0.0, 3.1416, 0.0]
         scale: [2.0, 2.0, 2.0]
-  
+
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"

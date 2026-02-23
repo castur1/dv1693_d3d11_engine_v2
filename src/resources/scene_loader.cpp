@@ -200,6 +200,8 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         ++lineNumber;
 
         int indent = GetIndentLevel(line);
+        if (indent % 4 != 0)
+            LogWarn("Invalid indent on line %d\n", lineNumber);
 
         line = TrimWhitespace(line);
         if (line.empty() || line.front() == '#') // Supports comments!

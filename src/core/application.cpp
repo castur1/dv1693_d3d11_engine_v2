@@ -6,7 +6,12 @@
 #include <stdio.h>
 #include <chrono>
 
-Application::Application() : context{&this->sceneManager, &this->assetManager, this->sceneManager.GetCurrentScene()} {}
+Application::Application() 
+    : context{
+        &this->sceneManager, 
+        &this->assetManager
+    } {}
+
 Application::~Application() {}
 
 bool Application::CreateConsole() {

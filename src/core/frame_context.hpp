@@ -3,12 +3,10 @@
 
 class SceneManager;
 class AssetManager;
-class Scene;
 
 struct Engine_context {
     SceneManager *sceneManager;
     AssetManager *assetManager;
-    Scene *scene;
 };
 
 struct Frame_context {
