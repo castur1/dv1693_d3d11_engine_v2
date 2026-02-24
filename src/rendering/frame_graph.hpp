@@ -8,6 +8,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <unordered_set>
 
 class FrameGraph {
 public:
@@ -16,7 +17,7 @@ public:
 
         uint32_t index = Texture_handle::invalidIndex;
 
-        bool IsValid() const { return this->index == Texture_handle::invalidIndex; }
+        bool IsValid() const { return this->index != Texture_handle::invalidIndex; }
     };
 
     struct Texture_desc {
@@ -127,7 +128,7 @@ private:
     bool isCompiled;
 
     void CullUnusedPasses();
-    void TopologicalSort();
+    bool TopologicalSort();
 
     void ComputeResourceLifetimes();
     void CreateTemporaryResources();
@@ -146,6 +147,15 @@ public:
 
     Texture_handle ImportTexture(
         const std::string &name,
+        ID3D11Texture2D *texture,
+        ID3D11RenderTargetView *renderTargetView,
+        ID3D11ShaderResourceView *shaderResourceView = nullptr,
+        ID3D11DepthStencilView *depthStencilView = nullptr,
+        ID3D11UnorderedAccessView *unorderedAccessView = nullptr
+    );
+
+    void UpdateImportedTexture(
+        Texture_handle handle,
         ID3D11Texture2D *texture,
         ID3D11RenderTargetView *renderTargetView,
         ID3D11ShaderResourceView *shaderResourceView = nullptr,
@@ -178,15 +188,6 @@ public:
     void OnResize(int width, int height);
 
     void Execute(ID3D11DeviceContext *deviceContext, const RenderQueue &renderQueue);
-
-    void UpdateImportedTexture(
-        Texture_handle handle,
-        ID3D11Texture2D *texture,
-        ID3D11RenderTargetView *renderTargetView,
-        ID3D11ShaderResourceView *shaderResourceView = nullptr,
-        ID3D11DepthStencilView *depthStencilView = nullptr,
-        ID3D11UnorderedAccessView *unorderedAccessView = nullptr
-    );
 
     void Clear();
 

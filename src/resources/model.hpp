@@ -9,7 +9,7 @@
 
 using namespace DirectX;
 
-#define SafeRelease(obj) do { if (obj) obj->Release(); } while (0)
+#define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
 struct Vertex {
     float position[3];

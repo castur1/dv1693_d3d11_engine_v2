@@ -27,6 +27,8 @@ class Renderer {
     RenderQueue renderQueue;
     FrameGraph frameGraph;
 
+    FrameGraph::Texture_handle backbufferHandle;
+
     int width;
     int height;
 
@@ -39,6 +41,8 @@ class Renderer {
     void SetViewport(int width, int height);
 
     void BindCommonSamplerStates();
+
+    void BuildFrameGraph();
 
 public:
     Renderer();
@@ -65,6 +69,9 @@ public:
     const float *GetClearColour() const;
 
     RenderQueue &GetRenderQueue();
+    FrameGraph &GetFrameGraph();
+
+    FrameGraph::Texture_handle GetBackbufferHandle() const;
 };
 
 #endif

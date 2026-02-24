@@ -1,7 +1,7 @@
 #include "renderer.hpp"
 #include "core/logging.hpp"
 
-#define SafeRelease(obj) do { if (obj) obj->Release(); } while (0)
+#define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
 Renderer::Renderer()
     : device{},
@@ -212,6 +212,35 @@ void Renderer::BindCommonSamplerStates() {
     this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::COUNT, this->samplerStates);
 }
 
+void Renderer::BuildFrameGraph() {
+    this->frameGraph.Clear();
+
+    this->backbufferHandle = this->frameGraph.ImportTexture("Backbuffer", nullptr, this->renderTargetView);
+
+    struct Test_data {
+        int hello;
+    };
+
+    auto &testData = this->frameGraph.AddRenderPass<Test_data>(
+        "Test pass",
+        [&](Test_data &data, FrameGraph::PassBuilder &builder) {
+            builder.WritesBackbuffer();
+        },
+        [backbufferHandle = this->backbufferHandle, clearColour = this->clearColour](const Test_data &data, FrameGraph::ExecutionContext &context) {
+            auto *deviceContext = context.GetDeviceContext();
+            auto *rtv = context.GetRenderTargetView(backbufferHandle);
+            auto *dsv = context.GetDepthStencilView(backbufferHandle);
+
+            deviceContext->ClearRenderTargetView(rtv, clearColour);
+            deviceContext->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+            deviceContext->OMSetRenderTargets(1, &rtv, dsv);
+        }
+    );
+
+    this->frameGraph.Compile(this->width, this->height);
+}
+
 bool Renderer::Initialize(HWND hWnd) {
     LogInfo("Creating renderer...\n");
     LogIndent();
@@ -236,6 +265,7 @@ bool Renderer::Initialize(HWND hWnd) {
     this->SetViewport(this->width, this->height);
 
     this->frameGraph.SetDevice(this->device);
+    this->BuildFrameGraph();
 
     LogUnindent();
 
@@ -274,6 +304,8 @@ bool Renderer::Resize(int width, int height) {
     this->width = width;
     this->height = height;
 
+    this->frameGraph.OnResize(width, height);
+
     LogUnindent();
 
     return true;
@@ -282,18 +314,22 @@ bool Renderer::Resize(int width, int height) {
 void Renderer::Begin() {
     this->renderQueue.Clear();
 
-    // TODO: Remove vvvvv
+    this->frameGraph.UpdateImportedTexture(
+        this->backbufferHandle,
+        nullptr,
+        this->renderTargetView,
+        nullptr,
+        this->depthStencilView
+    );
 
-    this->deviceContext->ClearRenderTargetView(this->renderTargetView, this->clearColour);
-    this->deviceContext->ClearDepthStencilView(this->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, this->depthStencilView);
-    this->deviceContext->RSSetViewports(1, &this->viewport);
+    deviceContext->RSSetViewports(1, &this->viewport);
 
     this->BindCommonSamplerStates();
 }
 
 void Renderer::End() {
+    this->frameGraph.Execute(this->deviceContext, this->renderQueue);
+
     this->swapChain->Present(0, 0);
 }
 
@@ -341,4 +377,12 @@ const float *Renderer::GetClearColour() const {
 
 RenderQueue &Renderer::GetRenderQueue() {
     return this->renderQueue;
+}
+
+FrameGraph &Renderer::GetFrameGraph() {
+    return this->frameGraph;
+}
+
+FrameGraph::Texture_handle Renderer::GetBackbufferHandle() const {
+    return this->backbufferHandle;
 }
