@@ -27,7 +27,7 @@ class Renderer {
     RenderQueue renderQueue;
     FrameGraph frameGraph;
 
-    FrameGraph::Texture_handle backbufferHandle;
+    FrameGraph::TextureHandle backbufferHandle;
 
     int width;
     int height;
@@ -71,7 +71,7 @@ public:
     RenderQueue &GetRenderQueue();
     FrameGraph &GetFrameGraph();
 
-    FrameGraph::Texture_handle GetBackbufferHandle() const;
+    FrameGraph::TextureHandle GetBackbufferHandle() const;
 };
 
 #endif

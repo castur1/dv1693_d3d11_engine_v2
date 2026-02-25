@@ -12,13 +12,8 @@
 
 class FrameGraph {
 public:
-    struct Texture_handle {
-        static const uint32_t invalidIndex = UINT32_MAX;
-
-        uint32_t index = Texture_handle::invalidIndex;
-
-        bool IsValid() const { return this->index != Texture_handle::invalidIndex; }
-    };
+    typedef uint32_t TextureHandle, PassHandle;
+    static constexpr uint32_t INVALID_HANDLE = UINT32_MAX;
 
     struct Texture_desc {
         enum class Size_mode {
@@ -37,18 +32,22 @@ public:
         UINT bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
     };
 
-    class PassBuilder {
+    struct Render_pass_base;
+
+    class RenderPassBuilder {
         friend class FrameGraph;
 
         FrameGraph &frameGraph;
-        uint32_t passIndex;
+        PassHandle passHandle;
 
-        PassBuilder(FrameGraph &frameGraph, uint32_t passIndex) 
-            : frameGraph(frameGraph), passIndex(passIndex) {}
+        RenderPassBuilder(FrameGraph &frameGraph, PassHandle passHandle) 
+            : frameGraph(frameGraph), passHandle(passHandle) {}
+
+        Render_pass_base *GetRenderPass();
 
     public:
-        Texture_handle Read(const Texture_handle &handle);
-        Texture_handle Write(const Texture_handle &handle);
+        TextureHandle Read(TextureHandle textureHandle);
+        TextureHandle Write(TextureHandle textureHandle);
 
         void WritesBackbuffer();
     };
@@ -67,10 +66,10 @@ public:
         ID3D11DeviceContext *GetDeviceContext() const { return this->deviceContext; }
         const RenderQueue &GetRenderQueue() const { return this->renderQueue; }
 
-        ID3D11ShaderResourceView *GetShaderResourceView(Texture_handle handle) const;
-        ID3D11RenderTargetView *GetRenderTargetView(Texture_handle handle) const;
-        ID3D11DepthStencilView *GetDepthStencilView(Texture_handle handle) const;
-        ID3D11UnorderedAccessView *GetUnorderedAccessView(Texture_handle handle) const;
+        ID3D11ShaderResourceView *GetShaderResourceView(TextureHandle handle) const;
+        ID3D11RenderTargetView *GetRenderTargetView(TextureHandle handle) const;
+        ID3D11DepthStencilView *GetDepthStencilView(TextureHandle handle) const;
+        ID3D11UnorderedAccessView *GetUnorderedAccessView(TextureHandle handle) const;
     };
 
 private:
@@ -85,16 +84,16 @@ private:
         ID3D11DepthStencilView *depthStencilView       = nullptr;
         ID3D11UnorderedAccessView *unorderedAccessView = nullptr;
 
-        uint32_t firstWrite = UINT32_MAX;
-        uint32_t lastRead   = UINT32_MAX;
+        PassHandle firstWrite = INVALID_HANDLE;
+        PassHandle lastRead   = INVALID_HANDLE;
         int readRefCount    = 0;
     };
 
     struct Render_pass_base {
         std::string name;
 
-        std::vector<uint32_t> reads;
-        std::vector<uint32_t> writes;
+        std::unordered_set<TextureHandle> reads;
+        std::unordered_set<TextureHandle> writes;
 
         bool writesBackbuffer = false;
 
@@ -121,10 +120,11 @@ private:
     std::vector<Texture_resource> textureResources;
 
     std::vector<std::unique_ptr<Render_pass_base>> renderPasses;
-    std::vector<uint32_t> sortedRenderPassIndices;
+    std::vector<PassHandle> sortedPassHandles;
 
     int backbufferWidth;
     int backbufferHeight;
+
     bool isCompiled;
 
     void CullUnusedPasses();
@@ -143,9 +143,9 @@ public:
 
     void SetDevice(ID3D11Device *device);
 
-    Texture_handle CreateTexture(const std::string &name, Texture_desc desc);
+    TextureHandle CreateTexture(const std::string &name, Texture_desc desc);
 
-    Texture_handle ImportTexture(
+    TextureHandle ImportTexture(
         const std::string &name,
         ID3D11Texture2D *texture,
         ID3D11RenderTargetView *renderTargetView,
@@ -155,7 +155,7 @@ public:
     );
 
     void UpdateImportedTexture(
-        Texture_handle handle,
+        TextureHandle handle,
         ID3D11Texture2D *texture,
         ID3D11RenderTargetView *renderTargetView,
         ID3D11ShaderResourceView *shaderResourceView = nullptr,
@@ -166,17 +166,17 @@ public:
     template <typename PassData>
     PassData &AddRenderPass(
         const std::string &name,
-        std::function<void(PassData &, PassBuilder &)> setupFunc,
+        std::function<void(PassData &, RenderPassBuilder &)> setupFunc,
         std::function<void(const PassData &, ExecutionContext &)> executeFunc
     ) {
-        uint32_t index = this->renderPasses.size();
+        PassHandle handle = this->renderPasses.size();
 
         Render_pass<PassData> *renderPass = new Render_pass<PassData>();
         renderPass->name = name;
 
         this->renderPasses.emplace_back(renderPass);
 
-        PassBuilder builder(*this, index);
+        RenderPassBuilder builder(*this, handle);
         setupFunc(renderPass->data, builder);
 
         renderPass->executeFunc = std::move(executeFunc);

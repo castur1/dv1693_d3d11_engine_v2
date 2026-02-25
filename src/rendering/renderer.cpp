@@ -223,7 +223,7 @@ void Renderer::BuildFrameGraph() {
 
     auto &testData = this->frameGraph.AddRenderPass<Test_data>(
         "Test pass",
-        [&](Test_data &data, FrameGraph::PassBuilder &builder) {
+        [&](Test_data &data, FrameGraph::RenderPassBuilder &builder) {
             builder.WritesBackbuffer();
         },
         [backbufferHandle = this->backbufferHandle, clearColour = this->clearColour](const Test_data &data, FrameGraph::ExecutionContext &context) {
@@ -383,6 +383,6 @@ FrameGraph &Renderer::GetFrameGraph() {
     return this->frameGraph;
 }
 
-FrameGraph::Texture_handle Renderer::GetBackbufferHandle() const {
+FrameGraph::TextureHandle Renderer::GetBackbufferHandle() const {
     return this->backbufferHandle;
 }

@@ -2,85 +2,64 @@
 #include "core/logging.hpp"
 
 #include <queue>
-#include <set>
 
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
-// Questions:
-// 1. In PassBuilder, why store frameGraph and passIndex rather than the Render_pass_base itself?
-// 2. In Render_pass_base, why store reads/writes as a vector rather than unordered_set if we manually check whether we already have the index?
-// 3. Should there be support for buffers as a type of resource rather than just textures?
-// 4. You say that OnResize() only recreateds transient textures, but it just calls Compile()?
-// 5. Why does Render_pass_base reads/writes store uint32_t rather than Texture_handle? Other places do this as well. And UINT32_MAX rather than Texture_handle::invalid
-// 6. In TopologicalSort, could we use an unordered_set instead of a normal set? Would that be more optimal?
-// 7. In TopologicalSort, why is successors not also a set? Is it because it simply doesn't need to be, since dependencies handles all the duplicate checks for us?
-// 8. Why do we check if a render pass is culled rather than simply removing the pass? Is it because that that would alter the other passes' indices?
-// 9. What's up with DSV + SRV needing typeless texture format?
-// 10. I don't really understand how CreateTemporaryResources (CreateTransientResources) works actually. Why those combinations?
-// 11. What about textures/resources that aren't 2D textures? I suppose you'd perhaps create them outside the frame graph and import them if you really needed them.
-// Feel free to correct me if I've misunderstood anything. This is decently complex code, so I'm bound to get something wrong haha
-
-FrameGraph::Texture_handle FrameGraph::PassBuilder::Read(const Texture_handle &handle) {
-    if (!handle.IsValid())
-        return handle;
-
-    Render_pass_base *pass = this->frameGraph.renderPasses[this->passIndex].get();
-
-    if (std::find(pass->reads.begin(), pass->reads.end(), handle.index) == pass->reads.end())
-        pass->reads.push_back(handle.index);
-
-    return handle;
+FrameGraph::Render_pass_base *FrameGraph::RenderPassBuilder::GetRenderPass() {
+    return this->frameGraph.renderPasses[this->passHandle].get();
 }
 
-FrameGraph::Texture_handle FrameGraph::PassBuilder::Write(const Texture_handle &handle) {
-    if (!handle.IsValid())
-        return handle;
+FrameGraph::TextureHandle FrameGraph::RenderPassBuilder::Read(TextureHandle textureHandle) {
+    if (textureHandle == INVALID_HANDLE)
+        return INVALID_HANDLE;
 
-    Render_pass_base *pass = this->frameGraph.renderPasses[this->passIndex].get();
+    this->GetRenderPass()->reads.insert(textureHandle);
 
-    if (std::find(pass->writes.begin(), pass->writes.end(), handle.index) == pass->writes.end())
-        pass->writes.push_back(handle.index);
-
-    return handle;
+    return textureHandle;
 }
 
-void FrameGraph::PassBuilder::WritesBackbuffer() {
-    this->frameGraph.renderPasses[this->passIndex]->writesBackbuffer = true;
+FrameGraph::TextureHandle FrameGraph::RenderPassBuilder::Write(TextureHandle textureHandle) {
+    if (textureHandle == INVALID_HANDLE)
+        return INVALID_HANDLE;
+
+    this->GetRenderPass()->writes.insert(textureHandle);
+
+    return textureHandle;
 }
 
-ID3D11ShaderResourceView *FrameGraph::ExecutionContext::GetShaderResourceView(Texture_handle handle) const {
-    if (!handle.IsValid() || handle.index >= this->frameGraph.textureResources.size())
+void FrameGraph::RenderPassBuilder::WritesBackbuffer() {
+    this->frameGraph.renderPasses[this->passHandle]->writesBackbuffer = true;
+}
+
+ID3D11ShaderResourceView *FrameGraph::ExecutionContext::GetShaderResourceView(TextureHandle handle) const {
+    if (handle == INVALID_HANDLE || handle >= this->frameGraph.textureResources.size())
         return nullptr;
 
-    return this->frameGraph.textureResources[handle.index].shaderResourceView;
+    return this->frameGraph.textureResources[handle].shaderResourceView;
 }
 
-ID3D11RenderTargetView *FrameGraph::ExecutionContext::GetRenderTargetView(Texture_handle handle) const {
-    if (!handle.IsValid() || handle.index >= this->frameGraph.textureResources.size())
+ID3D11RenderTargetView *FrameGraph::ExecutionContext::GetRenderTargetView(TextureHandle handle) const {
+    if (handle == INVALID_HANDLE || handle >= this->frameGraph.textureResources.size())
         return nullptr;
 
-    return this->frameGraph.textureResources[handle.index].renderTargetView;
+    return this->frameGraph.textureResources[handle].renderTargetView;
 }
 
-ID3D11DepthStencilView *FrameGraph::ExecutionContext::GetDepthStencilView(Texture_handle handle) const {
-    if (!handle.IsValid() || handle.index >= this->frameGraph.textureResources.size())
+ID3D11DepthStencilView *FrameGraph::ExecutionContext::GetDepthStencilView(TextureHandle handle) const {
+    if (handle == INVALID_HANDLE || handle >= this->frameGraph.textureResources.size())
         return nullptr;
 
-    return this->frameGraph.textureResources[handle.index].depthStencilView;
+    return this->frameGraph.textureResources[handle].depthStencilView;
 }
 
-ID3D11UnorderedAccessView *FrameGraph::ExecutionContext::GetUnorderedAccessView(Texture_handle handle) const {
-    if (!handle.IsValid() || handle.index >= this->frameGraph.textureResources.size())
+ID3D11UnorderedAccessView *FrameGraph::ExecutionContext::GetUnorderedAccessView(TextureHandle handle) const {
+    if (handle == INVALID_HANDLE || handle >= this->frameGraph.textureResources.size())
         return nullptr;
 
-    return this->frameGraph.textureResources[handle.index].unorderedAccessView;
+    return this->frameGraph.textureResources[handle].unorderedAccessView;
 }
 
-FrameGraph::FrameGraph() 
-    : device(nullptr), 
-    backbufferWidth(0), 
-    backbufferHeight(0), 
-    isCompiled(false) {}
+FrameGraph::FrameGraph() : device(nullptr), backbufferWidth(0), backbufferHeight(0), isCompiled(false) {}
 
 FrameGraph::~FrameGraph() {
     this->Clear();
@@ -100,46 +79,45 @@ void FrameGraph::CullUnusedPasses() {
         resource.readRefCount = 0;
 
     for (const auto &pass : this->renderPasses)
-        for (uint32_t index : pass->reads)
-            if (index < this->textureResources.size())
-                ++this->textureResources[index].readRefCount;
+        for (TextureHandle textureHandle : pass->reads)
+            if (textureHandle < this->textureResources.size())
+                ++this->textureResources[textureHandle].readRefCount;
 
     for (auto &pass : this->renderPasses) {
         if (pass->writesBackbuffer)
             ++pass->refCount;
 
-        for (uint32_t index : pass->writes)
-            if (index < this->textureResources.size() && this->textureResources[index].readRefCount > 0)
+        for (TextureHandle textureHandle : pass->writes)
+            if (textureHandle < this->textureResources.size() && this->textureResources[textureHandle].readRefCount > 0)
                 ++pass->refCount;
     }
 
-    std::queue<uint32_t> cullQueue;
-    for (uint32_t i = 0; i < this->renderPasses.size(); ++i)
-        if (this->renderPasses[i]->refCount == 0)
-            cullQueue.push(i);
+    std::queue<PassHandle> cullQueue;
+    for (PassHandle passHandle = 0; passHandle < this->renderPasses.size(); ++passHandle)
+        if (this->renderPasses[passHandle]->refCount == 0)
+            cullQueue.push(passHandle);
 
     while (!cullQueue.empty()) {
-        uint32_t passIndex = cullQueue.front();
+        PassHandle passHandle = cullQueue.front();
         cullQueue.pop();
 
-        Render_pass_base *pass = this->renderPasses[passIndex].get();
+        Render_pass_base *pass = this->renderPasses[passHandle].get();
         pass->isCulled = true;
 
-        for (uint32_t resourceIndex : pass->reads) {
-            if (resourceIndex >= this->textureResources.size())
+        for (TextureHandle textureHandle : pass->reads) {
+            if (textureHandle >= this->textureResources.size())
                 continue;
 
-            if (--this->textureResources[resourceIndex].readRefCount > 0)
+            if (--this->textureResources[textureHandle].readRefCount > 0)
                 continue;
 
-            for (uint32_t i = 0; i < this->renderPasses.size(); ++i) {
-                if (this->renderPasses[i]->isCulled)
+            for (PassHandle otherPassHandle = 0; otherPassHandle < this->renderPasses.size(); ++otherPassHandle) {
+                if (this->renderPasses[otherPassHandle]->isCulled)
                     continue;
 
-                const auto &writes = this->renderPasses[i]->writes;
-                if (std::find(writes.begin(), writes.end(), resourceIndex) != writes.end())
-                    if (--this->renderPasses[i]->refCount == 0)
-                        cullQueue.push(i);
+                if (this->renderPasses[otherPassHandle]->writes.count(textureHandle))
+                    if (--this->renderPasses[otherPassHandle]->refCount == 0)
+                        cullQueue.push(otherPassHandle);
             }
         }
     }
@@ -147,47 +125,50 @@ void FrameGraph::CullUnusedPasses() {
 
 // https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
 bool FrameGraph::TopologicalSort() {
-    this->sortedRenderPassIndices.clear();
+    this->sortedPassHandles.clear();
 
     const uint32_t passCount = this->renderPasses.size();
 
-    std::vector<std::set<uint32_t>> dependencies(passCount);
-    std::vector<std::vector<uint32_t>> successors(passCount);
+    // Construct the graph
 
-    for (uint32_t i = 0; i < passCount; ++i) {
-        if (this->renderPasses[i]->isCulled)
+    std::vector<std::unordered_set<PassHandle>> dependencies(passCount);
+    std::vector<std::unordered_set<PassHandle>> successors(passCount);
+
+    for (PassHandle passHandle = 0; passHandle < passCount; ++passHandle) {
+        if (this->renderPasses[passHandle]->isCulled)
             continue;
 
-        for (uint32_t resourceIndex : this->renderPasses[i]->reads) {
-            for (uint32_t j = 0; j < passCount; ++j) {
-                if (j == i || this->renderPasses[j]->isCulled)
+        for (TextureHandle textureHandle : this->renderPasses[passHandle]->reads) {
+            for (PassHandle otherPassHandle = 0; otherPassHandle < passCount; ++otherPassHandle) {
+                if (otherPassHandle == passHandle || this->renderPasses[otherPassHandle]->isCulled)
                     continue;
 
-                const auto &writes = this->renderPasses[j]->writes;
-                if (std::find(writes.begin(), writes.end(), resourceIndex) != writes.end())
-                    if (dependencies[i].insert(j).second)
-                        successors[j].push_back(i);
+                if (this->renderPasses[otherPassHandle]->writes.count(textureHandle))
+                    if (dependencies[passHandle].insert(otherPassHandle).second)
+                        successors[otherPassHandle].insert(passHandle);
             }
         }
     }
 
-    std::vector<int> inDegree(passCount, 0);
-    for (uint32_t i = 0; i < passCount; ++i)
-        if (!this->renderPasses[i]->isCulled)
-            inDegree[i] = dependencies[i].size();
+    // Sort the graph
 
-    std::queue<uint32_t> readyQueue;
-    for (uint32_t i = 0; i < passCount; ++i)
-        if (!this->renderPasses[i]->isCulled && inDegree[i] == 0)
-            readyQueue.push(i);
+    std::vector<int> inDegree(passCount, 0);
+    for (PassHandle passHandle = 0; passHandle < passCount; ++passHandle)
+        if (!this->renderPasses[passHandle]->isCulled)
+            inDegree[passHandle] = dependencies[passHandle].size();
+
+    std::queue<PassHandle> readyQueue;
+    for (PassHandle passHandle = 0; passHandle < passCount; ++passHandle)
+        if (!this->renderPasses[passHandle]->isCulled && inDegree[passHandle] == 0)
+            readyQueue.push(passHandle);
 
     while (!readyQueue.empty()) {
-        uint32_t passIndex = readyQueue.front();
+        PassHandle passHandle = readyQueue.front();
         readyQueue.pop();
 
-        this->sortedRenderPassIndices.push_back(passIndex);
+        this->sortedPassHandles.push_back(passHandle);
 
-        for (uint32_t successor : successors[passIndex])
+        for (PassHandle successor : successors[passHandle])
             if (--inDegree[successor] == 0)
                 readyQueue.push(successor);
     }
@@ -197,7 +178,7 @@ bool FrameGraph::TopologicalSort() {
         if (!pass->isCulled)
             ++liveCount;
 
-    if (this->sortedRenderPassIndices.size() != liveCount) {
+    if (this->sortedPassHandles.size() != liveCount) {
         LogError("Cycle detected in render pass dependency graph");
         return false;
     }
@@ -207,21 +188,21 @@ bool FrameGraph::TopologicalSort() {
 
 void FrameGraph::ComputeResourceLifetimes() {
     for (auto &resource : this->textureResources) {
-        resource.firstWrite = UINT32_MAX;
-        resource.lastRead = UINT32_MAX;
+        resource.firstWrite = INVALID_HANDLE;
+        resource.lastRead   = INVALID_HANDLE;
     }
 
-    for (uint32_t sortedIndex = 0; sortedIndex < this->sortedRenderPassIndices.size(); ++sortedIndex) {
-        uint32_t passIndex = this->sortedRenderPassIndices[sortedIndex];
-        const Render_pass_base *pass = this->renderPasses[passIndex].get();
+    for (int i = 0; i < this->sortedPassHandles.size(); ++i) {
+        PassHandle passHandle = this->sortedPassHandles[i];
+        const Render_pass_base *pass = this->renderPasses[passHandle].get();
 
-        for (uint32_t resourceIndex : pass->writes)
-            if (resourceIndex < this->textureResources.size() && this->textureResources[resourceIndex].firstWrite == UINT32_MAX)
-                this->textureResources[resourceIndex].firstWrite = sortedIndex;
+        for (TextureHandle textureHandle : pass->writes)
+            if (textureHandle < this->textureResources.size() && this->textureResources[textureHandle].firstWrite == INVALID_HANDLE)
+                this->textureResources[textureHandle].firstWrite = i;
 
-        for (uint32_t resourceIndex : pass->reads)
-            if (resourceIndex < this->textureResources.size())
-                this->textureResources[resourceIndex].lastRead = sortedIndex;
+        for (TextureHandle textureHandle : pass->reads)
+            if (textureHandle < this->textureResources.size())
+                this->textureResources[textureHandle].lastRead = i;
     }
 }
 
@@ -275,7 +256,7 @@ void FrameGraph::CreateTemporaryResources() {
         if (resource.wasImported)
             continue;
 
-        if (resource.firstWrite == UINT32_MAX)
+        if (resource.firstWrite == INVALID_HANDLE)
             continue;
 
         UINT width, height;
@@ -321,8 +302,8 @@ void FrameGraph::CreateTemporaryResources() {
 
         if (bindsRenderTarget && !bindsDepthStencil) {
             D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
-            rtvDesc.Format             = resource.desc.format;
-            rtvDesc.ViewDimension      = D3D11_RTV_DIMENSION_TEXTURE2D;
+            rtvDesc.Format = resource.desc.format;
+            rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
             rtvDesc.Texture2D.MipSlice = 0;
 
             result = this->device->CreateRenderTargetView(resource.texture, &rtvDesc, &resource.renderTargetView);
@@ -332,8 +313,8 @@ void FrameGraph::CreateTemporaryResources() {
 
         if (bindsDepthStencil) {
             D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-            dsvDesc.Format             = resource.desc.format;
-            dsvDesc.ViewDimension      = D3D11_DSV_DIMENSION_TEXTURE2D;
+            dsvDesc.Format = resource.desc.format;
+            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
             dsvDesc.Texture2D.MipSlice = 0;
 
             result = this->device->CreateDepthStencilView(resource.texture, &dsvDesc, &resource.depthStencilView);
@@ -379,9 +360,8 @@ void FrameGraph::ReleaseTemporaryResources() {
     }
 }
 
-FrameGraph::Texture_handle FrameGraph::CreateTexture(const std::string &name, FrameGraph::Texture_desc desc) {
-    Texture_handle handle{};
-    handle.index = this->textureResources.size();
+FrameGraph::TextureHandle FrameGraph::CreateTexture(const std::string &name, FrameGraph::Texture_desc desc) {
+    TextureHandle handle = this->textureResources.size();
 
     Texture_resource resource{};
     resource.name = name;
@@ -393,7 +373,7 @@ FrameGraph::Texture_handle FrameGraph::CreateTexture(const std::string &name, Fr
     return handle;
 }
 
-FrameGraph::Texture_handle FrameGraph::ImportTexture(
+FrameGraph::TextureHandle FrameGraph::ImportTexture(
     const std::string &name,
     ID3D11Texture2D *texture,
     ID3D11RenderTargetView *renderTargetView,
@@ -401,8 +381,7 @@ FrameGraph::Texture_handle FrameGraph::ImportTexture(
     ID3D11DepthStencilView *depthStencilView,
     ID3D11UnorderedAccessView *unorderedAccessView
 ) {
-    Texture_handle handle{};
-    handle.index = this->textureResources.size();
+    TextureHandle handle = this->textureResources.size();
 
     Texture_resource resource{};
     resource.name = name;
@@ -419,19 +398,19 @@ FrameGraph::Texture_handle FrameGraph::ImportTexture(
 }
 
 void FrameGraph::UpdateImportedTexture(
-    Texture_handle handle,
+    TextureHandle handle,
     ID3D11Texture2D *texture,
     ID3D11RenderTargetView *renderTargetView,
     ID3D11ShaderResourceView *shaderResourceView,
     ID3D11DepthStencilView *depthStencilView,
     ID3D11UnorderedAccessView *unorderedAccessView
 ) {
-    if (!handle.IsValid() || handle.index >= this->textureResources.size()) {
+    if (handle == INVALID_HANDLE || handle >= this->textureResources.size()) {
         LogWarn("Invalid handle\n");
         return;
     }
 
-    Texture_resource &resource = this->textureResources[handle.index];
+    Texture_resource &resource = this->textureResources[handle];
     if (!resource.wasImported) {
         LogWarn("Tried to update non-imported texture resource '%s'\n", resource.name.c_str());
         return;
@@ -478,8 +457,8 @@ void FrameGraph::Execute(ID3D11DeviceContext *deviceContext, const RenderQueue &
 
     ExecutionContext context(deviceContext, renderQueue, *this);
 
-    for (uint32_t passIndex : this->sortedRenderPassIndices)
-        this->renderPasses[passIndex]->Execute(context);
+    for (PassHandle passHandle : this->sortedPassHandles)
+        this->renderPasses[passHandle]->Execute(context);
 }
 
 void FrameGraph::Clear() {
@@ -487,7 +466,7 @@ void FrameGraph::Clear() {
 
     this->renderPasses.clear();
     this->textureResources.clear();
-    this->sortedRenderPassIndices.clear();
+    this->sortedPassHandles.clear();
 
     this->isCompiled = false;
 }
