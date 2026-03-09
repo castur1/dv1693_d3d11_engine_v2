@@ -19,8 +19,12 @@ void main(uint3 id : SV_DispatchThreadID) {
     if (depth >= 1.0f)
         return;
     
+<<<<<<< HEAD
     float3 albedo = gbufferAlbedo[pixel].rgb;
     float3 normal = gbufferNormal[pixel].rgb;
     float t = 0.4f;
     outputTexture[pixel] = float4(albedo * t + normal * (1 - t), 1.0f);
+=======
+    outputTexture[pixel] = float4(gbufferNormal[pixel].rgb, 1.0f);
+>>>>>>> ac7a8a100ba13c8dbe2c12872267afd00d474438
 }
