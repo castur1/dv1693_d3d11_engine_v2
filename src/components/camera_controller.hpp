@@ -4,14 +4,13 @@
 #include "scene/component.hpp"
 
 class CameraController : public Component {
-    float fieldOfView;
-    float aspectRatio;
-    float nearPlane;
-    float farPlane;
+    float fieldOfView = 0.7854f;
+    float nearPlane   = 0.1f;
+    float farPlane    = 100.0f;
 
 public:
-    CameraController(Entity *owner, bool isActive);
-    ~CameraController();
+    CameraController(Entity *owner, bool isActive) : Component(owner, isActive) {}
+    ~CameraController() = default;
 
     void OnStart(const Engine_context &context) override;
     void Update(const Frame_context &context) override;
@@ -20,7 +19,6 @@ public:
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
         BIND(fieldOfView);
-        BIND(aspectRatio);
         BIND(nearPlane);
         BIND(farPlane);
     }

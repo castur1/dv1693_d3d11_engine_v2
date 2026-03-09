@@ -13,11 +13,11 @@ class Entity;
 class SceneManager;
 
 class Scene {
-    std::vector<std::unique_ptr<Entity>> entities;
+    std::vector<std::unique_ptr<Entity>>   entities;
     std::unordered_map<EntityID, Entity *> uuidLookup;
 
     std::vector<std::unique_ptr<Entity>> entitiesToAdd;
-    std::vector<Entity *> entitiesToRemove;
+    std::vector<Entity *>                entitiesToRemove;
 
     const Engine_context *context;
 

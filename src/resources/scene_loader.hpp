@@ -7,12 +7,13 @@ class Scene;
 class AssetManager;
 
 class SceneLoader {
-    AssetManager *assetManager;
+    AssetManager *assetManager = nullptr;
 
-    std::string sceneDir;
+    std::string sceneDir = "scenes/";
 
 public:
-    SceneLoader() : assetManager(nullptr), sceneDir("scenes/") {}
+    SceneLoader()  = default;
+    ~SceneLoader() = default;
 
     virtual bool Load(Scene &scene, const std::string &name);
 

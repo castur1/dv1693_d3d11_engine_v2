@@ -172,5 +172,10 @@
   <ItemGroup>
     <FxCompile Include="src\shaders\ps_default.hlsl" />
     <FxCompile Include="src\shaders\vs_default.hlsl" />
+    <FxCompile Include="src\shaders\vs_gbuffer.hlsl" />
+    <FxCompile Include="src\shaders\ps_gbuffer.hlsl" />
+    <FxCompile Include="src\shaders\cs_lighting.hlsl" />
+    <FxCompile Include="src\shaders\vs_resolve.hlsl" />
+    <FxCompile Include="src\shaders\ps_resolve.hlsl" />
   </ItemGroup>
 </Project>

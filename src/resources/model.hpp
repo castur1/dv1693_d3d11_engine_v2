@@ -12,9 +12,9 @@ using namespace DirectX;
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
 struct Vertex {
-    float position[3];
-    float normal[3];
-    float uv[2];
+    float position[3] = {};
+    float normal[3]   = {};
+    float uv[2]       = {};
 
     // For std::map used for vertex deduplication in the OBJ loader
     bool operator<(const Vertex& other) const {
@@ -32,9 +32,9 @@ struct Vertex {
 };
 
 struct Pipeline_state {
-    ID3D11VertexShader *vertexShader;
-    ID3D11PixelShader *pixelShader;
-    ID3D11InputLayout *inputLayout;
+    ID3D11VertexShader *vertexShader = nullptr;
+    ID3D11PixelShader  *pixelShader  = nullptr;
+    ID3D11InputLayout  *inputLayout  = nullptr;
 
     // TODO: Fixed-function states?
 
@@ -48,9 +48,10 @@ struct Pipeline_state {
 };
 
 struct Texture2D {
-    ID3D11ShaderResourceView *shaderResourceView;
-    int width;
-    int height;
+    ID3D11ShaderResourceView *shaderResourceView = nullptr;
+
+    int width  = 0;
+    int height = 0;
 
     ~Texture2D() {
         SafeRelease(this->shaderResourceView);
@@ -62,15 +63,15 @@ struct Material {
 
     AssetHandle<Texture2D> diffuseTexture;
 
-    XMFLOAT3 ambientColour;
-    XMFLOAT3 diffuseColour;
-    XMFLOAT3 specularColour;
-    float specularExponent;
+    XMFLOAT3 ambientColour  = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 diffuseColour  = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 specularColour = {1.0f, 1.0f, 1.0f};
+    float specularExponent  = 32.0f;
 };
 
 struct Model {
-    ID3D11Buffer *vertexBuffer;
-    ID3D11Buffer *indexBuffer;
+    ID3D11Buffer *vertexBuffer = nullptr;
+    ID3D11Buffer *indexBuffer  = nullptr;
 
     struct Mesh {
         UINT indexCount;

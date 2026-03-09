@@ -10,14 +10,15 @@
 using namespace DirectX;
 
 class Transform : public Component {
-    XMFLOAT3 position;
-    XMFLOAT3 rotation;
-    XMFLOAT3 scale;
+    XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
+    XMFLOAT3 rotation = {0.0f, 0.0f, 0.0f};
+    XMFLOAT3 scale    = {1.0f, 1.0f, 1.0f};
 
 public:
     Transform(Entity *owner, bool isActive, const XMFLOAT3 &position, const XMFLOAT3 &rotation, const XMFLOAT3 &scale);
-    Transform(Entity *owner, bool isActive);
-    ~Transform();
+
+    Transform(Entity *owner, bool isActive) : Component(owner, isActive) {}
+    ~Transform() = default;
 
     void OnStart(const Engine_context &context) override;
     void Update(const Frame_context &context) override;

@@ -56,15 +56,15 @@ public:
         friend class FrameGraph;
 
         ID3D11DeviceContext *deviceContext;
-        const RenderQueue &renderQueue;
-        const FrameGraph &frameGraph;
+        RenderQueue &renderQueue;
+        FrameGraph &frameGraph;
 
-        ExecutionContext(ID3D11DeviceContext *deviceContext, const RenderQueue &renderQueue, const FrameGraph &frameGraph)
+        ExecutionContext(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue, FrameGraph &frameGraph)
             : deviceContext(deviceContext), renderQueue(renderQueue), frameGraph(frameGraph) {}
 
     public:
-        ID3D11DeviceContext *GetDeviceContext() const { return this->deviceContext; }
-        const RenderQueue &GetRenderQueue() const { return this->renderQueue; }
+        ID3D11DeviceContext *GetDeviceContext()  { return this->deviceContext; }
+        RenderQueue &GetRenderQueue() { return this->renderQueue; }
 
         ID3D11ShaderResourceView *GetShaderResourceView(TextureHandle handle) const;
         ID3D11RenderTargetView *GetRenderTargetView(TextureHandle handle) const;
@@ -86,7 +86,7 @@ private:
 
         PassHandle firstWrite = INVALID_HANDLE;
         PassHandle lastRead   = INVALID_HANDLE;
-        int readRefCount    = 0;
+        int readRefCount      = 0;
     };
 
     struct Render_pass_base {
@@ -98,7 +98,7 @@ private:
         bool writesBackbuffer = false;
 
         bool isCulled = false;
-        int refCount = 0;
+        int refCount  = 0;
 
         virtual ~Render_pass_base() = default;
 
@@ -115,17 +115,17 @@ private:
         }
     };
 
-    ID3D11Device *device;
+    ID3D11Device *device = nullptr;
 
     std::vector<Texture_resource> textureResources;
 
     std::vector<std::unique_ptr<Render_pass_base>> renderPasses;
     std::vector<PassHandle> sortedPassHandles;
 
-    int backbufferWidth;
-    int backbufferHeight;
+    int backbufferWidth  = 0;
+    int backbufferHeight = 0;
 
-    bool isCompiled;
+    bool isCompiled = false;
 
     void CullUnusedPasses();
     bool TopologicalSort();
@@ -135,7 +135,7 @@ private:
     void ReleaseTemporaryResources();
 
 public:
-    FrameGraph();
+    FrameGraph() = default;
     ~FrameGraph();
 
     FrameGraph(const FrameGraph &other) = delete;
@@ -187,7 +187,7 @@ public:
     void Compile(int backbufferWidth, int backbufferHeight);
     void OnResize(int width, int height);
 
-    void Execute(ID3D11DeviceContext *deviceContext, const RenderQueue &renderQueue);
+    void Execute(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue);
 
     void Clear();
 

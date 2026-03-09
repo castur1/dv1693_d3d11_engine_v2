@@ -6,10 +6,6 @@
 
 #include <fstream>
 
-AssetManager::AssetManager() : device(nullptr), assetDir("assets/") {}
-
-AssetManager::~AssetManager() {}
-
 bool AssetManager::Initialize(ID3D11Device *device) {
     LogInfo("Creating asset manager...\n");
     LogIndent();

@@ -3,14 +3,16 @@
 
 class SceneManager;
 class AssetManager;
+class Renderer;
 
 struct Engine_context {
-    SceneManager *sceneManager;
-    AssetManager *assetManager;
+    Renderer     *renderer     = nullptr;
+    SceneManager *sceneManager = nullptr;
+    AssetManager *assetManager = nullptr;
 };
 
 struct Frame_context {
-    float deltaTime;
+    float deltaTime = 0.0f;
     const Engine_context &engineContext;
 };
 
