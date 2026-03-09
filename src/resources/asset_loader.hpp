@@ -14,11 +14,11 @@ public:
 template <typename T>
 class AssetLoader : public AssetLoaderBase {
 protected:
-    ID3D11Device *device;
-    AssetManager *assetManager;
+    ID3D11Device *device       = nullptr;
+    AssetManager *assetManager = nullptr;
 
 public:
-    AssetLoader<T>(AssetManager *assetManager) : device(nullptr), assetManager(assetManager) {}
+    AssetLoader<T>(AssetManager *assetManager) : assetManager(assetManager) {}
 
     virtual T *Load(const std::string &path) = 0;
     virtual T *CreateDefault() = 0;

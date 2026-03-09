@@ -7,11 +7,6 @@
 #include "rendering/render_queue.hpp"
 #include "rendering/renderer.hpp"
 
-ModelRenderer::ModelRenderer(Entity *owner, bool isActive)
-    : Component(owner, isActive), modelID(0) {}
-
-ModelRenderer::~ModelRenderer() {}
-
 void ModelRenderer::OnStart(const Engine_context &context) {
     this->modelHandle = context.assetManager->GetHandle<Model>(this->modelID);
 }

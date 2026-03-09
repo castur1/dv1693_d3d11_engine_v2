@@ -9,16 +9,16 @@
 using namespace DirectX;
 
 struct GeometryCommand {
-    ID3D11Buffer *vertexBuffer;
-    ID3D11Buffer *indexBuffer;
+    ID3D11Buffer *vertexBuffer = nullptr;
+    ID3D11Buffer *indexBuffer  = nullptr;
 
-    UINT indexCount;
-    UINT startIndex;
-    INT baseVertex;
+    UINT indexCount = 0U;
+    UINT startIndex = 0U;
+    INT  baseVertex = 0;
 
-    AssetHandle<Material> material;
+    AssetHandle<Material> material{};
 
-    XMFLOAT4X4 worldMatrix;
+    XMFLOAT4X4 worldMatrix{};
 };
 
 // Lights, cube map, particle system, ...

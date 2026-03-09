@@ -59,8 +59,6 @@ ID3D11UnorderedAccessView *FrameGraph::ExecutionContext::GetUnorderedAccessView(
     return this->frameGraph.textureResources[handle].unorderedAccessView;
 }
 
-FrameGraph::FrameGraph() : device(nullptr), backbufferWidth(0), backbufferHeight(0), isCompiled(false) {}
-
 FrameGraph::~FrameGraph() {
     this->Clear();
 }
@@ -449,7 +447,7 @@ void FrameGraph::OnResize(int width, int height) {
     this->Compile(width, height);
 }
 
-void FrameGraph::Execute(ID3D11DeviceContext *deviceContext, const RenderQueue &renderQueue) {
+void FrameGraph::Execute(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue) {
     if (!this->isCompiled) {
         LogWarn("Tried to execute uncompiled frame graph!\n");
         return;

@@ -8,8 +8,8 @@
 #include "core/frame_context.hpp"
 
 class Application {
-    Window window;
-    Renderer renderer;
+    Window       window;
+    Renderer     renderer;
     AssetManager assetManager;
     SceneManager sceneManager;
 

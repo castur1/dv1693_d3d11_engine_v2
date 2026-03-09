@@ -3,8 +3,6 @@
 
 #define WINDOW_CLASS_NAME L"window_class"
 
-Window::Window() : shouldClose(true), wasResized(false), width(0), height(0), hInst{}, hWnd{} {}
-
 Window::~Window() {
     if (this->hWnd) DestroyWindow(this->hWnd);
     if (this->hInst) UnregisterClass(WINDOW_CLASS_NAME, this->hInst);

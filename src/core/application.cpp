@@ -8,6 +8,7 @@
 
 Application::Application() 
     : context{
+        &this->renderer,
         &this->sceneManager, 
         &this->assetManager
     } {}

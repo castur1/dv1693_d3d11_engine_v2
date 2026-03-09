@@ -7,12 +7,12 @@
 #include "resources/model.hpp"
 
 class ModelRenderer : public Component {
-    AssetID modelID;
+    AssetID modelID = AssetID::invalid;
     AssetHandle<Model> modelHandle;
 
 public:
-    ModelRenderer(Entity *owner, bool isActive);
-    ~ModelRenderer();
+    ModelRenderer(Entity *owner, bool isActive) : Component(owner, isActive) {}
+    ~ModelRenderer() = default;
 
     void OnStart(const Engine_context &context) override;
     void Update(const Frame_context &context) override;

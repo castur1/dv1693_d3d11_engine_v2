@@ -15,15 +15,15 @@ class AssetManager;
 
 template <typename T>
 class AssetHandle {
-    AssetID uuid;
+    AssetID uuid = AssetID::invalid;
     // NOTE: This pointer only valid as long as the asset don't get unloaded.
     // Right now assets only get unloaded on scene change, so this is fine.
-    T *cachedPtr;
+    T *cachedPtr = nullptr;
 
-    AssetManager *assetManager;
+    AssetManager *assetManager = nullptr;
 
 public:
-    AssetHandle() : uuid(AssetID::invalid), cachedPtr(nullptr), assetManager(nullptr) {}
+    AssetHandle() = default;
 
     AssetHandle(const AssetID &uuid, AssetManager *assetManager)
         : uuid(uuid), cachedPtr(nullptr), assetManager(assetManager) {}
@@ -34,14 +34,14 @@ public:
 };
 
 class AssetManager {
-    ID3D11Device *device;
+    ID3D11Device *device = nullptr;
 
     AssetRegistry registry;
 
     std::unordered_map<std::type_index, std::unique_ptr<AssetCacheBase>> caches;
     std::unordered_map<std::type_index, std::unique_ptr<AssetLoaderBase>> loaders;
 
-    std::string assetDir;
+    std::string assetDir = "assets/";
 
     template <typename T>
     AssetCache<T> *GetCache() {
@@ -62,8 +62,8 @@ class AssetManager {
     }
 
 public:
-    AssetManager();
-    ~AssetManager();
+    AssetManager() = default;
+    ~AssetManager() = default;
 
     bool Initialize(ID3D11Device *device);
 

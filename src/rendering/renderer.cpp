@@ -1,31 +1,29 @@
 #include "renderer.hpp"
 #include "core/logging.hpp"
+#include "resources/asset_manager.hpp"
+
+#include <fstream>
+#include <vector>
 
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
-Renderer::Renderer()
-    : device{},
-    deviceContext{},
-    swapChain{},
-    renderTargetView{},
-    depthStencilTexture{},
-    depthStencilView{},
-    samplerStates{},
-    viewport{},
-    width(0),
-    height(0) {
-    this->clearColour[0] = 0.2f;
-    this->clearColour[1] = 0.0f;
-    this->clearColour[2] = 0.1f;
-    this->clearColour[3] = 1.0f;
-}
-
 Renderer::~Renderer() {
+    this->frameGraph.Clear();
+
+    SafeRelease(this->gBufferVS);
+    SafeRelease(this->gBufferPS);
+    SafeRelease(this->gBufferLayout);
+    SafeRelease(this->lightingCS);
+    SafeRelease(this->resolveVS);
+    SafeRelease(this->resolvePS);
+
+    SafeRelease(this->perFrameBuffer);
+    SafeRelease(this->perObjectBuffer);
+    SafeRelease(this->perMaterialBuffer);
+
     for (int i = 0; i < (int)Sampler_state_type::COUNT; ++i)
         SafeRelease(this->samplerStates[i]);
 
-    SafeRelease(this->depthStencilView);
-    SafeRelease(this->depthStencilTexture);
     SafeRelease(this->renderTargetView);
 
     if (this->deviceContext) {
@@ -137,37 +135,41 @@ bool Renderer::CreateRenderTargetView() {
     return true;
 }
 
-bool Renderer::CreateDepthStencil(int width, int height) {
-    D3D11_TEXTURE2D_DESC textureDesc{};
-    textureDesc.Width = width;
-    textureDesc.Height = height;
-    textureDesc.MipLevels = 1;
-    textureDesc.ArraySize = 1;
-    textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    textureDesc.SampleDesc.Count = 1;
-    textureDesc.SampleDesc.Quality = 0;
-    textureDesc.Usage = D3D11_USAGE_DEFAULT;
-    textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    textureDesc.CPUAccessFlags = 0;
-    textureDesc.MiscFlags = 0;
+bool Renderer::CreateConstantBuffers() {
+    D3D11_BUFFER_DESC bufferDesc{};
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    HRESULT result = this->device->CreateTexture2D(&textureDesc, nullptr, &this->depthStencilTexture);
-
+    bufferDesc.ByteWidth = sizeof(Per_object_data);
+    HRESULT result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perObjectBuffer);
     if (FAILED(result)) {
-        LogError("Failed to create the Depth Stencil texture");
+        LogError("Failed to create per-object constant buffer");
         return false;
     }
 
-    LogInfo("Depth stencil texture created\n");
-
-    result = this->device->CreateDepthStencilView(this->depthStencilTexture, nullptr, &this->depthStencilView);
-
+    bufferDesc.ByteWidth = sizeof(Per_frame_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perFrameBuffer);
     if (FAILED(result)) {
-        LogError("Failed to create the Depth Stencil view");
+        LogError("Failed to create per-frame constant buffer");
         return false;
     }
 
-    LogInfo("Depth stencil view created\n");
+    bufferDesc.ByteWidth = sizeof(Per_material_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perMaterialBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create per-material constant buffer");
+        return false;
+    }
+
+    //bufferDesc.ByteWidth = sizeof(Lighting_data);
+    //result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->lightingBuffer);
+    //if (FAILED(result)) {
+    //    LogError("Failed to create lighting constant buffer");
+    //    return false;
+    //}
+
+    LogInfo("Constant buffers created\n");
 
     return true;
 }
@@ -199,11 +201,94 @@ bool Renderer::CreateCommonSamplerStates() {
     return true;
 }
 
+// TODO: Look this over. Refactor?
+static bool LoadShaderBytecode(const std::string &path, std::vector<uint8_t> &out) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        LogError("Failed to load file '%s'", path.c_str());
+        return false;
+    }
+
+    size_t size = (size_t)file.tellg();
+    out.resize(size);
+    file.seekg(0);
+    file.read(reinterpret_cast<char *>(out.data()), size);
+
+    return true;
+}
+
+bool Renderer::LoadDeferredShaders() {
+    const std::string shaderDir = "assets/shaders/";
+
+    std::vector<uint8_t> bytecode;
+
+    if (!LoadShaderBytecode(shaderDir + "vs_gbuffer.cso", bytecode))
+        return false;
+    
+    HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->gBufferVS);
+    if (FAILED(result)) {
+        LogError("Failed to create G-buffer vertex shader");
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+
+    result = this->device->CreateInputLayout(layoutDesc, 3, bytecode.data(), bytecode.size(), &this->gBufferLayout);
+    if (FAILED(result)) {
+        LogError("Failed to create G-buffer input layout");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ps_gbuffer.cso", bytecode))
+        return false;
+
+    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->gBufferPS);
+    if (FAILED(result)) {
+        LogError("Failed to create G-buffer pixel shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "cs_lighting.cso", bytecode))
+        return false;
+
+    result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->lightingCS);
+    if (FAILED(result)) {
+        LogError("Failed to create lighting compute shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "vs_resolve.cso", bytecode))
+        return false;
+
+    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->resolveVS);
+    if (FAILED(result)) {
+        LogError("Failed to create resolve vertex shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ps_resolve.cso", bytecode))
+        return false;
+
+    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->resolvePS);
+    if (FAILED(result)) {
+        LogError("Failed to create resolve pixel shader");
+        return false;
+    }
+
+    LogInfo("Loaded shaders for deferred rendering\n");
+
+    return true;
+}
+
 void Renderer::SetViewport(int width, int height) {
     this->viewport.TopLeftX = 0.0f;
     this->viewport.TopLeftY = 0.0f;
-    this->viewport.Width = (FLOAT)width;
-    this->viewport.Height = (FLOAT)height;
+    this->viewport.Width    = (FLOAT)width;
+    this->viewport.Height   = (FLOAT)height;
     this->viewport.MinDepth = 0.0f;
     this->viewport.MaxDepth = 1.0f;
 }
@@ -217,24 +302,211 @@ void Renderer::BuildFrameGraph() {
 
     this->backbufferHandle = this->frameGraph.ImportTexture("Backbuffer", nullptr, this->renderTargetView);
 
-    struct Test_data {
-        int hello;
+    // T0: R8G8B8A8_UNORM    = albedo.rgb | specular exponent / 1000 = 32 bits
+    // T1: R10G10B10A2_UNORM = encoded normal | unused               = 32 bits
+    // T2: R11G11B10_FLOAT   = specular colour                       = 32 bits
+    //                                                               = 96 bits
+    // Position is reconstructed from the depth map
+    // TODO: Per-object ambient?
+
+    FrameGraph::Texture_desc desc{};
+    desc.sizeMode    = FrameGraph::Texture_desc::Size_mode::relative;
+    desc.widthScale  = 1.0f;
+    desc.heightScale = 1.0f;
+    desc.mipLevels   = 1;
+    desc.bindFlags   = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    desc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    auto albedoHandle = this->frameGraph.CreateTexture("GBuffer_albedo", desc);
+
+    desc.format = DXGI_FORMAT_R10G10B10A2_UNORM;
+    auto normalHandle = this->frameGraph.CreateTexture("GBuffer_normal", desc);
+
+    desc.format = DXGI_FORMAT_R11G11B10_FLOAT;
+    auto specularHandle = this->frameGraph.CreateTexture("GBuffer_specular", desc);
+
+    desc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    desc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    auto depthHandle = this->frameGraph.CreateTexture("Depth_stencil", desc);
+
+    desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
+
+    struct Geometry_pass_data {
+        FrameGraph::TextureHandle albedo;
+        FrameGraph::TextureHandle normal;
+        FrameGraph::TextureHandle specular;
+        FrameGraph::TextureHandle depth;
     };
 
-    auto &testData = this->frameGraph.AddRenderPass<Test_data>(
-        "Test pass",
-        [&](Test_data &data, FrameGraph::RenderPassBuilder &builder) {
-            builder.WritesBackbuffer();
+    this->frameGraph.AddRenderPass<Geometry_pass_data>(
+        "Geometry pass",
+        [&](Geometry_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.albedo   = builder.Write(albedoHandle);
+            data.normal   = builder.Write(normalHandle);
+            data.specular = builder.Write(specularHandle);
+            data.depth    = builder.Write(depthHandle);
         },
-        [backbufferHandle = this->backbufferHandle, clearColour = this->clearColour](const Test_data &data, FrameGraph::ExecutionContext &context) {
-            auto *deviceContext = context.GetDeviceContext();
-            auto *rtv = context.GetRenderTargetView(backbufferHandle);
-            auto *dsv = context.GetDepthStencilView(backbufferHandle);
+        [this](const Geometry_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
-            deviceContext->ClearRenderTargetView(rtv, clearColour);
+            ID3D11RenderTargetView *rtvs[3] = {
+                context.GetRenderTargetView(data.albedo),
+                context.GetRenderTargetView(data.normal),
+                context.GetRenderTargetView(data.specular)
+            };
+
+            ID3D11DepthStencilView *dsv = context.GetDepthStencilView(data.depth);
+
+            const float clearAlbedo[4]   = {0.0f, 0.0f, 0.0f, 0.0f};
+            const float clearNormal[4]   = {0.5f, 0.5f, 0.1f, 0.0f};
+            const float clearSpecular[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
+            deviceContext->ClearRenderTargetView(rtvs[0], clearAlbedo);
+            deviceContext->ClearRenderTargetView(rtvs[1], clearNormal);
+            deviceContext->ClearRenderTargetView(rtvs[2], clearSpecular);
             deviceContext->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-            deviceContext->OMSetRenderTargets(1, &rtv, dsv);
+            deviceContext->OMSetRenderTargets(3, rtvs, dsv);
+
+            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            deviceContext->IASetInputLayout(this->gBufferLayout);
+            deviceContext->VSSetShader(this->gBufferVS, nullptr, 0);
+            deviceContext->PSSetShader(this->gBufferPS, nullptr, 0);
+
+            deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+
+            for (GeometryCommand &command : context.GetRenderQueue().geometryCommands) {
+                Per_object_data perObjectData{};
+                perObjectData.worldMatrix = command.worldMatrix;
+                XMStoreFloat4x4(
+                    &perObjectData.worldMatrixInvTranspose, 
+                    XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
+                );
+
+                this->UploadConstantBuffer<Per_object_data>(this->perObjectBuffer, perObjectData);
+                deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+
+                Material *material = command.material.Get();
+                if (material) {
+                    Per_material_data perMaterialData{};
+                    perMaterialData.materialAmbient          = material->ambientColour;
+                    perMaterialData.materialDiffuse          = material->diffuseColour;
+                    perMaterialData.materialSpecular         = material->specularColour;
+                    perMaterialData.materialSpecularExponent = material->specularExponent;
+
+                    this->UploadConstantBuffer<Per_material_data>(this->perMaterialBuffer, perMaterialData);
+                    deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
+
+                    Texture2D *diffuseTexture = material->diffuseTexture.Get();
+                    deviceContext->PSSetShaderResources(0, 1, &diffuseTexture->shaderResourceView);
+                }
+
+                UINT stride = sizeof(Vertex);
+                UINT offset = 0;
+                deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
+                deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
+            }
+
+            ID3D11RenderTargetView *nullRtvs[3] = {};
+            deviceContext->OMSetRenderTargets(3, nullRtvs, nullptr);
+
+            ID3D11ShaderResourceView *nullSrv = nullptr;
+            deviceContext->PSSetShaderResources(0, 1, &nullSrv);
+        }
+    );
+
+    struct Lighting_pass_data {
+        FrameGraph::TextureHandle albedo;
+        FrameGraph::TextureHandle normal;
+        FrameGraph::TextureHandle specular;
+        FrameGraph::TextureHandle depth;
+
+        FrameGraph::TextureHandle output;
+    };
+
+    this->frameGraph.AddRenderPass<Lighting_pass_data>(
+        "Lighting pass",
+        [&](Lighting_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.albedo   = builder.Read(albedoHandle);
+            data.normal   = builder.Read(normalHandle);
+            data.specular = builder.Read(specularHandle);
+            data.depth    = builder.Read(depthHandle);
+
+            data.output = builder.Write(lightingOutputHandle);
+        },
+        [this](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            // TODO: Upload light data
+
+            deviceContext->CSSetShader(this->lightingCS, nullptr, 0);
+            // deviceContext->CSSetConstantBuffers() // Light buffer
+
+            ID3D11ShaderResourceView *srvs[4] = {
+                context.GetShaderResourceView(data.albedo),
+                context.GetShaderResourceView(data.normal),
+                context.GetShaderResourceView(data.specular),
+                context.GetShaderResourceView(data.depth)
+            };
+            deviceContext->CSSetShaderResources(0, 4, srvs);
+
+            ID3D11UnorderedAccessView *uav = context.GetUnorderedAccessView(data.output);
+            deviceContext->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+
+            UINT groupsX = (this->width  + 7) / 8;
+            UINT groupsY = (this->height + 7) / 8;
+            deviceContext->Dispatch(groupsX, groupsY, 1);
+
+            ID3D11ShaderResourceView *nullSrvs[4] = {};
+            deviceContext->CSSetShaderResources(0, 4, nullSrvs);
+
+            ID3D11UnorderedAccessView *nullUav = nullptr;
+            deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUav, nullptr);
+
+            deviceContext->CSSetShader(nullptr, nullptr, 0);
+        }
+    );
+
+    struct Resolve_pass_data {
+        FrameGraph::TextureHandle lightingOutput;
+
+        FrameGraph::TextureHandle backbuffer;
+    };
+
+    this->frameGraph.AddRenderPass<Resolve_pass_data>(
+        "Resolve pass",
+        [&](Resolve_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.lightingOutput = builder.Read(lightingOutputHandle);
+
+            data.backbuffer = builder.Write(this->backbufferHandle);
+            builder.WritesBackbuffer();
+        },
+        [this](const Resolve_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);
+            deviceContext->ClearRenderTargetView(rtv, this->clearColour);
+            deviceContext->OMSetRenderTargets(1, &rtv, nullptr);
+
+            deviceContext->VSSetShader(this->resolveVS, nullptr, 0);
+            deviceContext->PSSetShader(this->resolvePS, nullptr, 0);
+            deviceContext->IASetInputLayout(nullptr);
+            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            ID3D11ShaderResourceView *srv = context.GetShaderResourceView(data.lightingOutput);
+            deviceContext->PSSetShaderResources(0, 1, &srv);
+
+            deviceContext->Draw(3, 0);
+
+            ID3D11ShaderResourceView *nullSrv = nullptr;
+            deviceContext->PSSetShaderResources(0, 1, &nullSrv);
+
+            ID3D11RenderTargetView *nullRtv = nullptr;
+            deviceContext->OMSetRenderTargets(1, &nullRtv, nullptr);
         }
     );
 
@@ -256,10 +528,13 @@ bool Renderer::Initialize(HWND hWnd) {
     if (!this->CreateRenderTargetView())
         return false;
 
-    if (!this->CreateDepthStencil(this->width, this->height))
+    if (!this->CreateConstantBuffers())
         return false;
 
     if (!this->CreateCommonSamplerStates())
+        return false;
+
+    if (!this->LoadDeferredShaders())
         return false;
 
     this->SetViewport(this->width, this->height);
@@ -281,8 +556,6 @@ bool Renderer::Resize(int width, int height) {
     LogIndent();
 
     SafeRelease(this->renderTargetView);
-    SafeRelease(this->depthStencilView);
-    SafeRelease(this->depthStencilTexture);
 
     this->deviceContext->ClearState();
     this->deviceContext->Flush();
@@ -294,9 +567,6 @@ bool Renderer::Resize(int width, int height) {
     }
 
     if (!this->CreateRenderTargetView())
-        return false;
-
-    if (!this->CreateDepthStencil(width, height))
         return false;
 
     this->SetViewport(width, height);
@@ -317,9 +587,7 @@ void Renderer::Begin() {
     this->frameGraph.UpdateImportedTexture(
         this->backbufferHandle,
         nullptr,
-        this->renderTargetView,
-        nullptr,
-        this->depthStencilView
+        this->renderTargetView
     );
 
     deviceContext->RSSetViewports(1, &this->viewport);
@@ -328,9 +596,20 @@ void Renderer::Begin() {
 }
 
 void Renderer::End() {
-    this->frameGraph.Execute(this->deviceContext, this->renderQueue);
+    this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, this->currentFrameData);
 
+    this->frameGraph.Execute(this->deviceContext, this->renderQueue);
     this->swapChain->Present(0, 0);
+}
+
+void Renderer::SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
+    XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+
+    XMStoreFloat4x4(&this->currentFrameData.viewMatrix, XMMatrixTranspose(viewMatrix));
+    XMStoreFloat4x4(&this->currentFrameData.projectionMatrix, XMMatrixTranspose(projectionMatrix));
+    XMStoreFloat4x4(&this->currentFrameData.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
+
+    this->currentFrameData.cameraPosition = position;
 }
 
 ID3D11Device *Renderer::GetDevice() const {
