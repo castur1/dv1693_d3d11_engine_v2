@@ -54,7 +54,7 @@ class Renderer {
     int width  = 0;
     int height = 0;
 
-    float clearColour[4] = {0.2f, 0.0f, 0.1f, 1.0f};
+    float clearColour[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     RenderQueue renderQueue;
     FrameGraph frameGraph;

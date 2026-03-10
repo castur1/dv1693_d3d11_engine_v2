@@ -17,6 +17,9 @@ entity a1b2-c3d4-e5f6-0123
         fieldOfView: 0.7854
         nearPlane: 0.1
         farPlane: 100.0
+        moveSpeed: 8.0
+        rotationSpeed: 1.5
+        mouseSensitivity: 0.0015
 
 entity 123a-ffff-3242-0011
     name: "entity_1"

@@ -9,6 +9,10 @@ class CameraController : public Component {
     float farPlane    = 100.0f;
 
 public:
+    float moveSpeed        = 8.0f;
+    float rotationSpeed    = 1.5f;
+    float mouseSensitivity = 0.0015f;
+
     CameraController(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~CameraController() = default;
 
@@ -21,6 +25,10 @@ public:
         BIND(fieldOfView);
         BIND(nearPlane);
         BIND(farPlane);
+
+        BIND(moveSpeed);
+        BIND(rotationSpeed);
+        BIND(mouseSensitivity);
     }
 };
 

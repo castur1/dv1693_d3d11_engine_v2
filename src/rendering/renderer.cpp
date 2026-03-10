@@ -455,6 +455,9 @@ void Renderer::BuildFrameGraph() {
             deviceContext->CSSetShaderResources(0, 4, srvs);
 
             ID3D11UnorderedAccessView *uav = context.GetUnorderedAccessView(data.output);
+
+            deviceContext->ClearUnorderedAccessViewFloat(uav, this->clearColour);
+
             deviceContext->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
             UINT groupsX = (this->width  + 7) / 8;
