@@ -1,6 +1,7 @@
 #include "application.hpp"
 #include "core/logging.hpp"
 #include "scene/component_registry.hpp"
+#include "core/input.hpp"
 
 #include <Windows.h>
 #include <stdio.h>
@@ -71,12 +72,42 @@ void Application::Run() {
 
     auto previousTime = std::chrono::high_resolution_clock::now();
 
+    Input::CaptureMouse(this->window.GetHandle());
+
     while (!this->window.ShouldClose()) {
         this->window.ProcessMessages();
 
         if (this->window.WasResized()) {
             this->renderer.Resize(this->window.GetWidth(), this->window.GetHeight());
             this->window.ClearResizeFlag();
+        }
+
+        Input::Update();
+
+        if (Input::IsKeyPressed(VK_F4))
+            this->renderer.ToggleFullscreen();
+
+        if (Input::IsKeyPressed(VK_ESCAPE))
+            Input::ReleaseMouse();
+
+        if (!Input::IsMouseCaptured() && Input::IsKeyPressed(VK_LBUTTON)) {
+            HWND hWnd = this->window.GetHandle();
+            HWND foregroundHWnd = GetForegroundWindow();
+
+            if (hWnd == foregroundHWnd) {
+                POINT cursorPos;
+                if (GetCursorPos(&cursorPos)) {
+                    ScreenToClient(hWnd, &cursorPos);
+
+                    RECT clientRect;
+                    GetClientRect(hWnd, &clientRect);
+
+                    if (cursorPos.x >= 0 && cursorPos.x < clientRect.right &&
+                        cursorPos.y >= 0 && cursorPos.y < clientRect.bottom) {
+                        Input::CaptureMouse(this->window.GetHandle());
+                    }
+                }
+            }
         }
 
         auto currentTime = std::chrono::high_resolution_clock::now();
