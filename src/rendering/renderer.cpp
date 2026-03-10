@@ -20,6 +20,7 @@ Renderer::~Renderer() {
     SafeRelease(this->perFrameBuffer);
     SafeRelease(this->perObjectBuffer);
     SafeRelease(this->perMaterialBuffer);
+    SafeRelease(this->debugResolveBuffer); // Debug
 
     for (int i = 0; i < (int)Sampler_state_type::COUNT; ++i)
         SafeRelease(this->samplerStates[i]);
@@ -159,6 +160,14 @@ bool Renderer::CreateConstantBuffers() {
     result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perMaterialBuffer);
     if (FAILED(result)) {
         LogError("Failed to create per-material constant buffer");
+        return false;
+    }
+
+    // Debug
+    bufferDesc.ByteWidth = sizeof(Debug_resolve_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->debugResolveBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create debug resolve constant buffer");
         return false;
     }
 
@@ -477,6 +486,12 @@ void Renderer::BuildFrameGraph() {
     struct Resolve_pass_data {
         FrameGraph::TextureHandle lightingOutput;
 
+        // Debug
+        FrameGraph::TextureHandle albedo;
+        FrameGraph::TextureHandle normal;
+        FrameGraph::TextureHandle specular;
+        FrameGraph::TextureHandle depth;
+
         FrameGraph::TextureHandle backbuffer;
     };
 
@@ -485,11 +500,19 @@ void Renderer::BuildFrameGraph() {
         [&](Resolve_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
             data.lightingOutput = builder.Read(lightingOutputHandle);
 
+            // Debug
+            data.albedo   = builder.Read(albedoHandle);
+            data.normal   = builder.Read(normalHandle);
+            data.specular = builder.Read(specularHandle);
+            data.depth    = builder.Read(depthHandle);
+
             data.backbuffer = builder.Write(this->backbufferHandle);
             builder.WritesBackbuffer();
         },
         [this](const Resolve_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            deviceContext->PSSetConstantBuffers(3, 1, &this->debugResolveBuffer); // Debug
 
             ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);
             deviceContext->ClearRenderTargetView(rtv, this->clearColour);
@@ -503,7 +526,19 @@ void Renderer::BuildFrameGraph() {
             ID3D11ShaderResourceView *srv = context.GetShaderResourceView(data.lightingOutput);
             deviceContext->PSSetShaderResources(0, 1, &srv);
 
+            // Debug
+            ID3D11ShaderResourceView *debugSrvs[4] = {
+                context.GetShaderResourceView(data.albedo),
+                context.GetShaderResourceView(data.normal),
+                context.GetShaderResourceView(data.specular),
+                context.GetShaderResourceView(data.depth)
+            };
+            deviceContext->PSSetShaderResources(1, 4, debugSrvs);
+
             deviceContext->Draw(3, 0);
+
+            ID3D11ShaderResourceView *nullDebugSrvs[4] = {};
+            deviceContext->CSSetShaderResources(1, 4, nullDebugSrvs);
 
             ID3D11ShaderResourceView *nullSrv = nullptr;
             deviceContext->PSSetShaderResources(0, 1, &nullSrv);
@@ -600,6 +635,7 @@ void Renderer::Begin() {
 
 void Renderer::End() {
     this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, this->currentFrameData);
+    this->UploadConstantBuffer<Debug_resolve_data>(this->debugResolveBuffer, this->currentDebugData); // Debug
 
     this->frameGraph.Execute(this->deviceContext, this->renderQueue);
     this->swapChain->Present(0, 0);
@@ -613,6 +649,17 @@ void Renderer::SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &project
     XMStoreFloat4x4(&this->currentFrameData.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
 
     this->currentFrameData.cameraPosition = position;
+}
+ // Debug
+void Renderer::SetDebugData(int debugMode, float nearPlane, float farPlane) {
+    this->currentDebugData.debugMode = debugMode;
+    this->currentDebugData.nearPlane = nearPlane;
+    this->currentDebugData.farPlane = farPlane;
+}
+
+// Debug
+int Renderer::GetDebugMode() {
+    return this->currentDebugData.debugMode;
 }
 
 ID3D11Device *Renderer::GetDevice() const {

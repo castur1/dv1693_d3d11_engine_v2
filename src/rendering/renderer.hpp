@@ -37,6 +37,15 @@ struct Per_material_data {
 };
 static_assert(sizeof(Per_material_data) % 16 == 0);
 
+// CBuffer
+struct Debug_resolve_data {
+    int debugMode;
+    float nearPlane;
+    float farPlane;
+    float pad0;
+};
+static_assert(sizeof(Debug_resolve_data) % 16 == 0);
+
 enum class Sampler_state_type {
     LINEAR_WRAP = 0,
     COUNT
@@ -67,11 +76,13 @@ class Renderer {
     ID3D11VertexShader  *resolveVS     = nullptr;
     ID3D11PixelShader   *resolvePS     = nullptr;
 
-    ID3D11Buffer *perObjectBuffer   = nullptr;
-    ID3D11Buffer *perFrameBuffer    = nullptr;
-    ID3D11Buffer *perMaterialBuffer = nullptr;
+    ID3D11Buffer *perObjectBuffer    = nullptr;
+    ID3D11Buffer *perFrameBuffer     = nullptr;
+    ID3D11Buffer *perMaterialBuffer  = nullptr;
+    ID3D11Buffer *debugResolveBuffer = nullptr; // Debug
 
     Per_frame_data currentFrameData{};
+    Debug_resolve_data currentDebugData{}; // Debug
 
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
@@ -116,6 +127,9 @@ public:
     void End();
 
     void SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position);
+
+    void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug
+    int GetDebugMode(); // Debug
 
     ID3D11Device *GetDevice() const;
     int GetWidth() const;

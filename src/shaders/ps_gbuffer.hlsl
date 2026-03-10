@@ -12,10 +12,9 @@ Texture2D diffuseTexture : register(t0);
 SamplerState linearSampler : register(s0);
 
 struct Pixel_shader_input {
-    float4 positionClip : SV_POSITION; // TODO: These are unused
-    float3 positionWorld : TEXCOORD0; // And what are these names?
-    float3 normalWorld : TEXCOORD1;
-    float2 uv : TEXCOORD2;
+    float4 position : SV_POSITION;
+    float3 normal : TEXCOORD0;
+    float2 uv : TEXCOORD1;
 };
 
 struct Pixel_shader_output {
@@ -31,7 +30,7 @@ Pixel_shader_output main(Pixel_shader_input input)
     float3 albedo = materialDiffuse * diffuseTexture.Sample(linearSampler, input.uv).rgb;
     output.albedo = float4(albedo, materialSpecularExponent / 1000.0f);
 
-    float3 normal = normalize(input.normalWorld);
+    float3 normal = normalize(input.normal);
     output.normal = float4(normal * 0.5f + 0.5f, 0.0f);
 
     output.specular = float4(materialSpecular, 0.0f);

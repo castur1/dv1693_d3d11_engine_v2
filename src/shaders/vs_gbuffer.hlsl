@@ -18,10 +18,9 @@ struct Vertex_shader_input {
 };
 
 struct Vertex_shader_output {
-    float4 positionClip : SV_POSITION;
-    float3 positionWorld : TEXCOORD0;
-    float3 normalWorld : TEXCOORD1;
-    float2 uv : TEXCOORD2;
+    float4 position : SV_POSITION;
+    float3 normal : TEXCOORD0;
+    float2 uv : TEXCOORD1;
 };
 
 Vertex_shader_output main(Vertex_shader_input input) {
@@ -30,9 +29,8 @@ Vertex_shader_output main(Vertex_shader_input input) {
     float4 position = float4(input.position, 1.0f);
     position = mul(position, worldMatrix);
     
-    output.positionWorld = position.xyz;
-    output.positionClip = mul(position, viewProjectionMatrix);
-    output.normalWorld = mul(input.normal, (float3x3)worldMatrixInvTransform);
+    output.position = mul(position, viewProjectionMatrix);
+    output.normal = mul(input.normal, (float3x3) worldMatrixInvTransform);
     output.uv = input.uv;
 
     return output;

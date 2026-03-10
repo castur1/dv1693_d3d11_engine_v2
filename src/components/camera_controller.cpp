@@ -92,6 +92,14 @@ void CameraController::Update(const Frame_context &context) {
     );
 
     renderer->SetCameraData(viewMatrix, projectionMatrix, position);
+
+    // Debug //
+
+    int debugMode = renderer->GetDebugMode();
+    if (Input::IsKeyPressed('C'))
+        debugMode = (debugMode + 1) % 6;
+
+    renderer->SetDebugData(debugMode, this->nearPlane, this->farPlane);
 }
 
 void CameraController::Render(Renderer *renderer) {}

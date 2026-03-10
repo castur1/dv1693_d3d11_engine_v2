@@ -9,7 +9,7 @@ entity a1b2-c3d4-e5f6-0123
     component Transform
         isActive: true
         position: [0.0, 1.0, 0.0]
-        rotation: [0.0, 0.0, 0.0]
+        rotation: [-0.15, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component CameraController
@@ -28,9 +28,39 @@ entity 123a-ffff-3242-0011
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 5.0]
+        position: [0.0, -10.0, 50.0]
         rotation: [0.0, -1.5708, 0.0]
+        scale: [20.0, 20.0, 20.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 8654-adce-1006-0012
+    name: "entity_2"
+    isActive: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [2.0, 0.0, 5.0]
+        rotation: [0.0, -0.7854, 0.0]
         scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-1237
+    name: "entity_3"
+    isActive: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-8.0, -3.0, 20.0]
+        rotation: [0.0, 3.9270, 0.0]
+        scale: [5.0, 5.0, 5.0]
 
     component ModelRenderer
         isActive: true

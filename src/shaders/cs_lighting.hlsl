@@ -1,7 +1,7 @@
 Texture2D<float4> gbufferAlbedo : register(t0);
 Texture2D<float4> gbufferNormal : register(t1);
 Texture2D<float4> gbufferSpecular : register(t2);
-Texture2D<float4> depthStencil : register(t3);
+Texture2D<float4> depthBuffer : register(t3);
 
 RWTexture2D<float4> outputTexture : register(u0);
 
@@ -15,12 +15,12 @@ void main(uint3 id : SV_DispatchThreadID) {
     
     int2 pixel = int2(id.xy);
     
-    float depth = depthStencil[pixel].r;
+    float depth = depthBuffer[pixel].r;
     if (depth >= 1.0f)
         return;
     
     float3 albedo = gbufferAlbedo[pixel].rgb;
-    float3 normal = gbufferNormal[pixel].rgb;
-    float t = 0.4f;
+    float3 normal = saturate(gbufferNormal[pixel].rgb * 2.0f - 1.0f);
+    float t = 0.0f;
     outputTexture[pixel] = float4(albedo * t + normal * (1 - t), 1.0f);
 }
