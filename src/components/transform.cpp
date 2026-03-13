@@ -41,3 +41,13 @@ XMFLOAT3 Transform::GetRotation() const {
 XMFLOAT3 Transform::GetScale() const {
     return this->scale;
 }
+
+XMFLOAT3 Transform::GetDirectionVector() const {
+    XMFLOAT3 output;
+
+    XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
+    XMVECTOR forward = XMVector3Normalize(rotationMatrix.r[2]);
+    XMStoreFloat3(&output, forward);
+
+    return output;
+}

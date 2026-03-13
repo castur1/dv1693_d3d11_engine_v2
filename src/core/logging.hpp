@@ -44,9 +44,12 @@ namespace LogImpl {
 
 #define LogError(format, ...) \
     do { \
-        wchar_t buffer[128]; \
-        swprintf_s(buffer, L"[ERROR] %hs:%d in %hs(): " L##format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__); \
-        MessageBox(NULL, buffer, L"Fatal error", MB_OK | MB_ICONERROR); \
+        char buffer[512]; \
+        sprintf_s(buffer, "[ERROR] %s:%d in %s(): " format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__); \
+        wchar_t wideBuffer[512]; \
+        size_t dummy = 0; \
+        mbstowcs_s(&dummy, wideBuffer, buffer, _TRUNCATE); \
+        MessageBox(NULL, wideBuffer, L"Fatal error", MB_OK | MB_ICONERROR); \
     } while (0)
 
 #define LogIndent() (void)0

@@ -2,7 +2,7 @@ version: "0.1.0"
 scene: "demo_0"
 
 entity a1b2-c3d4-e5f6-0123
-    name: "entity_0"
+    name: "player"
     isActive: true
     parent: null
 
@@ -22,7 +22,7 @@ entity a1b2-c3d4-e5f6-0123
         mouseSensitivity: 0.0015
 
 entity 123a-ffff-3242-0011
-    name: "entity_1"
+    name: "monkey_1"
     isActive: true
     parent: null
 
@@ -37,7 +37,7 @@ entity 123a-ffff-3242-0011
         modelID: "0dbc-caa8-2206-5ca7"
 
 entity 8654-adce-1006-0012
-    name: "entity_2"
+    name: "monkey_2"
     isActive: true
     parent: null
 
@@ -52,7 +52,7 @@ entity 8654-adce-1006-0012
         modelID: "0dbc-caa8-2206-5ca7"
 
 entity 0142-de23-fa87-1237
-    name: "entity_3"
+    name: "monkey_3"
     isActive: true
     parent: null
 
@@ -65,6 +65,62 @@ entity 0142-de23-fa87-1237
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+
+entity 7432-fe32-48ac-cd73
+    name: "apple"
+    isActive: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-40.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [2.0, 2.0, 2.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+
+entity faff-6543-8755-014a
+    name: "sun"
+    isActive: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.7854, 0.7854, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component DirectionalLight
+        isActive: true
+        colour: [1.0, 0.95, 0.8]
+        intensity: 1.5
+        ambient: [0.05, 0.08, 0.12]
+
+entity deef-ac43-8744-0ae2
+    name: "spot_light"
+    isActive: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 14.0, 70.0]
+        rotation: [0.0, 3.1416, 0.0]
+        scale: [0.2, 0.2, 0.2]
+
+    component SpotLight
+        isActive: true
+        colour: [0.0, 1.0, 0.0]
+        intensity: 15.0
+        range: 10.0
+        innerConeAngle: 0.5236
+        outerConeAngle: 0.6981
+        castsShadows: true
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
 
 assets:
     0dbc-caa8-2206-5ca7

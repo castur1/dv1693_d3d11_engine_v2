@@ -289,7 +289,7 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                     auto [key, value] = ParseKeyValuePair(line);
 
                     if (key == "name") { // unused
-
+                        LogInfo("Entity name: '%s'\n", value.c_str());
                     }
                     else if (key == "isActive") {
                         currentEntity->isActive = (value == "true" || value == "True" || value == "1");

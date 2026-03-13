@@ -20,9 +20,13 @@ Renderer::~Renderer() {
     SafeRelease(this->perFrameBuffer);
     SafeRelease(this->perObjectBuffer);
     SafeRelease(this->perMaterialBuffer);
+    SafeRelease(this->lightingBuffer);
     SafeRelease(this->debugResolveBuffer); // Debug
 
-    for (int i = 0; i < (int)Sampler_state_type::COUNT; ++i)
+    SafeRelease(this->spotLightBufferSRV);
+    SafeRelease(this->spotLightBuffer);
+
+    for (int i = 0; i < (int)Sampler_state_type::count; ++i)
         SafeRelease(this->samplerStates[i]);
 
     SafeRelease(this->renderTargetView);
@@ -163,6 +167,13 @@ bool Renderer::CreateConstantBuffers() {
         return false;
     }
 
+    bufferDesc.ByteWidth = sizeof(Lighting_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->lightingBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create lighting constant buffer");
+        return false;
+    }
+
     // Debug
     bufferDesc.ByteWidth = sizeof(Debug_resolve_data);
     result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->debugResolveBuffer);
@@ -183,6 +194,38 @@ bool Renderer::CreateConstantBuffers() {
     return true;
 }
 
+bool Renderer::CreateStructuredBuffers() {
+    D3D11_BUFFER_DESC bufferDesc{};
+    bufferDesc.ByteWidth = sizeof(Spot_light_data) * Renderer::MAX_SPOT_LIGHTS;
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    bufferDesc.StructureByteStride = sizeof(Spot_light_data);
+
+    HRESULT result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->spotLightBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create spot light structured buffer");
+        return false;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.NumElements = Renderer::MAX_SPOT_LIGHTS;
+
+    result = this->device->CreateShaderResourceView(this->spotLightBuffer, &srvDesc, &this->spotLightBufferSRV);
+    if (FAILED(result)) {
+        LogError("Failed to create spot light structured buffer SRV");
+        return false;
+    }
+
+    LogInfo("Structured buffers created\n");
+
+    return true;
+}
+
 bool Renderer::CreateCommonSamplerStates() {
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.MipLODBias = 0.0f;
@@ -198,7 +241,7 @@ bool Renderer::CreateCommonSamplerStates() {
 
     HRESULT result = this->device->CreateSamplerState(
         &samplerDesc, 
-        &this->samplerStates[(int)Sampler_state_type::LINEAR_WRAP]
+        &this->samplerStates[(int)Sampler_state_type::linearWrap]
     );
     if (FAILED(result)) {
         LogError("Failed to create linear wrap sampler state");
@@ -303,7 +346,50 @@ void Renderer::SetViewport(int width, int height) {
 }
 
 void Renderer::BindCommonSamplerStates() {
-    this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::COUNT, this->samplerStates);
+    this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
+}
+
+void Renderer::UploadLightData() {
+    Lighting_data lightingData{};
+
+    if (this->renderQueue.directionalLightCommand.has_value()) {
+        const Directional_light_command &dlc = this->renderQueue.directionalLightCommand.value();
+        lightingData.directionalLightDirection = dlc.direction;
+        lightingData.directionalLightColour    = dlc.colour;
+        lightingData.directionalLightIntensity = dlc.intensity;
+        lightingData.ambientColour             = dlc.ambientColour;
+    }
+
+    lightingData.spotLightCount = min(Renderer::MAX_SPOT_LIGHTS, this->renderQueue.spotLightCommands.size());
+
+    this->UploadConstantBuffer<Lighting_data>(this->lightingBuffer, lightingData);
+
+    if (lightingData.spotLightCount <= 0)
+        return;
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    HRESULT result = this->deviceContext->Map(this->spotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    if (FAILED(result)) {
+        LogWarn("Failed to map spot light buffer\n");
+        return;
+    }
+
+    Spot_light_data *dest = static_cast<Spot_light_data *>(mapped.pData);
+    for (int i = 0; i < lightingData.spotLightCount; ++i) {
+        const Spot_light_command &src = this->renderQueue.spotLightCommands[i];
+        dest[i].position      = src.position;
+        dest[i].intensity     = src.intensity;
+        dest[i].direction     = src.direction;
+        dest[i].range         = src.range;
+        dest[i].colour        = src.colour;
+        dest[i].cosInnerAngle = cosf(src.innerConeAngle);
+        dest[i].cosOuterAngle = cosf(src.outerConeAngle);
+        dest[i].castsShadows  = src.castsShadows ? 1 : 0;
+
+        XMStoreFloat4x4(&dest[i].viewProjectionMatrix, XMMatrixIdentity()); // TODO
+    }
+
+    this->deviceContext->Unmap(this->spotLightBuffer, 0);
 }
 
 void Renderer::BuildFrameGraph() {
@@ -386,7 +472,7 @@ void Renderer::BuildFrameGraph() {
 
             deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
 
-            for (GeometryCommand &command : context.GetRenderQueue().geometryCommands) {
+            for (Geometry_command &command : context.GetRenderQueue().geometryCommands) {
                 Per_object_data perObjectData{};
                 perObjectData.worldMatrix = command.worldMatrix;
                 XMStoreFloat4x4(
@@ -450,10 +536,9 @@ void Renderer::BuildFrameGraph() {
         [this](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
-            // TODO: Upload light data
-
             deviceContext->CSSetShader(this->lightingCS, nullptr, 0);
-            // deviceContext->CSSetConstantBuffers() // Light buffer
+            deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+            deviceContext->CSSetConstantBuffers(1, 1, &this->lightingBuffer);
 
             ID3D11ShaderResourceView *srvs[4] = {
                 context.GetShaderResourceView(data.albedo),
@@ -463,18 +548,18 @@ void Renderer::BuildFrameGraph() {
             };
             deviceContext->CSSetShaderResources(0, 4, srvs);
 
+            deviceContext->CSSetShaderResources(4, 1, &this->spotLightBufferSRV);
+
             ID3D11UnorderedAccessView *uav = context.GetUnorderedAccessView(data.output);
-
             deviceContext->ClearUnorderedAccessViewFloat(uav, this->clearColour);
-
             deviceContext->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
 
             UINT groupsX = (this->width  + 7) / 8;
             UINT groupsY = (this->height + 7) / 8;
             deviceContext->Dispatch(groupsX, groupsY, 1);
 
-            ID3D11ShaderResourceView *nullSrvs[4] = {};
-            deviceContext->CSSetShaderResources(0, 4, nullSrvs);
+            ID3D11ShaderResourceView *nullSrvs[5] = {};
+            deviceContext->CSSetShaderResources(0, 5, nullSrvs);
 
             ID3D11UnorderedAccessView *nullUav = nullptr;
             deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUav, nullptr);
@@ -538,7 +623,7 @@ void Renderer::BuildFrameGraph() {
             deviceContext->Draw(3, 0);
 
             ID3D11ShaderResourceView *nullDebugSrvs[4] = {};
-            deviceContext->CSSetShaderResources(1, 4, nullDebugSrvs);
+            deviceContext->PSSetShaderResources(1, 4, nullDebugSrvs);
 
             ID3D11ShaderResourceView *nullSrv = nullptr;
             deviceContext->PSSetShaderResources(0, 1, &nullSrv);
@@ -567,6 +652,9 @@ bool Renderer::Initialize(HWND hWnd) {
         return false;
 
     if (!this->CreateConstantBuffers())
+        return false;
+
+    if (!this->CreateStructuredBuffers())
         return false;
 
     if (!this->CreateCommonSamplerStates())
@@ -636,6 +724,7 @@ void Renderer::Begin() {
 void Renderer::End() {
     this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, this->currentFrameData);
     this->UploadConstantBuffer<Debug_resolve_data>(this->debugResolveBuffer, this->currentDebugData); // Debug
+    this->UploadLightData();
 
     this->frameGraph.Execute(this->deviceContext, this->renderQueue);
     this->swapChain->Present(0, 0);
@@ -643,10 +732,12 @@ void Renderer::End() {
 
 void Renderer::SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
     XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+    XMMATRIX invViewProjectionMatrix = XMMatrixInverse(nullptr, viewProjectionMatrix);
 
     XMStoreFloat4x4(&this->currentFrameData.viewMatrix, XMMatrixTranspose(viewMatrix));
     XMStoreFloat4x4(&this->currentFrameData.projectionMatrix, XMMatrixTranspose(projectionMatrix));
     XMStoreFloat4x4(&this->currentFrameData.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
+    XMStoreFloat4x4(&this->currentFrameData.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
 
     this->currentFrameData.cameraPosition = position;
 }

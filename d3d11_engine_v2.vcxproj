@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>src;external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +126,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>src;external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,7 +140,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\components\camera_controller.cpp" />
+    <ClCompile Include="src\components\directional_light.cpp" />
     <ClCompile Include="src\components\model_renderer.cpp" />
+    <ClCompile Include="src\components\spot_light.cpp" />
     <ClCompile Include="src\components\transform.cpp" />
     <ClCompile Include="src\core\application.cpp" />
     <ClCompile Include="src\core\input.cpp" />
@@ -165,7 +167,9 @@
     <ClInclude Include="external\stb_image\stb_image.h" />
     <ClInclude Include="external\tiny_obj_loader\tiny_obj_loader.h" />
     <ClInclude Include="src\components\camera_controller.hpp" />
+    <ClInclude Include="src\components\directional_light.hpp" />
     <ClInclude Include="src\components\model_renderer.hpp" />
+    <ClInclude Include="src\components\spot_light.hpp" />
     <ClInclude Include="src\components\transform.hpp" />
     <ClInclude Include="src\core\application.hpp" />
     <ClInclude Include="src\core\frame_context.hpp" />

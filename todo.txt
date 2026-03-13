@@ -1,5 +1,1 @@
-Frame graph for structuring render passes
-
-Input manager
-
-Mouse capturing + full-screen toggle
+Refactor my Blinn-Phong implementation

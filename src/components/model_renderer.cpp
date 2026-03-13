@@ -1,6 +1,5 @@
 #include "model_renderer.hpp"
 
-#include "scene/scene.hpp"
 #include "core/logging.hpp"
 #include "components/transform.hpp"
 #include "scene/entity.hpp"
@@ -31,7 +30,7 @@ void ModelRenderer::Render(Renderer *renderer) {
     for (int i = 0; i < model->subModels.size(); ++i) {
         const auto &subModel = model->subModels[i];
 
-        GeometryCommand command{};
+        Geometry_command command{};
 
         command.vertexBuffer = model->vertexBuffer;
         command.indexBuffer = model->indexBuffer;

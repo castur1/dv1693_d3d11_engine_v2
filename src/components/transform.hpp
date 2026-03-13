@@ -40,6 +40,7 @@ public:
     XMFLOAT3 GetPosition() const;
     XMFLOAT3 GetRotation() const;
     XMFLOAT3 GetScale() const;
+    XMFLOAT3 GetDirectionVector() const;
 };
 
 REGISTER_COMPONENT(Transform);

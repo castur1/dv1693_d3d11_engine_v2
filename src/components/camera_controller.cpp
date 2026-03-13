@@ -61,7 +61,7 @@ void CameraController::Update(const Frame_context &context) {
 
     float moveSpeed = this->moveSpeed * context.deltaTime;
     if (Input::IsKeyDown('X'))
-        moveSpeed *= 3.0f;
+        moveSpeed *= 5.0f;
 
     if (Input::IsKeyDown('W'))
         positionVector = XMVectorAdd(positionVector, XMVectorScale(forward, moveSpeed));
@@ -100,6 +100,11 @@ void CameraController::Update(const Frame_context &context) {
         debugMode = (debugMode + 1) % 6;
 
     renderer->SetDebugData(debugMode, this->nearPlane, this->farPlane);
+
+    if (Input::IsKeyPressed('P')) {
+        LogInfo("Position: [%.2f, %.2f, %.2f]\n", position.x, position.y, position.z);
+        LogInfo("Rotation: [%.2f, %.2f, %.2f]\n", rotation.x, rotation.y, rotation.z);
+    }
 }
 
 void CameraController::Render(Renderer *renderer) {}

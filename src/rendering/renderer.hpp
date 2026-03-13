@@ -14,6 +14,7 @@ struct Per_frame_data {
     XMFLOAT4X4 viewMatrix;
     XMFLOAT4X4 projectionMatrix;
     XMFLOAT4X4 viewProjectionMatrix;
+    XMFLOAT4X4 invViewProjectionMatrix;
     XMFLOAT3 cameraPosition;
     float pad0;
 };
@@ -29,26 +30,52 @@ static_assert(sizeof(Per_object_data) % 16 == 0);
 // CBuffer
 struct Per_material_data {
     XMFLOAT3 materialAmbient;
-    float pad0;
+    float    pad0;
     XMFLOAT3 materialDiffuse;
-    float pad1;
+    float    pad1;
     XMFLOAT3 materialSpecular;
-    float materialSpecularExponent;
+    float    materialSpecularExponent;
 };
 static_assert(sizeof(Per_material_data) % 16 == 0);
 
 // CBuffer
+struct Lighting_data {
+    XMFLOAT3 directionalLightDirection;
+    float    directionalLightIntensity;
+    XMFLOAT3 directionalLightColour;
+    int      spotLightCount;
+    XMFLOAT3 ambientColour;
+    float    pad0;
+};
+static_assert(sizeof(Lighting_data) % 16 == 0);
+
+// CBuffer
 struct Debug_resolve_data {
-    int debugMode;
+    int   debugMode;
     float nearPlane;
     float farPlane;
     float pad0;
 };
 static_assert(sizeof(Debug_resolve_data) % 16 == 0);
 
+// Structured buffer element
+struct Spot_light_data {
+    XMFLOAT3   position;
+    float      intensity;
+    XMFLOAT3   direction;
+    float      range;
+    XMFLOAT3   colour;
+    float      cosInnerAngle;
+    float      cosOuterAngle;
+    int        castsShadows; // C++ bool != HLSL bool
+    float      pad0[2];
+    XMFLOAT4X4 viewProjectionMatrix;
+};
+static_assert(sizeof(Spot_light_data) % 16 == 0);
+
 enum class Sampler_state_type {
-    LINEAR_WRAP = 0,
-    COUNT
+    linearWrap = 0,
+    count
 };
 
 class Renderer {
@@ -57,7 +84,7 @@ class Renderer {
     IDXGISwapChain         *swapChain        = nullptr;
     ID3D11RenderTargetView *renderTargetView = nullptr;
 
-    ID3D11SamplerState *samplerStates[(int)Sampler_state_type::COUNT] = {};
+    ID3D11SamplerState *samplerStates[(int)Sampler_state_type::count] = {};
 
     D3D11_VIEWPORT viewport{};
     int width  = 0;
@@ -79,7 +106,12 @@ class Renderer {
     ID3D11Buffer *perObjectBuffer    = nullptr;
     ID3D11Buffer *perFrameBuffer     = nullptr;
     ID3D11Buffer *perMaterialBuffer  = nullptr;
+    ID3D11Buffer *lightingBuffer     = nullptr;
     ID3D11Buffer *debugResolveBuffer = nullptr; // Debug
+
+    static constexpr int MAX_SPOT_LIGHTS         = 256;
+    ID3D11Buffer *spotLightBuffer                = nullptr;
+    ID3D11ShaderResourceView *spotLightBufferSRV = nullptr;
 
     Per_frame_data currentFrameData{};
     Debug_resolve_data currentDebugData{}; // Debug
@@ -87,11 +119,13 @@ class Renderer {
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
     bool CreateConstantBuffers();
+    bool CreateStructuredBuffers();
     bool CreateCommonSamplerStates();
     bool LoadDeferredShaders();
     void SetViewport(int width, int height);
 
     void BindCommonSamplerStates();
+    void UploadLightData();
 
     void BuildFrameGraph();
 
