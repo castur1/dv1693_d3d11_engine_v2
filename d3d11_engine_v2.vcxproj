@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="src\components\camera_controller.cpp" />
     <ClCompile Include="src\components\directional_light.cpp" />
+    <ClCompile Include="src\components\interp_move.cpp" />
     <ClCompile Include="src\components\model_renderer.cpp" />
     <ClCompile Include="src\components\spot_light.cpp" />
     <ClCompile Include="src\components\transform.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="external\tiny_obj_loader\tiny_obj_loader.h" />
     <ClInclude Include="src\components\camera_controller.hpp" />
     <ClInclude Include="src\components\directional_light.hpp" />
+    <ClInclude Include="src\components\interp_move.hpp" />
     <ClInclude Include="src\components\model_renderer.hpp" />
     <ClInclude Include="src\components\spot_light.hpp" />
     <ClInclude Include="src\components\transform.hpp" />

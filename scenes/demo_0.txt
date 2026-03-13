@@ -81,6 +81,38 @@ entity 7432-fe32-48ac-cd73
         isActive: true
         modelID: "e679-318b-f448-3109"
 
+    component InterpMove
+        isActive: true
+        startPosition: [-40.0, 0.0, 0.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [-40.0, 5.0, 0.0]
+        endRotation: [0.0, 0.0, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: false
+        shouldIgnoreRotation: true
+        shouldIgnoreScale: true
+        moveDuration: 2.0
+        pauseDuration: 0.0
+        shouldPingPong: true
+        easingFunctionType: 3
+
+    component InterpMove
+        isActive: true
+        startPosition: [0.0, 0.0, 0.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [0.0, 5.0, 0.0]
+        endRotation: [0.0, 6.2832, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
+        moveDuration: 3.4
+        pauseDuration: 0.0
+        shouldPingPong: false
+        easingFunctionType: 0
+
 entity faff-6543-8755-014a
     name: "sun"
     isActive: true
@@ -121,6 +153,22 @@ entity deef-ac43-8744-0ae2
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+
+    component InterpMove
+        isActive: true
+        startPosition: [0.0, 0.0, 0.0]
+        startRotation: [0.0, 2.7925, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [0.0, 0.0, 0.0]
+        endRotation: [0.0, 3.4907, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
+        moveDuration: 2.0
+        pauseDuration: 0.0
+        shouldPingPong: true
+        easingFunctionType: 3
 
 assets:
     0dbc-caa8-2206-5ca7

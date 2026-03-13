@@ -1,1 +1,5 @@
 Refactor my Blinn-Phong implementation
+
+InterpMove
+
+Bind enums
