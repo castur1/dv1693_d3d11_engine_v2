@@ -23,11 +23,11 @@ namespace LogImpl {
     } while (0)
 
 #define LogWarn(format, ...) \
-        printf("[WARNING] %s:%d in %s(): " format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__)
+        printf("\033[33m[WARNING]\033[0m %s:%d in %s(): " format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__)
 
 #define LogError(format, ...) \
     do { \
-        printf("[ERROR] %s:%d in %s(): " format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__); \
+        printf("\033[31m[ERROR]\033[0m %s:%d in %s(): " format, LogImpl::GetFilename(__FILE__), __LINE__, __func__, ##__VA_ARGS__); \
         (void)getchar(); \
     } while (0)
 
