@@ -6,6 +6,7 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <xhash>
 
 using namespace DirectX;
 
@@ -16,20 +17,52 @@ struct Vertex {
     float normal[3]   = {};
     float uv[2]       = {};
 
-    // For std::map used for vertex deduplication in the OBJ loader
-    bool operator<(const Vertex& other) const {
-        if (position[0] != other.position[0]) return position[0] < other.position[0];
-        if (position[1] != other.position[1]) return position[1] < other.position[1];
-        if (position[2] != other.position[2]) return position[2] < other.position[2];
+    float tangent[4]  = {};
 
-        if (normal[0] != other.normal[0]) return normal[0] < other.normal[0];
-        if (normal[1] != other.normal[1]) return normal[1] < other.normal[1];
-        if (normal[2] != other.normal[2]) return normal[2] < other.normal[2];
+    // For std::unordered_map
+    // We don't consider tangent since it is computed after vertex deduplication
+    bool operator==(const Vertex& other) const {
+        if (position[0] != other.position[0]) return false;
+        if (position[1] != other.position[1]) return false;
+        if (position[2] != other.position[2]) return false;
 
-        if (uv[0] != other.uv[0]) return uv[0] < other.uv[0];
-        return uv[1] < other.uv[1];
+        if (normal[0] != other.normal[0]) return false;
+        if (normal[1] != other.normal[1]) return false;
+        if (normal[2] != other.normal[2]) return false;
+
+        if (uv[0] != other.uv[0]) return false;
+        if (uv[1] != other.uv[1]) return false;
+
+        return true;
     }
 };
+
+// https://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
+namespace std {
+    template <>
+    struct hash<Vertex> {
+        size_t operator()(const Vertex &v) const {
+            size_t seed = 0;
+            std::hash<float> hasher;
+            auto combine = [&](float f) {
+                seed ^= hasher(f) + (seed << 6) + (seed >> 2) + 0x9e3779b9;
+            };
+
+            combine(v.position[0]);
+            combine(v.position[1]);
+            combine(v.position[2]);
+
+            combine(v.normal[0]);
+            combine(v.normal[1]);
+            combine(v.normal[2]);
+
+            combine(v.uv[0]);
+            combine(v.uv[1]);
+
+            return seed;
+        }
+    };
+}
 
 struct Pipeline_state {
     ID3D11VertexShader *vertexShader = nullptr;

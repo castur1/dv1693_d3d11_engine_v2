@@ -5,6 +5,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader/tiny_obj_loader.h"
 
+#include <unordered_map>
+
 Model *ModelLoader::Load(const std::string &path) {
     size_t lastSlash = path.find_last_of("/\\");
     std::string baseDir = lastSlash != std::string::npos ? path.substr(0, lastSlash + 1) : "";
@@ -71,10 +73,10 @@ Model *ModelLoader::Load(const std::string &path) {
         std::vector<Vertex> vertices;
         std::vector<UINT> indices;
 
-        std::map<Vertex, UINT> uniqueVertices;
+        std::unordered_map<Vertex, UINT> uniqueVertices;
     };
 
-    std::vector<Mesh_bucket> buckets(materials.size() + 1); // +1 for default material
+    std::vector<Mesh_bucket> buckets(materials.size() + 1);
 
     for (const tinyobj::shape_t& shape : shapes) {
         int indexOffset = 0;
@@ -83,7 +85,7 @@ Model *ModelLoader::Load(const std::string &path) {
             int vertexCount = shape.mesh.num_face_vertices[faceIndex];
 
             int materialID = shape.mesh.material_ids[faceIndex];
-            materialID = (materialID < 0) ? materials.size() : materialID; // Default material
+            materialID = (materialID < 0) ? materials.size() : materialID;
 
             for (int vertexIndex = vertexCount - 1; vertexIndex >= 0; --vertexIndex) {
                 tinyobj::index_t index = shape.mesh.indices[indexOffset + vertexIndex];
@@ -92,17 +94,17 @@ Model *ModelLoader::Load(const std::string &path) {
 
                 vertex.position[0] =  attributes.vertices[3 * index.vertex_index];
                 vertex.position[1] =  attributes.vertices[3 * index.vertex_index + 1];
-                vertex.position[2] = -attributes.vertices[3 * index.vertex_index + 2]; //
+                vertex.position[2] = -attributes.vertices[3 * index.vertex_index + 2];
 
                 if (index.normal_index >= 0) {
                     vertex.normal[0] =  attributes.normals[3 * index.normal_index];
                     vertex.normal[1] =  attributes.normals[3 * index.normal_index + 1];
-                    vertex.normal[2] = -attributes.normals[3 * index.normal_index + 2]; //
+                    vertex.normal[2] = -attributes.normals[3 * index.normal_index + 2];
                 }
 
                 if (index.texcoord_index >= 0) {
                     vertex.uv[0] = attributes.texcoords[2 * index.texcoord_index];
-                    vertex.uv[1] = 1.0f - attributes.texcoords[2 * index.texcoord_index + 1]; //
+                    vertex.uv[1] = 1.0f - attributes.texcoords[2 * index.texcoord_index + 1];
                 }
 
                 Mesh_bucket &bucket = buckets[materialID];
