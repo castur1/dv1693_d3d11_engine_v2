@@ -75,11 +75,11 @@ entity 7632-12ac-76de-fe23
         isActive: true
         position: [30.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
-        scale: [1.0, 1.0, 1.0]
+        scale: [0.2, 0.2, 0.2]
 
     component ModelRenderer
         isActive: true
-        modelID: "9e82-34ef-ee82-60be"
+        modelID: "5488-7f75-fd77-3eb3"
 
 entity 7432-fe32-48ac-cd73
     name: "apple"

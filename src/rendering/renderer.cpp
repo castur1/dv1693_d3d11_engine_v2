@@ -290,7 +290,7 @@ bool Renderer::LoadDeferredShaders() {
         { "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    result = this->device->CreateInputLayout(layoutDesc, 3, bytecode.data(), bytecode.size(), &this->gBufferLayout);
+    result = this->device->CreateInputLayout(layoutDesc, 4, bytecode.data(), bytecode.size(), &this->gBufferLayout);
     if (FAILED(result)) {
         LogError("Failed to create G-buffer input layout");
         return false;
@@ -495,8 +495,11 @@ void Renderer::BuildFrameGraph() {
                     this->UploadConstantBuffer<Per_material_data>(this->perMaterialBuffer, perMaterialData);
                     deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
 
-                    Texture2D *diffuseTexture = material->diffuseTexture.Get();
-                    deviceContext->PSSetShaderResources(0, 1, &diffuseTexture->shaderResourceView);
+                    ID3D11ShaderResourceView *srvs[2] = {
+                        material->diffuseTexture.Get()->shaderResourceView,
+                        material->normalTexture.Get()->shaderResourceView
+                    };
+                    deviceContext->PSSetShaderResources(0, 2, srvs);
                 }
 
                 UINT stride = sizeof(Vertex);
@@ -510,8 +513,8 @@ void Renderer::BuildFrameGraph() {
             ID3D11RenderTargetView *nullRtvs[3] = {};
             deviceContext->OMSetRenderTargets(3, nullRtvs, nullptr);
 
-            ID3D11ShaderResourceView *nullSrv = nullptr;
-            deviceContext->PSSetShaderResources(0, 1, &nullSrv);
+            ID3D11ShaderResourceView *nullSrv[2] = {};
+            deviceContext->PSSetShaderResources(0, 2, nullSrv);
         }
     );
 

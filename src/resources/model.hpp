@@ -13,25 +13,25 @@ using namespace DirectX;
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
 struct Vertex {
-    float position[3] = {};
-    float normal[3]   = {};
-    float uv[2]       = {};
+    XMFLOAT3 position{};
+    XMFLOAT3 normal{};
+    XMFLOAT2 uv{};
 
-    float tangent[4]  = {};
+    XMFLOAT4 tangent{};
 
     // For std::unordered_map
     // We don't consider tangent since it is computed after vertex deduplication
     bool operator==(const Vertex& other) const {
-        if (position[0] != other.position[0]) return false;
-        if (position[1] != other.position[1]) return false;
-        if (position[2] != other.position[2]) return false;
+        if (position.x != other.position.x) return false;
+        if (position.y != other.position.y) return false;
+        if (position.z != other.position.z) return false;
 
-        if (normal[0] != other.normal[0]) return false;
-        if (normal[1] != other.normal[1]) return false;
-        if (normal[2] != other.normal[2]) return false;
+        if (normal.x != other.normal.x) return false;
+        if (normal.y != other.normal.y) return false;
+        if (normal.z != other.normal.z) return false;
 
-        if (uv[0] != other.uv[0]) return false;
-        if (uv[1] != other.uv[1]) return false;
+        if (uv.x != other.uv.x) return false;
+        if (uv.y != other.uv.y) return false;
 
         return true;
     }
@@ -48,16 +48,16 @@ namespace std {
                 seed ^= hasher(f) + (seed << 6) + (seed >> 2) + 0x9e3779b9;
             };
 
-            combine(v.position[0]);
-            combine(v.position[1]);
-            combine(v.position[2]);
+            combine(v.position.x);
+            combine(v.position.y);
+            combine(v.position.z);
 
-            combine(v.normal[0]);
-            combine(v.normal[1]);
-            combine(v.normal[2]);
+            combine(v.normal.x);
+            combine(v.normal.y);
+            combine(v.normal.z);
 
-            combine(v.uv[0]);
-            combine(v.uv[1]);
+            combine(v.uv.x);
+            combine(v.uv.y);
 
             return seed;
         }
@@ -95,6 +95,7 @@ struct Material {
     AssetHandle<Pipeline_state> pipelineState;
 
     AssetHandle<Texture2D> diffuseTexture;
+    AssetHandle<Texture2D> normalTexture;
 
     XMFLOAT3 ambientColour  = {1.0f, 1.0f, 1.0f};
     XMFLOAT3 diffuseColour  = {1.0f, 1.0f, 1.0f};

@@ -7,6 +7,92 @@
 
 #include <unordered_map>
 
+void ModelLoader::ComputeTangents(std::vector<Vertex> &vertices, const std::vector<UINT> &indices) {
+    std::vector<XMFLOAT3> tangents(vertices.size(), {0.0f, 0.0f, 0.0f});
+    std::vector<XMFLOAT3> bitangents(vertices.size(), {0.0f, 0.0f, 0.0f});
+
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        UINT i0 = indices[i];
+        UINT i1 = indices[i + 1];
+        UINT i2 = indices[i + 2];
+
+        const Vertex &v0 = vertices[i0];
+        const Vertex &v1 = vertices[i1];
+        const Vertex &v2 = vertices[i2];
+
+        XMVECTOR p0 = XMLoadFloat3(&v0.position);
+        XMVECTOR p1 = XMLoadFloat3(&v1.position);
+        XMVECTOR p2 = XMLoadFloat3(&v2.position);
+
+        XMVECTOR e1 = p1 - p0;
+        XMVECTOR e2 = p2 - p0;
+
+        float du1 = v1.uv.x - v0.uv.x;
+        float dv1 = v1.uv.y - v0.uv.y;
+        float du2 = v2.uv.x - v0.uv.x;
+        float dv2 = v2.uv.y - v0.uv.y;
+
+        // https://en.wikipedia.org/wiki/Cramer%27s_rule
+        float det = du1 * dv2 - du2 * dv1;
+        if (fabsf(det) < 1e-6f)
+            continue;
+
+        XMVECTOR t = (e1 * dv2 - e2 * dv1) / det;
+        XMVECTOR b = (e2 * du1 - e1 * du2) / det;
+
+        XMFLOAT3 tf;
+        XMStoreFloat3(&tf, t);
+        XMFLOAT3 bf;
+        XMStoreFloat3(&bf, b);
+
+        tangents[i0].x += tf.x;
+        tangents[i0].y += tf.y;
+        tangents[i0].z += tf.z;
+
+        bitangents[i0].x += bf.x;
+        bitangents[i0].y += bf.y;
+        bitangents[i0].z += bf.z;
+
+        tangents[i1].x += tf.x;
+        tangents[i1].y += tf.y;
+        tangents[i1].z += tf.z;
+
+        bitangents[i1].x += bf.x;
+        bitangents[i1].y += bf.y;
+        bitangents[i1].z += bf.z;
+
+        tangents[i2].x += tf.x;
+        tangents[i2].y += tf.y;
+        tangents[i2].z += tf.z;
+
+        bitangents[i2].x += bf.x;
+        bitangents[i2].y += bf.y;
+        bitangents[i2].z += bf.z;
+    }
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        Vertex &v = vertices[i];
+
+        XMVECTOR n = XMLoadFloat3(&v.normal);
+        XMVECTOR t = XMLoadFloat3(&tangents[i]);
+        XMVECTOR b = XMLoadFloat3(&bitangents[i]);
+
+        // https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+        XMVECTOR to = XMVector3Normalize(t - n * XMVector3Dot(n, t));
+
+        XMVECTOR cross = XMVector3Cross(n, to);
+        float handedness = XMVectorGetX(XMVector3Dot(cross, b)) < 0.0f ? -1.0f : 1.0f;
+
+        XMFLOAT3 tf;
+        XMStoreFloat3(&tf, to);
+
+        v.tangent.x = tf.x;
+        v.tangent.y = tf.y;
+        v.tangent.z = tf.z;
+        v.tangent.w = handedness;
+    }
+}
+
 Model *ModelLoader::Load(const std::string &path) {
     size_t lastSlash = path.find_last_of("/\\");
     std::string baseDir = lastSlash != std::string::npos ? path.substr(0, lastSlash + 1) : "";
@@ -43,13 +129,25 @@ Model *ModelLoader::Load(const std::string &path) {
 
         newMaterial->pipelineState = defaultMaterial->pipelineState;
 
-        if (materials[i].diffuse_texname.empty()) {
-            newMaterial->diffuseTexture = defaultMaterial->diffuseTexture;
-        }
-        else {
-            baseDir = baseDir.substr(this->assetManager->GetAssetDirectory().size());
+        baseDir = baseDir.substr(this->assetManager->GetAssetDirectory().size());
+        if (!materials[i].diffuse_texname.empty()) {
             AssetID textureID = this->assetManager->PathToUUID(baseDir + materials[i].diffuse_texname);
             newMaterial->diffuseTexture = this->assetManager->GetHandle<Texture2D>(textureID);
+        }
+        else {
+            newMaterial->diffuseTexture = defaultMaterial->diffuseTexture;
+        }
+
+        if (!materials[i].normal_texname.empty()) {
+            AssetID textureID = this->assetManager->PathToUUID(baseDir + materials[i].normal_texname);
+            newMaterial->normalTexture = this->assetManager->GetHandle<Texture2D>(textureID);
+        }
+        else if (!materials[i].bump_texname.empty()) {
+            AssetID textureID = this->assetManager->PathToUUID(baseDir + materials[i].bump_texname);
+            newMaterial->normalTexture = this->assetManager->GetHandle<Texture2D>(textureID);
+        }
+        else {
+            newMaterial->normalTexture = defaultMaterial->normalTexture;
         }
 
         newMaterial->ambientColour = XMFLOAT3(materials[i].ambient);
@@ -92,19 +190,19 @@ Model *ModelLoader::Load(const std::string &path) {
 
                 Vertex vertex{};
 
-                vertex.position[0] =  attributes.vertices[3 * index.vertex_index];
-                vertex.position[1] =  attributes.vertices[3 * index.vertex_index + 1];
-                vertex.position[2] = -attributes.vertices[3 * index.vertex_index + 2];
+                vertex.position.x =  attributes.vertices[3 * index.vertex_index];
+                vertex.position.y =  attributes.vertices[3 * index.vertex_index + 1];
+                vertex.position.z = -attributes.vertices[3 * index.vertex_index + 2];
 
                 if (index.normal_index >= 0) {
-                    vertex.normal[0] =  attributes.normals[3 * index.normal_index];
-                    vertex.normal[1] =  attributes.normals[3 * index.normal_index + 1];
-                    vertex.normal[2] = -attributes.normals[3 * index.normal_index + 2];
+                    vertex.normal.x =  attributes.normals[3 * index.normal_index];
+                    vertex.normal.y =  attributes.normals[3 * index.normal_index + 1];
+                    vertex.normal.z = -attributes.normals[3 * index.normal_index + 2];
                 }
 
                 if (index.texcoord_index >= 0) {
-                    vertex.uv[0] = attributes.texcoords[2 * index.texcoord_index];
-                    vertex.uv[1] = 1.0f - attributes.texcoords[2 * index.texcoord_index + 1];
+                    vertex.uv.x = attributes.texcoords[2 * index.texcoord_index];
+                    vertex.uv.y = 1.0f - attributes.texcoords[2 * index.texcoord_index + 1];
                 }
 
                 Mesh_bucket &bucket = buckets[materialID];
@@ -154,6 +252,8 @@ Model *ModelLoader::Load(const std::string &path) {
 
         newModel->subModels.push_back(subModel);
     }
+
+    this->ComputeTangents(finalVertices, finalIndices);
 
     D3D11_BUFFER_DESC vertexBufferDesc{};
     vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;

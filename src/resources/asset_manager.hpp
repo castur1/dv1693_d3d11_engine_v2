@@ -138,19 +138,19 @@ public:
     }
 
     template <typename T>
-    AssetHandle<T> AddAsset(T *asset, AssetID uuid) {
+    AssetHandle<T> AddAsset(T *asset, AssetID uuid, bool isPersistent = false) {
         auto *cache = this->GetCache<T>();
         if (!cache)
             return AssetHandle<T>(AssetID::invalid, this);
 
-        cache->Add(uuid, asset);
+        cache->Add(uuid, asset, isPersistent);
         return AssetHandle<T>(uuid, this);
     }
 
     template <typename T>
-    AssetHandle<T> AddAsset(T *asset) {
+    AssetHandle<T> AddAsset(T *asset, bool isPersistent = false) {
         AssetID uuid;
-        return this->AddAsset<T>(asset, uuid);
+        return this->AddAsset<T>(asset, uuid, isPersistent);
     }
 
     template <typename T>
@@ -178,8 +178,10 @@ T *AssetHandle<T>::Get() {
     if (cachedPtr)
         return cachedPtr;
 
-    if (!assetManager)
+    if (!assetManager) {
+        LogWarn("AssetManager was nullptr.\n");
         return nullptr;
+    }
 
     return this->cachedPtr = this->assetManager->Load<T>(this->uuid);
 }
