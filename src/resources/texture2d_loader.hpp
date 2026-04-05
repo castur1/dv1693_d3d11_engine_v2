@@ -10,6 +10,8 @@ public:
 
     Texture2D *Load(const std::string &path) override;
     Texture2D *CreateDefault() override;
+
+    Texture2D *CreateFromBitmap(UINT32 *pixels, UINT width, UINT height);
 };
 
 #endif

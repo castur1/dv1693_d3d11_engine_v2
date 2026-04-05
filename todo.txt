@@ -1,5 +1,19 @@
-Refactor my Blinn-Phong implementation
+* Requirements:
 
-InterpMove
+    X Deferred rendering
+    * Shadow mapping
+    * Particle system
+    * Dynamic cube mapping
+    * Tessellation
+    * Hierarchical view frustum culling
+    X Normal mapping
 
-Bind enums
+* Refactor my Blinn-Phong implementation
+
+* Bind enums
+
+* Dear ImGui
+
+* Ambient Occlusion and other post-processing effects? Bloom?
+
+* Parent-child entity hierarchy

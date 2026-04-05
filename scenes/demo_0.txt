@@ -16,7 +16,7 @@ entity a1b2-c3d4-e5f6-0123
         isActive: true
         fieldOfView: 0.7854
         nearPlane: 0.1
-        farPlane: 100.0
+        farPlane: 512.0
         moveSpeed: 8.0
         rotationSpeed: 1.5
         mouseSensitivity: 0.0015
@@ -187,3 +187,4 @@ entity deef-ac43-8744-0ae2
 
 assets:
     0dbc-caa8-2206-5ca7
+    5488-7f75-fd77-3eb3
