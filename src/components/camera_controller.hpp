@@ -8,8 +8,13 @@ class CameraController : public Component {
     float nearPlane   = 0.1f;
     float farPlane    = 100.0f;
 
+    XMFLOAT3 velocity{};
+
 public:
-    float moveSpeed        = 8.0f;
+    float moveSpeed    = 8.0f;
+    float acceleration = 12.0f;
+    float drag         = 2.0f;
+
     float rotationSpeed    = 1.5f;
     float mouseSensitivity = 0.0015f;
 
@@ -27,6 +32,9 @@ public:
         BIND(farPlane);
 
         BIND(moveSpeed);
+        BIND(acceleration);
+        BIND(drag);
+
         BIND(rotationSpeed);
         BIND(mouseSensitivity);
     }

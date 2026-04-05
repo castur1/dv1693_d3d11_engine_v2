@@ -58,25 +58,40 @@ void CameraController::Update(const Frame_context &context) {
     XMVECTOR forward = XMVector3Normalize(XMVector3Cross(right, up));
 
     XMVECTOR positionVector = XMLoadFloat3(&position);
+    XMVECTOR velocityVector = XMLoadFloat3(&this->velocity);
 
-    float moveSpeed = this->moveSpeed * context.deltaTime;
-    if (Input::IsKeyDown('X'))
-        moveSpeed *= 5.0f;
+    XMVECTOR targetDirection = XMVectorZero();
 
     if (Input::IsKeyDown('W'))
-        positionVector = XMVectorAdd(positionVector, XMVectorScale(forward, moveSpeed));
+        targetDirection = XMVectorAdd(targetDirection, forward);
     if (Input::IsKeyDown('S'))
-        positionVector = XMVectorSubtract(positionVector, XMVectorScale(forward, moveSpeed));
+        targetDirection = XMVectorSubtract(targetDirection, forward);
     if (Input::IsKeyDown('D'))
-        positionVector = XMVectorAdd(positionVector, XMVectorScale(right, moveSpeed));
+        targetDirection = XMVectorAdd(targetDirection, right);
     if (Input::IsKeyDown('A'))
-        positionVector = XMVectorSubtract(positionVector, XMVectorScale(right, moveSpeed));
+        targetDirection = XMVectorSubtract(targetDirection, right);
     if (Input::IsKeyDown(VK_SPACE))
-        positionVector = XMVectorAdd(positionVector, XMVectorScale(up, moveSpeed));
+        targetDirection = XMVectorAdd(targetDirection, up);
     if (Input::IsKeyDown(VK_LSHIFT))
-        positionVector = XMVectorSubtract(positionVector, XMVectorScale(up, moveSpeed));
+        targetDirection = XMVectorSubtract(targetDirection, up);
+
+    if (XMVectorGetX(XMVector3LengthSq(targetDirection)) > 1e-6f)
+        targetDirection = XMVector3Normalize(targetDirection);
+
+    float maxSpeed = this->moveSpeed;
+    if (Input::IsKeyDown('X'))
+        maxSpeed *= 5.0f;
+
+    XMVECTOR targetVelocity = XMVectorScale(targetDirection, maxSpeed);
+    velocityVector = XMVectorLerp(velocityVector, targetVelocity, this->acceleration * context.deltaTime);
+
+    if (XMVector3Equal(targetDirection, XMVectorZero()))
+        velocityVector = XMVectorLerp(velocityVector, XMVectorZero(), this->drag * context.deltaTime);
+
+    positionVector = XMVectorAdd(positionVector, XMVectorScale(velocityVector, context.deltaTime));
 
     XMStoreFloat3(&position, positionVector);
+    XMStoreFloat3(&this->velocity, velocityVector);
 
     transform->SetPosition(position);
     transform->SetRotation(rotation);
