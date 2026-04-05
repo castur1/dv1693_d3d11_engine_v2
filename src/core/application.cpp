@@ -14,8 +14,6 @@ Application::Application()
         &this->assetManager
     } {}
 
-Application::~Application() {}
-
 bool Application::CreateConsole() {
     if (!AllocConsole())
         return false;
@@ -43,12 +41,17 @@ void Application::Update(const Frame_context &context) {
     this->sceneManager.Update(context);
 }
 
-void Application::Render() {
+void Application::Render(float deltaTime) {
     this->renderer.Begin();
-
     this->sceneManager.Render(&this->renderer);
-
     this->renderer.End();
+
+    if (this->isEditorEnabled) {
+        this->editor.NewFrame(deltaTime, this->sceneManager.GetCurrentScene());
+        this->editor.Render();
+    }
+
+    this->renderer.Present();
 }
 
 bool Application::Initialize() {
@@ -70,6 +73,9 @@ bool Application::Initialize() {
         return false;
 
     if (!this->sceneManager.Initialize(this->context))
+        return false;
+
+    if (!this->editor.Initalize(this->window.GetHandle(), this->renderer.GetDevice(), this->renderer.GetDeviceContext()))
         return false;
 
     LogUnindent();
@@ -94,7 +100,13 @@ void Application::Run() {
             this->window.ClearResizeFlag();
         }
 
-        Input::Update();
+        if (!this->editor.HasCapturedInput())
+            Input::Update();
+        else
+            Input::Clear();
+
+        if (Input::IsKeyPressed(VK_F1))
+            this->isEditorEnabled = !this->isEditorEnabled;
 
         if (Input::IsKeyPressed(VK_F4))
             this->renderer.ToggleFullscreen();
@@ -124,20 +136,22 @@ void Application::Run() {
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> elapsed = currentTime - previousTime;
+        float deltaTime = elapsed.count();
         previousTime = currentTime;
 
         Frame_context context{
-            .deltaTime = elapsed.count(),
+            .deltaTime = deltaTime,
             .engineContext = this->context
         };
 
         this->Update(context);
-        this->Render();
+        this->Render(deltaTime);
     }
 
     LogInfo("\n");
     LogInfo("Shutdown...\n");
 
+    this->editor.Shutdown();
     this->sceneManager.Shutdown();
 
     ComponentRegistry::GetMap().clear();

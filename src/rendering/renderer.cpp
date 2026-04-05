@@ -731,6 +731,11 @@ void Renderer::End() {
     this->UploadLightData();
 
     this->frameGraph.Execute(this->deviceContext, this->renderQueue);
+
+    this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
+}
+
+void Renderer::Present() {
     this->swapChain->Present(0, 0);
 }
 
@@ -759,6 +764,10 @@ int Renderer::GetDebugMode() {
 
 ID3D11Device *Renderer::GetDevice() const {
     return this->device;
+}
+
+ID3D11DeviceContext *Renderer::GetDeviceContext() const {
+    return this->deviceContext;
 }
 
 int Renderer::GetWidth() const {

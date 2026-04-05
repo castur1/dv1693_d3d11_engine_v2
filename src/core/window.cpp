@@ -1,5 +1,6 @@
 #include "window.hpp"
 #include "core/logging.hpp"
+#include "editor/editor.hpp"
 
 #define WINDOW_CLASS_NAME L"window_class"
 
@@ -16,6 +17,8 @@ LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
     } else {
         window = (Window *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     }
+
+    bool imguiHandled = Editor::ProcessMessage(hwnd, uMsg, wParam, lParam);
 
     switch (uMsg) {
         case WM_SIZE: {
@@ -36,6 +39,9 @@ LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
             return 0;
         }
     }
+
+    if (imguiHandled)
+        return true;
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

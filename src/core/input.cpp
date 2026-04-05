@@ -61,6 +61,16 @@ void Input::Update() {
     }
 }
 
+void Input::Clear() {
+    for (int i = 0; i < 0xFF; ++i) {
+        keyStates[i].wasDown = false;
+        keyStates[i].isDown = false;
+    }
+
+    mouseDeltaX = 0;
+    mouseDeltaY = 0;
+}
+
 bool Input::IsKeyDown(int key) {
     return keyStates[key].isDown;
 }

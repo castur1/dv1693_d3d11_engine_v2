@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;$(ProjectDir)external/imgui/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +126,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)external/;$(ProjectDir)external/imgui/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -139,6 +139,13 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="external\imgui\imgui.cpp" />
+    <ClCompile Include="external\imgui\imgui_demo.cpp" />
+    <ClCompile Include="external\imgui\imgui_draw.cpp" />
+    <ClCompile Include="external\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="external\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="external\imgui\imgui_tables.cpp" />
+    <ClCompile Include="external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\components\camera_controller.cpp" />
     <ClCompile Include="src\components\directional_light.cpp" />
     <ClCompile Include="src\components\interp_move.cpp" />
@@ -150,6 +157,7 @@
     <ClCompile Include="src\core\logging.cpp" />
     <ClCompile Include="src\core\uuid.cpp" />
     <ClCompile Include="src\core\window.cpp" />
+    <ClCompile Include="src\editor\editor.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\frame_graph.cpp" />
     <ClCompile Include="src\rendering\renderer.cpp" />
@@ -165,6 +173,14 @@
     <ClCompile Include="src\scene\scene_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="external\imgui\imconfig.h" />
+    <ClInclude Include="external\imgui\imgui.h" />
+    <ClInclude Include="external\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="external\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="external\imgui\imgui_internal.h" />
+    <ClInclude Include="external\imgui\imstb_rectpack.h" />
+    <ClInclude Include="external\imgui\imstb_textedit.h" />
+    <ClInclude Include="external\imgui\imstb_truetype.h" />
     <ClInclude Include="external\stb_image\stb_image.h" />
     <ClInclude Include="external\tiny_obj_loader\tiny_obj_loader.h" />
     <ClInclude Include="src\components\camera_controller.hpp" />
@@ -179,6 +195,7 @@
     <ClInclude Include="src\core\logging.hpp" />
     <ClInclude Include="src\core\uuid.hpp" />
     <ClInclude Include="src\core\window.hpp" />
+    <ClInclude Include="src\editor\editor.hpp" />
     <ClInclude Include="src\rendering\frame_graph.hpp" />
     <ClInclude Include="src\rendering\renderer.hpp" />
     <ClInclude Include="src\rendering\render_commands.hpp" />

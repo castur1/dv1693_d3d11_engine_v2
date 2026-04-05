@@ -23,6 +23,7 @@ class Input {
 
 public:
     static void Update();
+    static void Clear();
 
     static bool IsKeyDown(int key);
     static bool IsKeyPressed(int key);

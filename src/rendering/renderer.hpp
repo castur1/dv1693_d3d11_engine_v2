@@ -159,6 +159,7 @@ public:
 
     void Begin();
     void End();
+    void Present();
 
     void SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position);
 
@@ -166,6 +167,7 @@ public:
     int GetDebugMode(); // Debug
 
     ID3D11Device *GetDevice() const;
+    ID3D11DeviceContext *GetDeviceContext() const;
     int GetWidth() const;
     int GetHeight() const;
     float GetAspectRatio() const;
