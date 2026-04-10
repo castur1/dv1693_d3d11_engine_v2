@@ -100,6 +100,8 @@ void Application::Run() {
             this->window.ClearResizeFlag();
         }
 
+        // TODO: Let the editor pause the game! Also frame-by-frame
+
         if (!this->editor.HasCapturedInput())
             Input::Update();
         else

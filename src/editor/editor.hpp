@@ -5,14 +5,21 @@
 #include <d3d11.h>
 
 class Scene;
+class Entity;
 
 class Editor {
     float fpsSmoothed = 0.0f;
     float fpsAlpha    = 0.02f;
 
-    bool showFPSOverlay = true;
+    Entity *selectedEntity = nullptr;
+
+    bool showFPSOverlay      = true;
+    bool showEntityHierarchy = true;
+    bool showInspector       = true;
 
     void DrawFPSOverlay(float deltaTime);
+    void DrawEntityHierarchy(Scene *scene);
+    void DrawInspector();
 
 public:
     Editor()  = default;

@@ -1,5 +1,9 @@
 #include "editor.hpp"
 #include "core/logging.hpp"
+#include "scene/scene.hpp"
+#include "scene/entity.hpp"
+#include "scene/component.hpp"
+#include "editor/imgui_inspector.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -74,6 +78,136 @@ void Editor::DrawFPSOverlay(float deltaTime) {
     ImGui::PopStyleVar();
 }
 
+void Editor::DrawEntityHierarchy(Scene *scene) {
+    if (!this->showEntityHierarchy || !scene)
+        return;
+
+    ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
+
+    std::vector<Entity *> entities = scene->GetEntities();
+
+    std::string sceneLabel = "Scene [" + std::to_string(entities.size()) + "]"; // TODO: Scene name
+    if (!ImGui::Begin(sceneLabel.c_str(), &this->showEntityHierarchy)) {
+        ImGui::End();
+        return;
+    }
+
+    if (ImGui::BeginTable("##bg", 1, ImGuiTableFlags_RowBg)) {
+        for (Entity *entity : entities) {
+            if (!entity)
+                continue;
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            EntityID uuid = entity->GetID();
+            ImGui::PushID(uuid);
+
+            bool isSelected = (entity == this->selectedEntity);
+
+            ImGuiTreeNodeFlags flags =
+                ImGuiTreeNodeFlags_Leaf          | // TODO: Parent-child hierarchy
+                ImGuiTreeNodeFlags_SpanFullWidth |
+                ImGuiTreeNodeFlags_FramePadding;
+
+            if (isSelected)
+                flags |= ImGuiTreeNodeFlags_Selected;
+
+            bool isInactive = !entity->isActive;
+            if (isInactive)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+
+            std::string label = uuid.ToString() + " [" + std::to_string(entity->GetComponents().size()) + "]"; // TODO: Entity name
+
+            bool isOpened = ImGui::TreeNodeEx(label.c_str(), flags);
+
+            if (ImGui::IsItemClicked())
+                this->selectedEntity = isSelected ? nullptr : entity;
+
+            if (isInactive)
+                ImGui::PopStyleColor();
+
+            if (isOpened)
+                ImGui::TreePop();
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+static std::string GetComponentTypeName(Component *component) {
+    std::string name = typeid(*component).name();
+
+    for (const char *prefix : {"class ", "struct "}) {
+        std::string p = prefix;
+        if (name.substr(0, p.size()) == p) {
+            name = name.substr(p.size());
+            break;
+        }
+    }
+
+    return name;
+}
+
+void Editor::DrawInspector() {
+    if (!this->showInspector)
+        return;
+
+    ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
+
+    if (!ImGui::Begin("Inspector", &this->showInspector)) {
+        ImGui::End();
+        return;
+    }
+
+    if (!this->selectedEntity) {
+        ImGui::TextDisabled("No entity selected.");
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Text("UUID: %s", this->selectedEntity->GetID().ToString().c_str());
+    ImGui::Checkbox("isActive", &this->selectedEntity->isActive);
+    ImGui::Separator();
+
+    std::vector<Component *> components = this->selectedEntity->GetComponents();
+    ImGuiInspector inspector;
+
+    if (components.empty()) {
+        ImGui::TextDisabled("No components.");
+        ImGui::End();
+        return;
+    }
+
+    for (int i = 0; i < components.size(); ++i) {
+        Component *component = components[i];
+        if (!component)
+            return;
+
+        std::string typeName = GetComponentTypeName(component);
+
+        ImGui::PushID(i);
+
+        if (ImGui::CollapsingHeader(typeName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent();
+
+            ImGui::Checkbox("isActive##comp", &component->isActive);
+
+            component->Reflect(&inspector);
+
+            ImGui::Unindent();
+        }
+
+        ImGui::PopID();
+    }
+
+    ImGui::End();
+}
+
 void Editor::NewFrame(float deltaTime, Scene *scene) {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -81,13 +215,19 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
 
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("View")) {
+
             ImGui::MenuItem("FPS overlay", nullptr, &this->showFPSOverlay);
+            ImGui::MenuItem("Hierarchy", nullptr, &this->showEntityHierarchy);
+            ImGui::MenuItem("Inspector", nullptr, &this->showInspector);
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
 
     this->DrawFPSOverlay(deltaTime);
+    this->DrawEntityHierarchy(scene);
+    this->DrawInspector();
 }
 
 void Editor::Render() {
