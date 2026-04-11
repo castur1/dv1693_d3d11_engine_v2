@@ -1,6 +1,7 @@
 #include "window.hpp"
 #include "core/logging.hpp"
 #include "editor/editor.hpp"
+#include "core/input.hpp"
 
 #define WINDOW_CLASS_NAME L"window_class"
 

@@ -12,8 +12,10 @@
 
 * Bind enums
 
-* Dear ImGui
-
 * Ambient Occlusion and other post-processing effects? Bloom?
 
 * Parent-child entity hierarchy
+
+* Continue working on the debug overlay / editor
+
+    * At least display entity names and the scene name

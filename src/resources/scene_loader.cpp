@@ -180,6 +180,7 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
     }
 
     scene.Clear();
+    scene.name = name;
 
     if (this->assetManager)
         this->assetManager->MarkAllAssetsUnused();
@@ -288,7 +289,8 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 if (currentEntity) {
                     auto [key, value] = ParseKeyValuePair(line);
 
-                    if (key == "name") { // unused
+                    if (key == "name") {
+                        currentEntity->name = value;
                         LogInfo("Entity name: '%s'\n", value.c_str());
                     }
                     else if (key == "isActive") {

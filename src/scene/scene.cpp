@@ -66,6 +66,8 @@ void Scene::Clear() {
 
     this->uuidLookup.clear();
     this->entities.clear();
+
+    this->name.clear();
 }
 
 Entity *Scene::AddEntity(EntityID uuid, bool isActive) {

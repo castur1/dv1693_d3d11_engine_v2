@@ -25,6 +25,8 @@ class Scene {
     void ResolveEntitiesToDestroy();
 
 public:
+    std::string name; // Debugging
+
     Scene();
     ~Scene();
 

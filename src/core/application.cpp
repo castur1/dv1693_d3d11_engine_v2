@@ -102,10 +102,10 @@ void Application::Run() {
 
         // TODO: Let the editor pause the game! Also frame-by-frame
 
-        if (!this->editor.HasCapturedInput())
-            Input::Update();
-        else
+        if (this->editor.HasCapturedInput())
             Input::Clear();
+        else
+            Input::Update();
 
         if (Input::IsKeyPressed(VK_F1))
             this->isEditorEnabled = !this->isEditorEnabled;
@@ -140,6 +140,9 @@ void Application::Run() {
         std::chrono::duration<float> elapsed = currentTime - previousTime;
         float deltaTime = elapsed.count();
         previousTime = currentTime;
+
+        if (deltaTime > 0.1f)
+            deltaTime = 0.1f;
 
         Frame_context context{
             .deltaTime = deltaTime,

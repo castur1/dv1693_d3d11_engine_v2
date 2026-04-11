@@ -13,7 +13,6 @@ class Scene;
 
 class Entity {
     EntityID uuid;
-    // TODO: Name for debugging/editor
     Scene *scene;
 
     // TODO: Parent/children?
@@ -21,6 +20,7 @@ class Entity {
     std::vector<std::unique_ptr<Component>> components;
 
 public:
+    std::string name; // Debugging
     bool isActive;
 
     Entity(EntityID uuid, Scene *scene, bool isActive = true);
@@ -47,7 +47,8 @@ public:
     T *GetComponent() {
         for (auto &component : this->components) {
             T *ptr = dynamic_cast<T *>(component.get());
-            if (ptr) return ptr;
+            if (ptr) 
+                return ptr;
         }
 
         return nullptr;

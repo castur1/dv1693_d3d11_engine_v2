@@ -35,6 +35,7 @@ public:
     void Render();
 
     bool HasCapturedInput();
+    void DisableCursor();
 
     static bool ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

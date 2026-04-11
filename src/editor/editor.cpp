@@ -4,6 +4,7 @@
 #include "scene/entity.hpp"
 #include "scene/component.hpp"
 #include "editor/imgui_inspector.hpp"
+#include "core/input.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -63,10 +64,11 @@ void Editor::DrawFPSOverlay(float deltaTime) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
     ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoDecoration    |
-        ImGuiWindowFlags_NoInputs        |
-        ImGuiWindowFlags_NoMove          |
-        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoDecoration       |
+        ImGuiWindowFlags_NoInputs           |
+        ImGuiWindowFlags_NoMove             |
+        ImGuiWindowFlags_NoSavedSettings    |
+        ImGuiWindowFlags_NoFocusOnAppearing |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     if (ImGui::Begin("##fps", nullptr, flags)) {
@@ -86,8 +88,8 @@ void Editor::DrawEntityHierarchy(Scene *scene) {
 
     std::vector<Entity *> entities = scene->GetEntities();
 
-    std::string sceneLabel = "Scene [" + std::to_string(entities.size()) + "]"; // TODO: Scene name
-    if (!ImGui::Begin(sceneLabel.c_str(), &this->showEntityHierarchy)) {
+    std::string sceneLabel = "Scene \"" + scene->name + "\"";
+    if (!ImGui::Begin(sceneLabel.c_str(), &this->showEntityHierarchy, ImGuiWindowFlags_NoFocusOnAppearing)) {
         ImGui::End();
         return;
     }
@@ -117,7 +119,7 @@ void Editor::DrawEntityHierarchy(Scene *scene) {
             if (isInactive)
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
 
-            std::string label = uuid.ToString() + " [" + std::to_string(entity->GetComponents().size()) + "]"; // TODO: Entity name
+            std::string label = entity->name.empty() ? uuid.ToString() : entity->name;
 
             bool isOpened = ImGui::TreeNodeEx(label.c_str(), flags);
 
@@ -159,7 +161,7 @@ void Editor::DrawInspector() {
 
     ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
 
-    if (!ImGui::Begin("Inspector", &this->showInspector)) {
+    if (!ImGui::Begin("Inspector", &this->showInspector, ImGuiWindowFlags_NoFocusOnAppearing)) {
         ImGui::End();
         return;
     }
@@ -209,6 +211,14 @@ void Editor::DrawInspector() {
 }
 
 void Editor::NewFrame(float deltaTime, Scene *scene) {
+    // TODO: There's a bug where the game freezes temporarily when a mouse button is held down,
+    // the mouse is captured, and there's an ImGui window over (0, 0)
+    ImGuiIO &io = ImGui::GetIO();
+    if (Input::IsMouseCaptured())
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    else
+        io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -238,6 +248,15 @@ void Editor::Render() {
 bool Editor::HasCapturedInput() {
     ImGuiIO &io = ImGui::GetIO();
     return io.WantCaptureMouse || io.WantCaptureKeyboard;
+}
+
+void Editor::DisableCursor() {
+    ImGuiIO &io = ImGui::GetIO();
+
+    io.MousePos = {-FLT_MAX, -FLT_MAX};
+
+    for (int i = 0; i < ImGuiMouseButton_COUNT; ++i)
+        io.MouseDown[i] = false;
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
