@@ -1,6 +1,7 @@
 #include "transform.hpp"
 #include "core/logging.hpp"
 #include "rendering/renderer.hpp"
+#include "scene/entity.hpp"
 
 Transform::Transform(Entity *owner, bool isActive, const XMFLOAT3 &position, const XMFLOAT3 &rotation, const XMFLOAT3 &scale)
     : Component(owner, isActive), position(position), rotation(rotation), scale(scale) {}
@@ -10,12 +11,35 @@ void Transform::Update(const Frame_context &context) {}
 void Transform::Render(Renderer *renderer) {}
 void Transform::OnDestroy(const Engine_context &context) {}
 
-XMMATRIX Transform::GetWorldMatrix() const {
+XMMATRIX Transform::GetLocalMatrix() const {
     XMMATRIX scaleMatrix = XMMatrixScaling(this->scale.x, this->scale.y, this->scale.z);
     XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
     XMMATRIX translationMatrix = XMMatrixTranslation(this->position.x, this->position.y, this->position.z);
 
     return scaleMatrix * rotationMatrix * translationMatrix; // p' = pABC because row-major
+}
+
+XMMATRIX Transform::GetWorldMatrix() const {
+    XMMATRIX local = this->GetLocalMatrix();
+
+    Entity *owner = this->GetOwner();
+    if (!owner)
+        return local;
+
+    Entity *parent = owner->GetParent();
+    if (!parent)
+        return local;
+
+    Transform *parentTransform = parent->GetComponent<Transform>();
+    if (!parentTransform)
+        return local;
+
+    // CONTINUE HERE! I also need to update the editor entity hierarchy
+
+    // TODO: Caching
+    // This only "works" because parents are updated before their children
+    // (But nothing is stopping a child from updating a parent)
+    return local * parentTransform->GetWorldMatrix();
 }
 
 void Transform::SetPosition(const XMFLOAT3 &position) {

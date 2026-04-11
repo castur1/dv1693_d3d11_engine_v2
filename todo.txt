@@ -8,7 +8,7 @@
     * Hierarchical view frustum culling
     X Normal mapping
 
-* Refactor my Blinn-Phong implementation
+* Refactor the Blinn-Phong implementation
 
 * Bind enums
 
@@ -16,6 +16,6 @@
 
 * Parent-child entity hierarchy
 
-* Continue working on the debug overlay / editor
+    * Add caching to the transform, and the additional methods (SetLocal... vs SetWorld...) 
 
-    * At least display entity names and the scene name
+* Continue working on the debug overlay / editor

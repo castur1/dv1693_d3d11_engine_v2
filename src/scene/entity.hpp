@@ -12,16 +12,17 @@ class Component;
 class Scene;
 
 class Entity {
-    EntityID uuid;
-    Scene *scene;
+    EntityID uuid = EntityID::invalid;
+    Scene *scene  = nullptr;
+    bool isActive = true;
 
-    // TODO: Parent/children?
+    Entity *parent = nullptr;
+    std::vector<Entity *> children;
 
     std::vector<std::unique_ptr<Component>> components;
 
 public:
     std::string name; // Debugging
-    bool isActive;
 
     Entity(EntityID uuid, Scene *scene, bool isActive = true);
     Entity(Scene *scene, bool isActive = true);
@@ -31,6 +32,10 @@ public:
     void Update(const Frame_context &context);
     void Render(Renderer *renderer);
     void OnDestroy(const Engine_context &context);
+
+    void SetParent(Entity *newParent);
+    Entity *GetParent() const;
+    const std::vector<Entity *> &GetChildren() const;
 
     template<typename T, typename... Args>
     T *AddComponent(Args&&... args) {
@@ -55,6 +60,9 @@ public:
     }
 
     std::vector<Component *> GetComponents();
+
+    void SetActive(bool isActive);
+    bool IsActive();
 
     Scene *GetScene() const;
     EntityID GetID() const;

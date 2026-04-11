@@ -193,6 +193,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
 
     FieldWriter fieldWriter;
 
+    std::unordered_map<EntityID, Entity *> localLookup;
+    std::vector<std::pair<Entity *, EntityID>> adoptions;
+
     std::string line;
     int lineNumber = 0;
     bool isInAssetSection = false;
@@ -229,6 +232,7 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 EntityID uuid = EntityID::FromString(uuidStr);
 
                 currentEntity = scene.AddEntity(uuid);
+                localLookup[uuid] = currentEntity;
 
                 LogInfo("Created entity '%s'\n", uuidStr.c_str());
                 LogIndent();
@@ -294,10 +298,16 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                         LogInfo("Entity name: '%s'\n", value.c_str());
                     }
                     else if (key == "isActive") {
-                        currentEntity->isActive = (value == "true" || value == "True" || value == "1");
+                        currentEntity->SetActive(value == "true" || value == "True" || value == "1");
                     }
-                    else if (key == "parent") { // unused
-
+                    else if (key == "parent") {
+                        if (!value.empty() && value != "null") {
+                            EntityID parentUUID = EntityID::FromString(value);
+                            if (parentUUID.IsValid())
+                                adoptions.push_back({currentEntity, parentUUID});
+                            else
+                                LogWarn("Invalid parent UUID '%s' on line %d\n", value.c_str(), lineNumber);
+                        }
                     }
                 }
             }
@@ -326,6 +336,17 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         LogUnindent();
 
     file.close();
+
+    for (auto &[child, parentUUID] : adoptions) {
+        auto iter = localLookup.find(parentUUID);
+        if (iter != localLookup.end()) {
+            child->SetParent(iter->second);
+            LogInfo("Parented entity '%s' to '%s'\n", child->GetID().ToString().c_str(), parentUUID.ToString().c_str());
+        }
+        else {
+            LogWarn("Parent UUID '%s' not found in scene\n", parentUUID.ToString().c_str());
+        }
+    }
 
     if (this->assetManager) {
         for (const AssetID &uuid : assets)

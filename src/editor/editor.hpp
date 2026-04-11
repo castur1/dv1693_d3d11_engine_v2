@@ -18,6 +18,7 @@ class Editor {
     bool showInspector       = true;
 
     void DrawFPSOverlay(float deltaTime);
+    void DrawEntityNodeRecursive(Entity *entity);
     void DrawEntityHierarchy(Scene *scene);
     void DrawInspector();
 

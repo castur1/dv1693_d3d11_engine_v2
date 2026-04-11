@@ -16,6 +16,8 @@ class Scene {
     std::vector<std::unique_ptr<Entity>>   entities;
     std::unordered_map<EntityID, Entity *> uuidLookup;
 
+    std::vector<Entity *> rootEntities;
+
     std::vector<std::unique_ptr<Entity>> entitiesToAdd;
     std::vector<Entity *>                entitiesToRemove;
 
@@ -23,6 +25,9 @@ class Scene {
 
     void ResolveEntitiesToAdd();
     void ResolveEntitiesToDestroy();
+
+    void UpdateEntityRecursive(Entity *entity, const Frame_context &context);
+    void RenderEntityRecursive(Entity *entity, Renderer *renderer);
 
 public:
     std::string name; // Debugging
@@ -41,7 +46,10 @@ public:
     void DestroyEntity(Entity *entity);
     void DestroyEntity(EntityID uuid);
 
+    void OnEntityParentChanged(Entity *entity);
+
     std::vector<Entity *> GetEntities();
+    const std::vector<Entity *> &GetRootEntities() const;
     Entity *GetEntityByUUID(EntityID uuid);
 
     void SetEngineContext(const Engine_context *context);

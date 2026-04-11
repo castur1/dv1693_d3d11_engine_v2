@@ -80,13 +80,61 @@ void Editor::DrawFPSOverlay(float deltaTime) {
     ImGui::PopStyleVar();
 }
 
+void Editor::DrawEntityNodeRecursive(Entity *entity) {
+    if (!entity)
+        return;
+
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+
+    EntityID uuid = entity->GetID();
+    ImGui::PushID(uuid);
+
+    bool isSelected = (entity == this->selectedEntity);
+    bool hasChildren = !entity->GetChildren().empty();
+
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_SpanFullWidth |
+        ImGuiTreeNodeFlags_FramePadding  |
+        ImGuiTreeNodeFlags_DrawLinesFull |
+        ImGuiTreeNodeFlags_OpenOnArrow;
+
+    if (!hasChildren)
+        flags |= ImGuiTreeNodeFlags_Leaf;
+
+    if (isSelected)
+        flags |= ImGuiTreeNodeFlags_Selected;
+
+    std::string label = entity->name.empty() ? uuid.ToString() : entity->name;
+
+    bool isInactive = !entity->IsActive();
+    if (isInactive)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+
+
+    bool isOpened = ImGui::TreeNodeEx(label.c_str(), flags);
+
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        this->selectedEntity = isSelected ? nullptr : entity;
+
+    if (isOpened) {
+        for (Entity *child : entity->GetChildren())
+            this->DrawEntityNodeRecursive(child);
+
+        ImGui::TreePop();
+    }
+
+    if (isInactive)
+        ImGui::PopStyleColor();
+
+    ImGui::PopID();
+}
+
 void Editor::DrawEntityHierarchy(Scene *scene) {
     if (!this->showEntityHierarchy || !scene)
         return;
 
     ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
-
-    std::vector<Entity *> entities = scene->GetEntities();
 
     std::string sceneLabel = "Scene \"" + scene->name + "\"";
     if (!ImGui::Begin(sceneLabel.c_str(), &this->showEntityHierarchy, ImGuiWindowFlags_NoFocusOnAppearing)) {
@@ -95,48 +143,13 @@ void Editor::DrawEntityHierarchy(Scene *scene) {
     }
 
     if (ImGui::BeginTable("##bg", 1, ImGuiTableFlags_RowBg)) {
-        for (Entity *entity : entities) {
-            if (!entity)
-                continue;
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-
-            EntityID uuid = entity->GetID();
-            ImGui::PushID(uuid);
-
-            bool isSelected = (entity == this->selectedEntity);
-
-            ImGuiTreeNodeFlags flags =
-                ImGuiTreeNodeFlags_Leaf          | // TODO: Parent-child hierarchy
-                ImGuiTreeNodeFlags_SpanFullWidth |
-                ImGuiTreeNodeFlags_FramePadding;
-
-            if (isSelected)
-                flags |= ImGuiTreeNodeFlags_Selected;
-
-            bool isInactive = !entity->isActive;
-            if (isInactive)
-                ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-
-            std::string label = entity->name.empty() ? uuid.ToString() : entity->name;
-
-            bool isOpened = ImGui::TreeNodeEx(label.c_str(), flags);
-
-            if (ImGui::IsItemClicked())
-                this->selectedEntity = isSelected ? nullptr : entity;
-
-            if (isInactive)
-                ImGui::PopStyleColor();
-
-            if (isOpened)
-                ImGui::TreePop();
-
-            ImGui::PopID();
-        }
+        const std::vector<Entity *> &roots = scene->GetRootEntities();
+        for (Entity *entity : roots)
+            this->DrawEntityNodeRecursive(entity);
 
         ImGui::EndTable();
     }
+
 
     ImGui::End();
 }
@@ -172,8 +185,13 @@ void Editor::DrawInspector() {
         return;
     }
 
+    ImGui::Text("Name: %s", this->selectedEntity->name.c_str());
     ImGui::Text("UUID: %s", this->selectedEntity->GetID().ToString().c_str());
-    ImGui::Checkbox("isActive", &this->selectedEntity->isActive);
+
+    bool isActive = this->selectedEntity->IsActive();
+    ImGui::Checkbox("isActive", &isActive);
+    this->selectedEntity->SetActive(isActive);
+
     ImGui::Separator();
 
     std::vector<Component *> components = this->selectedEntity->GetComponents();

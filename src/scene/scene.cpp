@@ -8,18 +8,38 @@
 Scene::Scene() : context(nullptr) {}
 Scene::~Scene() {}
 
+void Scene::UpdateEntityRecursive(Entity *entity, const Frame_context &context) {
+    if (!entity->IsActive())
+        return;
+
+    entity->Update(context);
+
+    for (Entity *child : entity->GetChildren())
+        this->UpdateEntityRecursive(child, context);
+}
+
+void Scene::RenderEntityRecursive(Entity *entity, Renderer *renderer) {
+    if (!entity->IsActive())
+        return;
+
+    entity->Render(renderer);
+
+    for (Entity *child : entity->GetChildren())
+        this->RenderEntityRecursive(child, renderer);
+}
+
 void Scene::Update(const Frame_context &context) {
     this->ResolveEntitiesToAdd();
 
-    for (auto &entity : this->entities)
-        entity->Update(context);
+    for (Entity *entity : this->rootEntities)
+        this->UpdateEntityRecursive(entity, context); 
 
     this->ResolveEntitiesToDestroy();
 }
 
 void Scene::Render(Renderer *renderer) {
-    for (auto &entity : this->entities)
-        entity->Render(renderer);
+    for (Entity *entity : this->rootEntities)
+        this->RenderEntityRecursive(entity, renderer); 
 }
 
 void Scene::ResolveEntitiesToAdd() {
@@ -29,12 +49,23 @@ void Scene::ResolveEntitiesToAdd() {
 
         Entity *entity = this->entities.back().get();
         this->uuidLookup[entity->GetID()] = entity;
+
+        if (!entity->GetParent())
+            this->rootEntities.push_back(entity);
+
         entity->OnStart(*this->context);
     }
 }
 
 void Scene::ResolveEntitiesToDestroy() {
     for (Entity *entity : this->entitiesToRemove) {
+        std::vector<Entity *> childrenCopy = entity->GetChildren();
+        for (Entity *child : childrenCopy)
+            child->SetParent(nullptr);
+
+        entity->SetParent(nullptr);
+        this->rootEntities.erase(std::remove(this->rootEntities.begin(), this->rootEntities.end(), entity), this->rootEntities.end());
+
         this->uuidLookup.erase(entity->GetID());
 
         auto iter = std::find_if(
@@ -63,6 +94,8 @@ void Scene::Clear() {
 
     this->entitiesToRemove.clear();
     this->entitiesToAdd.clear();
+
+    this->rootEntities.clear();
 
     this->uuidLookup.clear();
     this->entities.clear();
@@ -99,6 +132,19 @@ void Scene::DestroyEntity(EntityID uuid) {
     this->DestroyEntity(this->GetEntityByUUID(uuid));
 }
 
+void Scene::OnEntityParentChanged(Entity *entity) {
+    if (this->uuidLookup.find(entity->GetID()) == this->uuidLookup.end())
+        return;
+
+    if (entity->GetParent()) {
+        this->rootEntities.erase(std::remove(this->rootEntities.begin(), this->rootEntities.end(), entity), this->rootEntities.end());
+        return;
+    }
+
+    if (std::find(this->rootEntities.begin(), this->rootEntities.end(), entity) == this->rootEntities.end())
+        this->rootEntities.push_back(entity);
+}
+
 std::vector<Entity *> Scene::GetEntities() {
     std::vector<Entity *> result;
     result.reserve(this->entities.size());
@@ -107,6 +153,10 @@ std::vector<Entity *> Scene::GetEntities() {
         result.push_back(entity.get());
 
     return result;
+}
+
+const std::vector<Entity *> &Scene::GetRootEntities() const {
+    return this->rootEntities;
 }
 
 Entity *Scene::GetEntityByUUID(EntityID uuid) {

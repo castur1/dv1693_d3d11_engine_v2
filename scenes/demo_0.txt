@@ -84,7 +84,7 @@ entity 7632-12ac-76de-fe23
         modelID: "5488-7f75-fd77-3eb3"
 
 entity 7432-fe32-48ac-cd73
-    name: "apple"
+    name: "apple_1"
     isActive: true
     parent: null
 
@@ -129,6 +129,21 @@ entity 7432-fe32-48ac-cd73
         pauseDuration: 0.0
         shouldPingPong: false
         easingFunctionType: 0
+
+entity 9347-ad23-cf26-eb95
+    name: "apple_2"
+    isActive: true
+    parent: 7432-fe32-48ac-cd73
+
+    component Transform
+        isActive: true
+        position: [2.0, 0.2, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [0.5, 0.5, 0.5]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
 
 entity faff-6543-8755-014a
     name: "sun"
