@@ -9,19 +9,19 @@ entity a1b2-c3d4-e5f6-0123
     component Transform
         isActive: true
         position: [0.0, 1.0, 0.0]
-        rotation: [-0.15, 0.0, 0.0]
+        rotation: [-10.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component CameraController
         isActive: true
-        fieldOfView: 0.7854
+        fieldOfView: 75.0
         nearPlane: 0.1
         farPlane: 512.0
         moveSpeed: 12.0
         acceleration: 12.0
         drag: 2.0
-        rotationSpeed: 1.5
-        mouseSensitivity: 0.0015
+        rotationSpeed: 90.0
+        mouseSensitivity: 0.09
 
 entity 123a-ffff-3242-0011
     name: "monkey_1"
@@ -31,7 +31,7 @@ entity 123a-ffff-3242-0011
     component Transform
         isActive: true
         position: [0.0, -10.0, 50.0]
-        rotation: [0.0, -1.5708, 0.0]
+        rotation: [0.0, 270.0, 0.0]
         scale: [20.0, 20.0, 20.0]
 
     component ModelRenderer
@@ -46,7 +46,7 @@ entity 8654-adce-1006-0012
     component Transform
         isActive: true
         position: [2.0, 0.0, 5.0]
-        rotation: [0.0, -0.7854, 0.0]
+        rotation: [0.0, 315.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component ModelRenderer
@@ -61,7 +61,7 @@ entity 0142-de23-fa87-1237
     component Transform
         isActive: true
         position: [-8.0, -3.0, 20.0]
-        rotation: [0.0, 3.9270, 0.0]
+        rotation: [0.0, 225.0, 0.0]
         scale: [5.0, 5.0, 5.0]
 
     component ModelRenderer
@@ -120,7 +120,7 @@ entity 7432-fe32-48ac-cd73
         startRotation: [0.0, 0.0, 0.0]
         startScale: [1.0, 1.0, 1.0]
         endPosition: [0.0, 5.0, 0.0]
-        endRotation: [0.0, 6.2832, 0.0]
+        endRotation: [0.0, 360.0, 0.0]
         endScale: [1.0, 1.0, 1.0]
         shouldIgnorePosition: true
         shouldIgnoreRotation: false
@@ -153,7 +153,7 @@ entity faff-6543-8755-014a
     component Transform
         isActive: true
         position: [0.0, 0.0, 0.0]
-        rotation: [0.7854, 0.7854, 0.0]
+        rotation: [45.0, 45.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component DirectionalLight
@@ -170,7 +170,7 @@ entity deef-ac43-8744-0ae2
     component Transform
         isActive: true
         position: [0.0, 14.0, 70.0]
-        rotation: [0.0, 3.1416, 0.0]
+        rotation: [0.0, 180.0, 0.0]
         scale: [0.2, 0.2, 0.2]
 
     component SpotLight
@@ -178,8 +178,8 @@ entity deef-ac43-8744-0ae2
         colour: [0.0, 1.0, 0.0]
         intensity: 15.0
         range: 10.0
-        innerConeAngle: 0.5236
-        outerConeAngle: 0.6981
+        innerConeAngle: 30.0
+        outerConeAngle: 40.0
         castsShadows: true
 
     component ModelRenderer
@@ -189,10 +189,10 @@ entity deef-ac43-8744-0ae2
     component InterpMove
         isActive: true
         startPosition: [0.0, 0.0, 0.0]
-        startRotation: [0.0, 2.7925, 0.0]
+        startRotation: [0.0, 160.0, 0.0]
         startScale: [1.0, 1.0, 1.0]
         endPosition: [0.0, 0.0, 0.0]
-        endRotation: [0.0, 3.4907, 0.0]
+        endRotation: [0.0, 200.0, 0.0]
         endScale: [1.0, 1.0, 1.0]
         shouldIgnorePosition: true
         shouldIgnoreRotation: false

@@ -21,12 +21,11 @@ void CameraController::Update(const Frame_context &context) {
         return;
     }
 
-    XMFLOAT3 position = transform->GetPosition();
-    XMFLOAT3 rotation = transform->GetRotation();
+    XMFLOAT3 rotation = transform->GetLocalRotation();
 
     float &pitch = rotation.x;
-    float &yaw = rotation.y;
-    float &roll = rotation.z;
+    float &yaw   = rotation.y;
+    float &roll  = rotation.z;
 
     if (Input::IsMouseCaptured()) {
         yaw   += this->mouseSensitivity * Input::GetMouseDeltaX();
@@ -44,16 +43,13 @@ void CameraController::Update(const Frame_context &context) {
     if (Input::IsKeyDown(VK_DOWN))
         pitch += rotationSpeed;
 
-    pitch = XMMax(-XM_PIDIV2 + 0.001f, XMMin(XM_PIDIV2 - 0.001f, pitch));
+    pitch = XMMax(-90.0f, XMMin(90.0f, pitch));
 
-    while (yaw >= XM_2PI)
-        yaw -= XM_2PI;
-    while (yaw < 0.0f)
-        yaw += XM_2PI;
+    transform->SetLocalRotation(rotation);
 
-    XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+    XMFLOAT3 position = transform->GetLocalPosition(); // TODO: This could be XMVECTOR
 
-    XMVECTOR right = rotationMatrix.r[0];
+    XMVECTOR right = transform->GetRightV();
     XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     XMVECTOR forward = XMVector3Normalize(XMVector3Cross(right, up));
 
@@ -93,14 +89,13 @@ void CameraController::Update(const Frame_context &context) {
     XMStoreFloat3(&position, positionVector);
     XMStoreFloat3(&this->velocity, velocityVector);
 
-    transform->SetPosition(position);
-    transform->SetRotation(rotation);
+    transform->SetLocalPosition(position);
 
-    forward = rotationMatrix.r[2];
+    forward = transform->GetForwardV();
     XMMATRIX viewMatrix = XMMatrixLookToLH(positionVector, forward, up);
 
     XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
-        this->fieldOfView, 
+        XMConvertToRadians(this->fieldOfView), 
         renderer->GetAspectRatio(), 
         this->nearPlane, 
         this->farPlane

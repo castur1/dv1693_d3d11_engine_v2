@@ -32,12 +32,14 @@ class InterpMove : public Component {
 
 public:
     XMFLOAT3 startPosition = {0.0f, 0.0f, 0.0f};
-    XMFLOAT3 startRotation = {0.0f, 0.0f, 0.0f};
+    XMFLOAT3 startRotation = {0.0f, 0.0f, 0.0f}; // Degrees
     XMFLOAT3 startScale    = {1.0f, 1.0f, 1.0f};
 
     XMFLOAT3 endPosition = {0.0f, 0.0f, 0.0f};
-    XMFLOAT3 endRotation = {0.0f, 0.0f, 0.0f};
+    XMFLOAT3 endRotation = {0.0f, 0.0f, 0.0f}; // Degrees
     XMFLOAT3 endScale    = {1.0f, 1.0f, 1.0f};
+
+    // TODO: Should this work with quaternions instead?
 
     bool shouldIgnorePosition = false;
     bool shouldIgnoreRotation = false;

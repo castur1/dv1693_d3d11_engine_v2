@@ -19,13 +19,13 @@ void SpotLight::Render(Renderer *renderer) {
     }
 
     Spot_light_command slc{};
-    slc.position       = transform->GetPosition();
-    slc.direction      = transform->GetDirectionVector();
+    slc.position       = transform->GetWorldPosition();
+    slc.direction      = transform->GetForward();
     slc.colour         = this->colour;
     slc.intensity      = this->intensity;
     slc.range          = this->range;
-    slc.innerConeAngle = this->innerConeAngle;
-    slc.outerConeAngle = this->outerConeAngle;
+    slc.innerConeAngle = XMConvertToRadians(this->innerConeAngle);
+    slc.outerConeAngle = XMConvertToRadians(this->outerConeAngle);
     slc.castsShadows   = this->castsShadows;
 
     renderer->GetRenderQueue().Submit(slc);

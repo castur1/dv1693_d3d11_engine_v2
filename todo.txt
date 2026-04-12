@@ -12,10 +12,12 @@
 
 * Bind enums
 
+    * This can be solved manually by circumventing BIND, like in Transform
+
 * Ambient Occlusion and other post-processing effects? Bloom?
 
-* Parent-child entity hierarchy
-
-    * Add caching to the transform, and the additional methods (SetLocal... vs SetWorld...) 
-
 * Continue working on the debug overlay / editor
+
+* InterpMove should perhaps store its rotation internally as a quaternion? Worth considering, at least. Or call helper on Transform.
+
+* XMVECTOR versions of Get/Set in Transform

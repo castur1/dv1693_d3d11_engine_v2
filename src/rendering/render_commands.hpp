@@ -36,6 +36,7 @@ struct Spot_light_command {
     float    intensity = 0.0f;
     float    range     = 0.0f;
 
+    // Radians
     float    innerConeAngle = 0.0f;
     float    outerConeAngle = 0.0f;
 

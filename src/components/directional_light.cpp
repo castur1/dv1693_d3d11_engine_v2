@@ -19,7 +19,7 @@ void DirectionalLight::Render(Renderer *renderer) {
     }
 
     Directional_light_command dlc{};
-    dlc.direction     = transform->GetDirectionVector();
+    dlc.direction     = transform->GetForward();
     dlc.colour        = this->colour;
     dlc.intensity     = this->intensity;
     dlc.ambientColour = this->ambient;

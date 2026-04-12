@@ -35,13 +35,13 @@ void InterpMove::EaseHelper(float t) {
     }
 
     if (!this->shouldIgnorePosition)
-        transform->SetPosition(this->startPosition + (this->endPosition - this->startPosition) * t);
+        transform->SetLocalPosition(this->startPosition + (this->endPosition - this->startPosition) * t);
 
     if (!this->shouldIgnoreRotation)
-        transform->SetRotation(this->startRotation + (this->endRotation - this->startRotation) * t);
+        transform->SetLocalRotation(this->startRotation + (this->endRotation - this->startRotation) * t);
 
     if (!this->shouldIgnoreScale)
-        transform->SetScale(this->startScale + (this->endScale - this->startScale) * t);
+        transform->SetLocalScale(this->startScale + (this->endScale - this->startScale) * t);
 }
 
 void InterpMove::EaseLinear() {

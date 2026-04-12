@@ -12,9 +12,9 @@ class SpotLight : public Component {
     float    intensity = 0.0f;
     float    range     = 0.0f;
 
-    // Radians
-    float innerConeAngle = 0.5236f;
-    float outerConeAngle = 0.6981f;
+    // Degrees
+    float innerConeAngle = 30.0f;
+    float outerConeAngle = 40.0f;
 
     bool castsShadows = false;
 

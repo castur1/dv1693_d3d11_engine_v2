@@ -4,19 +4,19 @@
 #include "scene/component.hpp"
 
 class CameraController : public Component {
-    float fieldOfView = 0.7854f;
+    float fieldOfView = 75.0f; // Degrees
     float nearPlane   = 0.1f;
-    float farPlane    = 100.0f;
+    float farPlane    = 512.0f;
 
     XMFLOAT3 velocity{};
 
 public:
-    float moveSpeed    = 8.0f;
+    float moveSpeed    = 12.0f;
     float acceleration = 12.0f;
     float drag         = 2.0f;
 
-    float rotationSpeed    = 1.5f;
-    float mouseSensitivity = 0.0015f;
+    float rotationSpeed    = 90.0;
+    float mouseSensitivity = 0.09f;
 
     CameraController(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~CameraController() = default;
