@@ -40,6 +40,8 @@ public:
     XMFLOAT3 endScale    = {1.0f, 1.0f, 1.0f};
 
     // TODO: Should this work with quaternions instead?
+    // It would make rotations smoother, but can't handle rotations >180 degrees
+    // To be fair, this component probably needs to be reworked anyways. Keyframes?
 
     bool shouldIgnorePosition = false;
     bool shouldIgnoreRotation = false;
@@ -48,7 +50,7 @@ public:
     float moveDuration  = 1.0f;
     float pauseDuration = 0.0f;
 
-    int easingFunctionType = (int)Easing_function_type::linear; // TODO: int to allow for reflection; better way?
+    Easing_function_type easingFunctionType = Easing_function_type::linear;
 
     InterpMove(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~InterpMove() = default;
@@ -75,7 +77,10 @@ public:
         BIND(pauseDuration);
         BIND(shouldPingPong);
 
-        BIND(easingFunctionType); // TODO
+        // TODO: Add enum support to the editor
+        int temp = (int)this->easingFunctionType;
+        inspector->Field("easingFunctionType", temp);
+        this->easingFunctionType = (Easing_function_type)temp;
     }
 
     void SetShouldPingPong(bool shouldPingPong);

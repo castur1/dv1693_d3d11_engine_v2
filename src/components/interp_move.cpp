@@ -128,16 +128,16 @@ void InterpMove::Update(const Frame_context &context) {
         this->UpdateTimersNormal(context.deltaTime);
 
     switch (this->easingFunctionType) {
-        case (int)Easing_function_type::linear: {
+        case Easing_function_type::linear: {
             this->EaseLinear();
         } break;
-        case (int)Easing_function_type::inSine: {
+        case Easing_function_type::inSine: {
             this->EaseInSine();
         } break;
-        case (int)Easing_function_type::outSine: {
+        case Easing_function_type::outSine: {
             this->EaseOutSine();
         } break;
-        case (int)Easing_function_type::inOutSine: {
+        case Easing_function_type::inOutSine: {
             this->EaseInOutSine();
         } break;
     }

@@ -12,12 +12,18 @@
 
 * Bind enums
 
-    * This can be solved manually by circumventing BIND, like in Transform
+    * This can be semi-solved manually by circumventing BIND, like in Transform, but still only int in editor
+
+    * Some way of setting a list of items would be useful as well, like for keyframes and animations
 
 * Ambient Occlusion and other post-processing effects? Bloom?
 
 * Continue working on the debug overlay / editor
 
-* InterpMove should perhaps store its rotation internally as a quaternion? Worth considering, at least. Or call helper on Transform.
+    * Add/remove entities and components
+
+    * Pause and frame-by-frame
+
+    * Display camera position (and rotation)
 
 * XMVECTOR versions of Get/Set in Transform
