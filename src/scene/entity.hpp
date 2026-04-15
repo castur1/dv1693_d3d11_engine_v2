@@ -12,8 +12,9 @@ class Component;
 class Scene;
 
 class Entity {
-    EntityID uuid = EntityID::invalid;
     Scene *scene  = nullptr;
+
+    EntityID uuid = EntityID::invalid;
     bool isActive = true;
 
     Entity *parent = nullptr;
@@ -22,6 +23,8 @@ class Entity {
     std::vector<std::unique_ptr<Component>> components;
 
 public:
+    bool isStatic = false; // TODO: Should this be public?
+
     std::string name; // Debugging
 
     Entity(EntityID uuid, Scene *scene, bool isActive = true);
@@ -30,7 +33,6 @@ public:
 
     void OnStart(const Engine_context &context);
     void Update(const Frame_context &context);
-    void Render(Renderer *renderer);
     void OnDestroy(const Engine_context &context);
 
     void SetParent(Entity *newParent);

@@ -3,6 +3,7 @@
 
 #include "rendering/render_queue.hpp"
 #include "rendering/frame_graph.hpp"
+#include "rendering/render_view.hpp"
 
 #include <Windows.h>
 #include <d3d11.h>
@@ -78,6 +79,8 @@ enum class Sampler_state_type {
     count
 };
 
+class Scene;
+
 class Renderer {
     ID3D11Device           *device           = nullptr;
     ID3D11DeviceContext    *deviceContext    = nullptr;
@@ -92,9 +95,10 @@ class Renderer {
 
     float clearColour[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-    RenderQueue renderQueue;
     FrameGraph frameGraph;
     FrameGraph::TextureHandle backbufferHandle = FrameGraph::INVALID_HANDLE;
+
+    std::vector<Render_view> views;
 
     ID3D11VertexShader  *gBufferVS     = nullptr;
     ID3D11PixelShader   *gBufferPS     = nullptr;
@@ -125,7 +129,9 @@ class Renderer {
     void SetViewport(int width, int height);
 
     void BindCommonSamplerStates();
-    void UploadLightData();
+
+    void UploadPerFrameData(const Render_view &view);
+    void UploadLightData(const Render_view &view);
 
     void BuildFrameGraph();
 
@@ -157,11 +163,14 @@ public:
     bool Initialize(HWND hWnd);
     bool Resize(int width, int height);
 
+    // TODO: Not entirely sure how I feel about this. We need to clear the views before Update,
+    // so begin will need to run before Update, but at the same time it does things that really
+    // should only be done at the start of rendering. Put those in Execute, and maybe rename Begin?
     void Begin();
-    void End();
+    void Execute(Scene *scene);
     void Present();
 
-    void SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position);
+    void AddView(const Render_view &view);
 
     void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug
     int GetDebugMode(); // Debug
@@ -178,7 +187,7 @@ public:
     void SetClearColour(float r, float g, float b, float a = 1.0f);
     const float *GetClearColour() const;
 
-    RenderQueue &GetRenderQueue();
+    std::vector<Render_view> &GetViews();
     FrameGraph &GetFrameGraph();
 
     FrameGraph::TextureHandle GetBackbufferHandle() const;

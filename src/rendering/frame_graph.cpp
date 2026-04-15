@@ -31,6 +31,14 @@ void FrameGraph::RenderPassBuilder::WritesBackbuffer() {
     this->frameGraph.renderPasses[this->passHandle]->writesBackbuffer = true;
 }
 
+Render_view *FrameGraph::ExecutionContext::GetView(View_type type, int index = 0) {
+    for (Render_view &view : this->views)
+        if (view.type == type && view.index == index)
+            return &view;
+
+    return nullptr;
+}
+
 ID3D11ShaderResourceView *FrameGraph::ExecutionContext::GetShaderResourceView(TextureHandle handle) const {
     if (handle == INVALID_HANDLE || handle >= this->frameGraph.textureResources.size())
         return nullptr;
@@ -447,13 +455,13 @@ void FrameGraph::OnResize(int width, int height) {
     this->Compile(width, height);
 }
 
-void FrameGraph::Execute(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue) {
+void FrameGraph::Execute(ID3D11DeviceContext *deviceContext, std::vector<Render_view> &views) {
     if (!this->isCompiled) {
         LogWarn("Tried to execute uncompiled frame graph!\n");
         return;
     }
 
-    ExecutionContext context(deviceContext, renderQueue, *this);
+    ExecutionContext context(deviceContext, views, *this);
 
     for (PassHandle passHandle : this->sortedPassHandles)
         this->renderPasses[passHandle]->Execute(context);

@@ -350,6 +350,8 @@ void Renderer::BindCommonSamplerStates() {
     this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
 }
 
+// CONTINUE HERE!
+
 void Renderer::UploadLightData() {
     Lighting_data lightingData{};
 

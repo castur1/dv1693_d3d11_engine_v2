@@ -4,7 +4,12 @@
 #include "scene/component_registry.hpp"
 #include "core/frame_context.hpp"
 
-class Renderer;
+#include <DirectXCollision.h>
+
+using namespace DirectX;
+
+class RenderQueue;
+struct Render_view;
 class Entity;
 
 class Component {
@@ -18,8 +23,10 @@ public:
 
     virtual void OnStart(const Engine_context &context) = 0;
     virtual void Update(const Frame_context &context) = 0;
-    virtual void Render(Renderer *renderer) = 0;
+    virtual void Render(const Render_view &view, RenderQueue &queue) = 0;
     virtual void OnDestroy(const Engine_context &context) = 0;
+
+    virtual bool GetWorldBounds(BoundingBox &outBox) const { return false; }
 
     virtual void Reflect(ComponentRegistry::Inspector *inspector) = 0;
 

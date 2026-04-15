@@ -18,11 +18,6 @@ void Entity::Update(const Frame_context &context) {
         component->Update(context);
 }
 
-void Entity::Render(Renderer *renderer) {
-    for (auto &component : this->components)
-        component->Render(renderer);
-}
-
 void Entity::OnDestroy(const Engine_context &context) {
     for (auto &component : this->components)
         component->OnDestroy(context);

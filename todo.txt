@@ -27,3 +27,29 @@
     * Display camera position (and rotation)
 
 * XMVECTOR versions of Get/Set in Transform
+
+* Minor problem with the current component culling approach is that only whole models are culled or not, rather than
+its sub-models. Culling the sub-models could potentially be faster but there's no good way of doing that if we're culling the
+entire component.
+
+
+
+I want to implement HVFC next. To make this work I need to rethink the way components submit themselves to be rendered,
+and I need to rework how the camera is handled. The engine currently assumes only one view per frame, basically.
+Culling has to be done before render commands are submitted. Instead of components pushing commands to the renderer,
+I think that the renderer needs to pull commands from the components. For each view (RenderView?) we would check against the components'
+bounding boxes (GetWorldBounds or something), and call Render on the ones that are visible. Component::Render() would take 
+in a RenderQueue instead of Renderer (?). The Octree lives on the scene. Would Renderer call SceneManager? No, it's given the current scene 
+in Application::Render(), and we rework the Begin(), Render(), End() pattern. Deduplication in the octree with vector + sort 
++ unique, store Component* and bounding box? isStatic flag on entities but also store in 2 seperate vectors. We have one RenderQueue
+per RenderView, and we populate it before the frame graph by iterating over all the views. All those RenderViews then need to be
+submitted to the frame graph somehow (as part of ExecutionContext probably). We can reuse the same render pass execution function for 
+multiple different passes, and provide different RenderViews. How do we know which RenderView to use if we have a variable 
+number of RenderViews? Also remove SetCameraData probably. Still need some way for cube map etc. to submit itself, maybe in Update()?
+
+It's a bit of a mess, but that's where my thoughts currently are. Essentially, we do the culling per-component (octree for static, 
+brute-force for dynamic), remove duplicate entries, then iterate over all the components that should be rendered. Instead of passing the 
+Renderer to Component::Render() directly, we pass a reference to the RenderQueue of the current RenderView. That way each RenderView then 
+has a culled list of all the relevant render commands. Instead of pushing data from the Components to the Renderer, we have the Renderer 
+pull the data from the Components (through Scene), if that makes sense. That way Renderer is in control of all the rendering, as it should 
+be, while still having loose coupling.

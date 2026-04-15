@@ -2,6 +2,7 @@
 #define FRAME_GRAPH_HPP
 
 #include "rendering/render_queue.hpp"
+#include "rendering/render_view.hpp"
 
 #include <d3d11.h>
 #include <cstdint>
@@ -56,15 +57,17 @@ public:
         friend class FrameGraph;
 
         ID3D11DeviceContext *deviceContext;
-        RenderQueue &renderQueue;
+        std::vector<Render_view> &views;
         FrameGraph &frameGraph;
 
-        ExecutionContext(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue, FrameGraph &frameGraph)
-            : deviceContext(deviceContext), renderQueue(renderQueue), frameGraph(frameGraph) {}
+        ExecutionContext(ID3D11DeviceContext *deviceContext, std::vector<Render_view> &views, FrameGraph &frameGraph)
+            : deviceContext(deviceContext), views(views), frameGraph(frameGraph) {}
 
     public:
         ID3D11DeviceContext *GetDeviceContext()  { return this->deviceContext; }
-        RenderQueue &GetRenderQueue() { return this->renderQueue; }
+        std::vector<Render_view> &GetViews() { return this->views; }
+
+        Render_view *GetView(View_type type, int index = 0);
 
         ID3D11ShaderResourceView *GetShaderResourceView(TextureHandle handle) const;
         ID3D11RenderTargetView *GetRenderTargetView(TextureHandle handle) const;
@@ -187,7 +190,7 @@ public:
     void Compile(int backbufferWidth, int backbufferHeight);
     void OnResize(int width, int height);
 
-    void Execute(ID3D11DeviceContext *deviceContext, RenderQueue &renderQueue);
+    void Execute(ID3D11DeviceContext *deviceContext, std::vector<Render_view> &views);
 
     void Clear();
 

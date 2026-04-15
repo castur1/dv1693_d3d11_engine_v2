@@ -3,6 +3,7 @@
 
 #include "core/uuid.hpp"
 #include "core/frame_context.hpp"
+#include "scene/scene_culler.hpp"
 
 #include <vector>
 #include <memory>
@@ -23,11 +24,14 @@ class Scene {
 
     const Engine_context *context;
 
+    SceneCuller culler;
+
+    std::vector<Component *> unculledComponents; // TODO: I don't know how I feel about this. Store somewhere else, or rethink?
+
     void ResolveEntitiesToAdd();
     void ResolveEntitiesToDestroy();
 
     void UpdateEntityRecursive(Entity *entity, const Frame_context &context);
-    void RenderEntityRecursive(Entity *entity, Renderer *renderer);
 
 public:
     std::string name; // Debugging
@@ -36,7 +40,8 @@ public:
     ~Scene();
 
     void Update(const Frame_context &context);
-    void Render(Renderer *renderer);
+    
+    void GatherVisibility(std::vector<Render_view> &views); // TODO: Don't know how I feel about this name
 
     void Clear();
 
