@@ -30,7 +30,6 @@ public:
     void RequestSceneChange(const std::string &name);
 
     void Update(const Frame_context &context);
-    void Render(Renderer *renderer);
 
     Scene *GetCurrentScene();
 };

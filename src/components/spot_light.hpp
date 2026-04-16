@@ -24,7 +24,7 @@ public:
 
     void OnStart(const Engine_context &context) override;
     void Update(const Frame_context &context) override;
-    void Render(Renderer *renderer) override;
+    void Render(const Render_view &view, RenderQueue &queue) override;
     void OnDestroy(const Engine_context &context) override;
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {

@@ -8,7 +8,7 @@
 void DirectionalLight::OnStart(const Engine_context &context) {}
 void DirectionalLight::Update(const Frame_context &context) {}
 
-void DirectionalLight::Render(Renderer *renderer) {
+void DirectionalLight::Render(const Render_view &view, RenderQueue &queue) {
     if (!this->isActive)
         return;
 
@@ -24,7 +24,7 @@ void DirectionalLight::Render(Renderer *renderer) {
     dlc.intensity     = this->intensity;
     dlc.ambientColour = this->ambient;
 
-    renderer->GetRenderQueue().Submit(dlc);
+    queue.Submit(dlc);
 }
 
 void DirectionalLight::OnDestroy(const Engine_context &context) {}

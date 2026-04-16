@@ -8,7 +8,7 @@
 void SpotLight::OnStart(const Engine_context &context) {}
 void SpotLight::Update(const Frame_context &context) {}
 
-void SpotLight::Render(Renderer *renderer) {
+void SpotLight::Render(const Render_view &view, RenderQueue &queue) {
     if (!this->isActive)
         return;
 
@@ -28,7 +28,7 @@ void SpotLight::Render(Renderer *renderer) {
     slc.outerConeAngle = XMConvertToRadians(this->outerConeAngle);
     slc.castsShadows   = this->castsShadows;
 
-    renderer->GetRenderQueue().Submit(slc);
+    queue.Submit(slc);
 }
 
 void SpotLight::OnDestroy(const Engine_context &context) {}

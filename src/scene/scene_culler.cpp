@@ -3,6 +3,8 @@
 #include "core/logging.hpp"
 #include "rendering/render_view.hpp"
 
+#include <algorithm>
+
 BoundingBox Octree::GetChildBounds(const BoundingBox &parent, int index) {
     XMFLOAT3 extents = {
         parent.Extents.x * 0.5f,
@@ -105,6 +107,12 @@ void Octree::Clear() {
     this->root.reset();
 }
 
+int Octree::Count() const {
+    std::vector<Component *> components;
+    this->CollectAll(this->root.get(), components);
+    return components.size();
+}
+
 void SceneCuller::AddComponent(Component *component, bool isStatic) {
     BoundingBox bounds;
     if (!component->GetWorldBounds(bounds))
@@ -161,6 +169,8 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
         // static
         this->octree.Query(view.frustum, visible);
 
+        int count = visible.size();
+
         // dynamic
         for (Component *component : this->dynamicRenderables) {
             BoundingBox bounds;
@@ -170,6 +180,19 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
             if (view.frustum.Contains(bounds) != DISJOINT)
                 visible.push_back(component);
         }
+
+        int dynamicCount = visible.size() - count;
+
+        std::sort(visible.begin(), visible.end());
+        visible.erase(std::unique(visible.begin(), visible.end()), visible.end());
+
+        int staticCount = visible.size() - dynamicCount;
+
+        for (Component *component : visible)
+            component->Render(view, view.queue);
+
+        // LogInfo("Culled dynamic: %d/%d\n", (int)this->dynamicRenderables.size() - dynamicCount, (int)this->dynamicRenderables.size());
+        // LogInfo("Culled static: %d/%d\n", this->octree.Count() - staticCount, this->octree.Count());
     }
 }
 

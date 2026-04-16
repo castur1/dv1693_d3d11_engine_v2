@@ -35,7 +35,7 @@ public:
 
     void OnStart(const Engine_context &context) override {}
     void Update(const Frame_context &context) override {}
-    void Render(Renderer *renderer) override {}
+    void Render(const Render_view &view, RenderQueue &queue) override {}
     void OnDestroy(const Engine_context &context) override {}
 
     // NOTE: This doesn't use BIND to provide a cleaner interface
@@ -100,6 +100,8 @@ public:
     // World space -> Local space
     XMFLOAT3 InverseTransformPoint(const XMFLOAT3 &worldPoint) const;
     XMFLOAT3 InverseTransformDirection(const XMFLOAT3 &worldDirection) const;
+
+    bool IsWorldDirty() const { return this->isWorldDirty; }
 };
 
 REGISTER_COMPONENT(Transform);

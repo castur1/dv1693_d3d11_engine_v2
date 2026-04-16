@@ -23,7 +23,7 @@ class Entity {
     std::vector<std::unique_ptr<Component>> components;
 
 public:
-    bool isStatic = false; // TODO: Should this be public?
+    bool isStatic = false; // TODO: Should this really be public?
 
     std::string name; // Debugging
 

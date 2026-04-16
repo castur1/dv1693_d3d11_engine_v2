@@ -6,13 +6,31 @@
 #include "rendering/render_queue.hpp"
 #include "rendering/renderer.hpp"
 
+void ModelRenderer::UpdateWorldBounds() const {
+    Model *model = this->modelHandle.Get();
+    if (!model) {
+        LogWarn("Model was nullptr\n");
+        return;
+    }
+
+    Transform *transform = this->GetOwner()->GetComponent<Transform>();
+    if (!transform) {
+        LogWarn("Transform was nullptr\n");
+        return;
+    }
+
+    model->localBounds.Transform(this->cachedWorldBounds, transform->GetWorldMatrix());
+    this->isWorldBoundsDirty = false;
+}
+
 void ModelRenderer::OnStart(const Engine_context &context) {
     this->modelHandle = context.assetManager->GetHandle<Model>(this->modelID);
+    this->isWorldBoundsDirty = true;
 }
 
 void ModelRenderer::Update(const Frame_context &context) {}
 
-void ModelRenderer::Render(Renderer *renderer) {
+void ModelRenderer::Render(const Render_view &view, RenderQueue &queue) {
     if (!this->isActive)
         return;
 
@@ -22,9 +40,9 @@ void ModelRenderer::Render(Renderer *renderer) {
         return;
     }
 
-    const XMMATRIX worldMatrix = XMMatrixTranspose(transform->GetWorldMatrix());
+    // TODO: Do culling per sub-model
 
-    RenderQueue &queue = renderer->GetRenderQueue();
+    const XMMATRIX worldMatrix = XMMatrixTranspose(transform->GetWorldMatrix());
 
     Model *model = this->modelHandle.Get();
     for (int i = 0; i < model->subModels.size(); ++i) {
@@ -48,3 +66,26 @@ void ModelRenderer::Render(Renderer *renderer) {
 }
 
 void ModelRenderer::OnDestroy(const Engine_context &context) {}
+
+bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
+    Model *model = this->modelHandle.Get();
+    if (!model) {
+        LogWarn("Model was nullptr\n");
+        return true;
+    }
+
+    Transform *transform = this->GetOwner()->GetComponent<Transform>();
+    if (!transform) {
+        LogWarn("Transform was nullptr\n");
+        return true;
+    }
+
+    if (transform->IsWorldDirty())
+        this->isWorldBoundsDirty = true;
+
+    if (this->isWorldBoundsDirty)
+        this->UpdateWorldBounds();
+
+    outBounds = this->cachedWorldBounds;
+    return true;
+}

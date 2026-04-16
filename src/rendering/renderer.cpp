@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 #include "core/logging.hpp"
 #include "resources/asset_manager.hpp"
+#include "scene/scene.hpp"
 
 #include <fstream>
 #include <vector>
@@ -348,22 +349,32 @@ void Renderer::SetViewport(int width, int height) {
 
 void Renderer::BindCommonSamplerStates() {
     this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
+    this->deviceContext->CSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
 }
 
-// CONTINUE HERE!
+void Renderer::UploadPerFrameData(const Render_view &view) {
+    Per_frame_data data{};
+    data.viewMatrix              = view.viewMatrix;
+    data.projectionMatrix        = view.projectionMatrix;
+    data.viewProjectionMatrix    = view.viewProjectionMatrix;
+    data.invViewProjectionMatrix = view.invViewProjectionMatrix;
+    data.cameraPosition          = view.cameraPosition;
 
-void Renderer::UploadLightData() {
+    this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, data);
+}
+
+void Renderer::UploadLightData(const Render_view &view) {
     Lighting_data lightingData{};
 
-    if (this->renderQueue.directionalLightCommand.has_value()) {
-        const Directional_light_command &dlc = this->renderQueue.directionalLightCommand.value();
+    if (view.queue.directionalLightCommand.has_value()) {
+        const Directional_light_command &dlc = view.queue.directionalLightCommand.value();
         lightingData.directionalLightDirection = dlc.direction;
         lightingData.directionalLightColour    = dlc.colour;
         lightingData.directionalLightIntensity = dlc.intensity;
         lightingData.ambientColour             = dlc.ambientColour;
     }
 
-    lightingData.spotLightCount = min(Renderer::MAX_SPOT_LIGHTS, this->renderQueue.spotLightCommands.size());
+    lightingData.spotLightCount = min(MAX_SPOT_LIGHTS, view.queue.spotLightCommands.size());
 
     this->UploadConstantBuffer<Lighting_data>(this->lightingBuffer, lightingData);
 
@@ -379,7 +390,7 @@ void Renderer::UploadLightData() {
 
     Spot_light_data *dest = static_cast<Spot_light_data *>(mapped.pData);
     for (int i = 0; i < lightingData.spotLightCount; ++i) {
-        const Spot_light_command &src = this->renderQueue.spotLightCommands[i];
+        const Spot_light_command &src = view.queue.spotLightCommands[i];
         dest[i].position      = src.position;
         dest[i].intensity     = src.intensity;
         dest[i].direction     = src.direction;
@@ -449,6 +460,14 @@ void Renderer::BuildFrameGraph() {
         [this](const Geometry_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
+            Render_view *view = context.GetView(View_type::primary);
+            if (!view) {
+                LogWarn("View was nullptr\n");
+                return;
+            }
+
+            this->UploadPerFrameData(*view);
+
             ID3D11RenderTargetView *rtvs[3] = {
                 context.GetRenderTargetView(data.albedo),
                 context.GetRenderTargetView(data.normal),
@@ -475,7 +494,7 @@ void Renderer::BuildFrameGraph() {
 
             deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
 
-            for (Geometry_command &command : context.GetRenderQueue().geometryCommands) {
+            for (Geometry_command &command : view->queue.geometryCommands) {
                 Per_object_data perObjectData{};
                 perObjectData.worldMatrix = command.worldMatrix;
                 XMStoreFloat4x4(
@@ -542,6 +561,14 @@ void Renderer::BuildFrameGraph() {
         [this](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
+            Render_view *view = context.GetView(View_type::primary);
+            if (!view) {
+                LogWarn("View was nullptr\n");
+                return;
+            }
+
+            this->UploadLightData(*view);
+
             deviceContext->CSSetShader(this->lightingCS, nullptr, 0);
             deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
             deviceContext->CSSetConstantBuffers(1, 1, &this->lightingBuffer);
@@ -603,6 +630,13 @@ void Renderer::BuildFrameGraph() {
         [this](const Resolve_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
+            Render_view *view = context.GetView(View_type::primary);
+            if (view) {
+                this->currentDebugData.nearPlane = view->nearPlane;
+                this->currentDebugData.farPlane  = view->farPlane;
+            }
+
+            this->UploadConstantBuffer<Debug_resolve_data>(this->debugResolveBuffer, this->currentDebugData);
             deviceContext->PSSetConstantBuffers(3, 1, &this->debugResolveBuffer); // Debug
 
             ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);
@@ -714,7 +748,14 @@ bool Renderer::Resize(int width, int height) {
 }
 
 void Renderer::Begin() {
-    this->renderQueue.Clear();
+    this->views.clear();
+}
+
+void Renderer::Render(Scene *scene) {
+    if (!scene) {
+        LogWarn("Scene was nullptr\n");
+        return;
+    }
 
     this->frameGraph.UpdateImportedTexture(
         this->backbufferHandle,
@@ -725,14 +766,10 @@ void Renderer::Begin() {
     deviceContext->RSSetViewports(1, &this->viewport);
 
     this->BindCommonSamplerStates();
-}
 
-void Renderer::End() {
-    this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, this->currentFrameData);
-    this->UploadConstantBuffer<Debug_resolve_data>(this->debugResolveBuffer, this->currentDebugData); // Debug
-    this->UploadLightData();
+    scene->GatherVisibility(this->views);
 
-    this->frameGraph.Execute(this->deviceContext, this->renderQueue);
+    this->frameGraph.Execute(this->deviceContext, this->views);
 
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 }
@@ -741,17 +778,36 @@ void Renderer::Present() {
     this->swapChain->Present(0, 0);
 }
 
-void Renderer::SetCameraData(const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
+void Renderer::AddView(const Render_view &view) {
+    this->views.push_back(view);
+}
+
+void Renderer::AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
+    Render_view v{};
+    v.type  = view.type;
+    v.index = view.index;
+
+    v.nearPlane = view.nearPlane;
+    v.farPlane  = view.farPlane;
+
+    XMMATRIX worldMatrix = XMMatrixInverse(nullptr, viewMatrix);
+
     XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
     XMMATRIX invViewProjectionMatrix = XMMatrixInverse(nullptr, viewProjectionMatrix);
 
-    XMStoreFloat4x4(&this->currentFrameData.viewMatrix, XMMatrixTranspose(viewMatrix));
-    XMStoreFloat4x4(&this->currentFrameData.projectionMatrix, XMMatrixTranspose(projectionMatrix));
-    XMStoreFloat4x4(&this->currentFrameData.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
-    XMStoreFloat4x4(&this->currentFrameData.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
+    XMStoreFloat4x4(&v.viewMatrix, XMMatrixTranspose(viewMatrix));
+    XMStoreFloat4x4(&v.projectionMatrix, XMMatrixTranspose(projectionMatrix));
+    XMStoreFloat4x4(&v.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
+    XMStoreFloat4x4(&v.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
 
-    this->currentFrameData.cameraPosition = position;
+    v.cameraPosition = position;
+
+    BoundingFrustum::CreateFromMatrix(v.frustum, projectionMatrix);
+    v.frustum.Transform(v.frustum, worldMatrix);
+
+    this->AddView(v);
 }
+
  // Debug
 void Renderer::SetDebugData(int debugMode, float nearPlane, float farPlane) {
     this->currentDebugData.debugMode = debugMode;
@@ -810,8 +866,8 @@ const float *Renderer::GetClearColour() const {
     return this->clearColour;
 }
 
-RenderQueue &Renderer::GetRenderQueue() {
-    return this->renderQueue;
+std::vector<Render_view> &Renderer::GetViews() {
+    return this->views;
 }
 
 FrameGraph &Renderer::GetFrameGraph() {

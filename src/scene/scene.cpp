@@ -2,6 +2,7 @@
 #include "scene/entity.hpp"
 #include "rendering/renderer.hpp"
 #include "core/logging.hpp"
+#include "scene/component.hpp"
 
 #include <algorithm>
 
@@ -18,16 +19,6 @@ void Scene::UpdateEntityRecursive(Entity *entity, const Frame_context &context) 
         this->UpdateEntityRecursive(child, context);
 }
 
-void Scene::RenderEntityRecursive(Entity *entity, Renderer *renderer) {
-    if (!entity->IsActive())
-        return;
-
-    entity->Render(renderer);
-
-    for (Entity *child : entity->GetChildren())
-        this->RenderEntityRecursive(child, renderer);
-}
-
 void Scene::Update(const Frame_context &context) {
     this->ResolveEntitiesToAdd();
 
@@ -37,12 +28,18 @@ void Scene::Update(const Frame_context &context) {
     this->ResolveEntitiesToDestroy();
 }
 
-void Scene::Render(Renderer *renderer) {
-    for (Entity *entity : this->rootEntities)
-        this->RenderEntityRecursive(entity, renderer); 
+void Scene::GatherVisibility(std::vector<Render_view> &views) {
+    this->culler.GatherVisibility(views);
+
+    for (Render_view &view : views)
+        for (Component *component : this->unculledComponents)
+            if (component && component->GetOwner() && component->GetOwner()->IsActive())
+                component->Render(view, view.queue);
 }
 
 void Scene::ResolveEntitiesToAdd() {
+    bool didAddStatic = false;
+
     while (!this->entitiesToAdd.empty()) {
         this->entities.push_back(std::move(this->entitiesToAdd.back()));
         this->entitiesToAdd.pop_back();
@@ -54,7 +51,22 @@ void Scene::ResolveEntitiesToAdd() {
             this->rootEntities.push_back(entity);
 
         entity->OnStart(*this->context);
+
+        for (Component *component : entity->GetComponents()) {
+            BoundingBox bounds;
+            if (!component->GetWorldBounds(bounds)) {
+                this->unculledComponents.push_back(component);
+                continue;
+            }
+
+            this->culler.AddComponent(component, entity->isStatic);
+            if (entity->isStatic)
+                didAddStatic = true;
+        }
     }
+
+    if (didAddStatic || this->culler.NeedsRebuild())
+        this->culler.Build();
 }
 
 void Scene::ResolveEntitiesToDestroy() {
@@ -65,6 +77,15 @@ void Scene::ResolveEntitiesToDestroy() {
 
         entity->SetParent(nullptr);
         this->rootEntities.erase(std::remove(this->rootEntities.begin(), this->rootEntities.end(), entity), this->rootEntities.end());
+
+        for (Component *component : entity->GetComponents()) {
+            this->culler.RemoveComponent(component);
+
+            this->unculledComponents.erase(
+                std::remove(this->unculledComponents.begin(), this->unculledComponents.end(), component), 
+                this->unculledComponents.end()
+            );
+        }
 
         this->uuidLookup.erase(entity->GetID());
 
@@ -86,11 +107,17 @@ void Scene::ResolveEntitiesToDestroy() {
     }
 
     this->entitiesToRemove.clear();
+
+    if (this->culler.NeedsRebuild())
+        this->culler.Build();
 }
 
 void Scene::Clear() {
     for (auto &entity : this->entities)
         entity->OnDestroy(*this->context);
+
+    this->culler.Clear();
+    this->unculledComponents.clear();
 
     this->entitiesToRemove.clear();
     this->entitiesToAdd.clear();

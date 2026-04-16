@@ -92,7 +92,7 @@ void CameraController::Update(const Frame_context &context) {
     transform->SetLocalPosition(position);
 
     forward = transform->GetForwardV();
-    XMMATRIX viewMatrix = XMMatrixLookToLH(positionVector, forward, up);
+    XMMATRIX viewMatrix = XMMatrixInverse(nullptr, transform->GetWorldMatrix());
 
     XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
         XMConvertToRadians(this->fieldOfView), 
@@ -101,7 +101,14 @@ void CameraController::Update(const Frame_context &context) {
         this->farPlane
     );
 
-    renderer->SetCameraData(viewMatrix, projectionMatrix, position);
+    Render_view view{};
+    view.type  = View_type::primary;
+    view.index = 0;
+
+    view.nearPlane = this->nearPlane;
+    view.farPlane  = this->farPlane;
+
+    context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix, transform->GetWorldPosition());
 
     // Debug //
 
@@ -117,6 +124,6 @@ void CameraController::Update(const Frame_context &context) {
     }
 }
 
-void CameraController::Render(Renderer *renderer) {}
+void CameraController::Render(const Render_view &view, RenderQueue &queue) {}
 
 void CameraController::OnDestroy(const Engine_context &context) {}

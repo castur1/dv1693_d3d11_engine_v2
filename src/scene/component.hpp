@@ -26,7 +26,7 @@ public:
     virtual void Render(const Render_view &view, RenderQueue &queue) = 0;
     virtual void OnDestroy(const Engine_context &context) = 0;
 
-    virtual bool GetWorldBounds(BoundingBox &outBox) const { return false; }
+    virtual bool GetWorldBounds(BoundingBox &outBounds) const { return false; }
 
     virtual void Reflect(ComponentRegistry::Inspector *inspector) = 0;
 

@@ -31,7 +31,7 @@ void FrameGraph::RenderPassBuilder::WritesBackbuffer() {
     this->frameGraph.renderPasses[this->passHandle]->writesBackbuffer = true;
 }
 
-Render_view *FrameGraph::ExecutionContext::GetView(View_type type, int index = 0) {
+Render_view *FrameGraph::ExecutionContext::GetView(View_type type, int index) {
     for (Render_view &view : this->views)
         if (view.type == type && view.index == index)
             return &view;

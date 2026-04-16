@@ -143,7 +143,7 @@ void InterpMove::Update(const Frame_context &context) {
     }
 }
 
-void InterpMove::Render(Renderer *renderer) {}
+void InterpMove::Render(const Render_view &view, RenderQueue &queue) {}
 void InterpMove::OnDestroy(const Engine_context &context) {}
 
 void InterpMove::SetShouldPingPong(bool shouldPingPong) {

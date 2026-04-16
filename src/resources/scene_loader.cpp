@@ -200,6 +200,8 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
     int lineNumber = 0;
     bool isInAssetSection = false;
 
+    // TODO: isStatic parsing
+
     while (std::getline(file, line)) {
         ++lineNumber;
 
@@ -299,6 +301,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                     }
                     else if (key == "isActive") {
                         currentEntity->SetActive(value == "true" || value == "True" || value == "1");
+                    }
+                    else if (key == "isStatic") {
+                        currentEntity->isStatic = (value == "true" || value == "True" || value == "1");
                     }
                     else if (key == "parent") {
                         if (!value.empty() && value != "null") {

@@ -42,9 +42,7 @@ void Application::Update(const Frame_context &context) {
 }
 
 void Application::Render(float deltaTime) {
-    this->renderer.Begin();
-    this->sceneManager.Render(&this->renderer);
-    this->renderer.End();
+    this->renderer.Render(this->sceneManager.GetCurrentScene());
 
     if (this->isEditorEnabled) {
         this->editor.NewFrame(deltaTime, this->sceneManager.GetCurrentScene());
@@ -149,6 +147,7 @@ void Application::Run() {
             .engineContext = this->context
         };
 
+        this->renderer.Begin();
         this->Update(context);
         this->Render(deltaTime);
     }

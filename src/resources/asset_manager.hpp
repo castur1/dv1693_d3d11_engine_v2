@@ -18,7 +18,7 @@ class AssetHandle {
     AssetID uuid = AssetID::invalid;
     // NOTE: This pointer only valid as long as the asset don't get unloaded.
     // Right now assets only get unloaded on scene change, so this is fine.
-    T *cachedPtr = nullptr;
+    mutable T *cachedPtr = nullptr;
 
     AssetManager *assetManager = nullptr;
 
@@ -30,7 +30,7 @@ public:
 
     ~AssetHandle() = default;
 
-    T *Get();
+    T *Get() const;
 };
 
 class AssetManager {
@@ -174,7 +174,7 @@ public:
 };
 
 template <typename T>
-T *AssetHandle<T>::Get() {
+T *AssetHandle<T>::Get() const {
     if (cachedPtr)
         return cachedPtr;
 

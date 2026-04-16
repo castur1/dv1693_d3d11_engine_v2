@@ -3,6 +3,8 @@
 
 #include "resources/asset_manager.hpp"
 
+#include <DirectXCollision.h>
+
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
@@ -107,6 +109,8 @@ struct Model {
     ID3D11Buffer *vertexBuffer = nullptr;
     ID3D11Buffer *indexBuffer  = nullptr;
 
+    BoundingBox localBounds;
+
     struct Mesh {
         UINT indexCount;
         UINT startIndex;
@@ -116,6 +120,7 @@ struct Model {
     struct Sub_model {
         Mesh mesh;
         AssetHandle<Material> material;
+        BoundingBox localBounds;
     };
 
     std::vector<Sub_model> subModels;

@@ -230,14 +230,19 @@ Model *ModelLoader::Load(const std::string &path) {
     std::vector<UINT> finalIndices;
 
     for (int i = 0; i < buckets.size(); ++i) {
-        if (buckets[i].vertices.empty())
+        Mesh_bucket &bucket = buckets[i];
+
+        if (bucket.vertices.empty())
             continue;
 
         Model::Sub_model subModel;
 
         subModel.mesh.startIndex = finalIndices.size();
-        subModel.mesh.indexCount = buckets[i].indices.size();
+        subModel.mesh.indexCount = bucket.indices.size();
         subModel.mesh.baseVertex = 0;
+
+        BoundingBox::CreateFromPoints(subModel.localBounds, bucket.vertices.size(), &bucket.vertices[0].position, sizeof(Vertex));
+        BoundingBox::CreateMerged(newModel->localBounds, newModel->localBounds, subModel.localBounds);
 
         if (i < modelMaterials.size())
             subModel.material = modelMaterials[i];
@@ -245,10 +250,10 @@ Model *ModelLoader::Load(const std::string &path) {
             subModel.material = this->assetManager->GetHandle<Material>(AssetID::invalid);
 
         int indexOffset = finalVertices.size();
-        for (UINT index : buckets[i].indices)
+        for (UINT index : bucket.indices)
             finalIndices.push_back(index + indexOffset);
 
-        finalVertices.insert(finalVertices.end(), buckets[i].vertices.begin(), buckets[i].vertices.end());
+        finalVertices.insert(finalVertices.end(), bucket.vertices.begin(), bucket.vertices.end());
 
         newModel->subModels.push_back(subModel);
     }

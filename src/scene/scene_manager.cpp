@@ -46,10 +46,6 @@ void SceneManager::Update(const Frame_context &context) {
     this->currentScene.Update(context);
 }
 
-void SceneManager::Render(Renderer *renderer) {
-    this->currentScene.Render(renderer);
-}
-
 Scene * SceneManager::GetCurrentScene() {
     return &this->currentScene;
 }

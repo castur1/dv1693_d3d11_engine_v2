@@ -11,7 +11,7 @@
 using namespace DirectX;
 
 // CBuffer
-struct Per_frame_data {
+struct Per_frame_data { // TODO: Rename to "Per_view_data"?
     XMFLOAT4X4 viewMatrix;
     XMFLOAT4X4 projectionMatrix;
     XMFLOAT4X4 viewProjectionMatrix;
@@ -163,16 +163,15 @@ public:
     bool Initialize(HWND hWnd);
     bool Resize(int width, int height);
 
-    // TODO: Not entirely sure how I feel about this. We need to clear the views before Update,
-    // so begin will need to run before Update, but at the same time it does things that really
-    // should only be done at the start of rendering. Put those in Execute, and maybe rename Begin?
     void Begin();
-    void Execute(Scene *scene);
+    void Render(Scene *scene);
     void Present();
 
     void AddView(const Render_view &view);
+    void AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position);
 
-    void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug
+    // TODO: This is kinda redundant now, at least nearPlane/farPlane since we're getting those from the Render_view
+    void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug.
     int GetDebugMode(); // Debug
 
     ID3D11Device *GetDevice() const;

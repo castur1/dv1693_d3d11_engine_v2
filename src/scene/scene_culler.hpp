@@ -46,6 +46,7 @@ public:
     void Query(const BoundingFrustum &frustum, std::vector<Component *> &outComponents) const;
 
     void Clear();
+    int Count() const;
 
     bool IsBuilt() const { return this->root != nullptr; }
 };
