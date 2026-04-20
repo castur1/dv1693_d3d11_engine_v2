@@ -191,7 +191,8 @@ void Editor::DrawInspector() {
 
     ImGui::Text("Name: %s", this->selectedEntity->name.c_str());
     ImGui::Text("UUID: %s", this->selectedEntity->GetID().ToString().c_str());
-
+    ImGui::Text("isStatic: %s", this->selectedEntity->isStatic ? "true" : "false");
+         
     bool isActive = this->selectedEntity->IsActive();
     ImGui::Checkbox("isActive", &isActive);
     this->selectedEntity->SetActive(isActive);

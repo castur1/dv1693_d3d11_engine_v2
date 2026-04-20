@@ -3,6 +3,7 @@
 #include "core/logging.hpp"
 #include "rendering/render_view.hpp"
 #include "debugging/debug.hpp"
+#include "scene/entity.hpp"
 
 #include <algorithm>
 
@@ -59,7 +60,10 @@ void Octree::CollectAll(const Node *node, std::vector<Component *> &outComponent
         return;
 
     if (node->IsLeaf()) {
-        outComponents.insert(outComponents.end(), node->components.begin(), node->components.end());
+        for (Component *component : node->components)
+            if (component->GetOwner()->IsActive())
+                outComponents.push_back(component);
+
         return;
     }
 
@@ -83,6 +87,9 @@ void Octree::Query(const Node *node, const BoundingFrustum &frustum, std::vector
 
     if (node->IsLeaf()) {
         for (Component *component : node->components) {
+            if (!component->GetOwner()->IsActive())
+                continue;
+
             BoundingBox bounds;
             component->GetWorldBounds(bounds);
 
@@ -187,6 +194,9 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
 
         // dynamic
         for (Component *component : this->dynamicRenderables) {
+            if (!component->GetOwner()->IsActive())
+                continue;
+
             BoundingBox bounds;
             if (!component->GetWorldBounds(bounds))
                 continue;

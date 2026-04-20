@@ -48,6 +48,8 @@ entire component.
 
 * Use an array instead of a vector in the octree node. Should be faster, right?
 
+    * Problem with overlapping renderables. 
+
 * Some sort of actual debug system as a core system in the engine would be nice.
 
 
