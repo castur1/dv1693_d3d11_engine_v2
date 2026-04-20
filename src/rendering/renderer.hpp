@@ -163,7 +163,7 @@ public:
     bool Initialize(HWND hWnd);
     bool Resize(int width, int height);
 
-    void Begin();
+    void NewFrame();
     void Render(Scene *scene);
     void Present();
 

@@ -2,6 +2,7 @@
 #include "core/logging.hpp"
 #include "scene/component_registry.hpp"
 #include "core/input.hpp"
+#include "debugging/debug.hpp"
 
 #include <Windows.h>
 #include <stdio.h>
@@ -147,7 +148,9 @@ void Application::Run() {
             .engineContext = this->context
         };
 
-        this->renderer.Begin();
+        this->renderer.NewFrame();
+        Debug::NewFrame();
+
         this->Update(context);
         this->Render(deltaTime);
     }

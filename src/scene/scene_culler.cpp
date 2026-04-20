@@ -2,6 +2,7 @@
 #include "scene/component.hpp"
 #include "core/logging.hpp"
 #include "rendering/render_view.hpp"
+#include "debugging/debug.hpp"
 
 #include <algorithm>
 
@@ -9,7 +10,7 @@ BoundingBox Octree::GetChildBounds(const BoundingBox &parent, int index) {
     XMFLOAT3 extents = {
         parent.Extents.x * 0.5f,
         parent.Extents.y * 0.5f,
-        parent.Extents.x * 0.5f
+        parent.Extents.z * 0.5f
     };
     XMFLOAT3 centre = {
         parent.Center.x + ((index & 1) ? extents.x : -extents.x),
@@ -81,7 +82,14 @@ void Octree::Query(const Node *node, const BoundingFrustum &frustum, std::vector
     }
 
     if (node->IsLeaf()) {
-        outComponents.insert(outComponents.end(), node->components.begin(), node->components.end());
+        for (Component *component : node->components) {
+            BoundingBox bounds;
+            component->GetWorldBounds(bounds);
+
+            if (frustum.Contains(bounds) != DISJOINT)
+                outComponents.push_back(component);
+        }
+
         return;
     }
 
@@ -110,6 +118,8 @@ void Octree::Clear() {
 int Octree::Count() const {
     std::vector<Component *> components;
     this->CollectAll(this->root.get(), components);
+    std::sort(components.begin(), components.end());
+    components.erase(std::unique(components.begin(), components.end()), components.end());
     return components.size();
 }
 
@@ -169,7 +179,11 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
         // static
         this->octree.Query(view.frustum, visible);
 
-        int count = visible.size();
+        // TODO: This is not necessary. It's just to get the stats
+        std::sort(visible.begin(), visible.end());
+        visible.erase(std::unique(visible.begin(), visible.end()), visible.end());
+
+        int staticVisible = visible.size();
 
         // dynamic
         for (Component *component : this->dynamicRenderables) {
@@ -181,15 +195,27 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
                 visible.push_back(component);
         }
 
-        int dynamicCount = visible.size() - count;
-
         std::sort(visible.begin(), visible.end());
         visible.erase(std::unique(visible.begin(), visible.end()), visible.end());
 
-        int staticCount = visible.size() - dynamicCount;
+        int dynamicVisible = visible.size() - staticVisible;
 
         for (Component *component : visible)
             component->Render(view, view.queue);
+
+        // Debug
+        int staticCount = this->octree.Count();
+        int dynamicCount = this->dynamicRenderables.size();
+
+        Debug::SetStat(
+            "octree.culledStatic", 
+            std::to_string(staticCount - staticVisible) + "/" + std::to_string(staticCount)
+        );
+
+        Debug::SetStat(
+            "octree.culledDynamic", 
+            std::to_string(dynamicCount - dynamicVisible) + "/" + std::to_string(dynamicCount)
+        );
 
         // LogInfo("Culled dynamic: %d/%d\n", (int)this->dynamicRenderables.size() - dynamicCount, (int)this->dynamicRenderables.size());
         // LogInfo("Culled static: %d/%d\n", this->octree.Count() - staticCount, this->octree.Count());

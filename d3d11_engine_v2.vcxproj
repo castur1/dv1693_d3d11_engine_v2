@@ -158,6 +158,8 @@
     <ClCompile Include="src\core\logging.cpp" />
     <ClCompile Include="src\core\uuid.cpp" />
     <ClCompile Include="src\core\window.cpp" />
+    <ClCompile Include="src\debugging\debug.cpp" />
+    <ClCompile Include="src\debugging\debug_draw.cpp" />
     <ClCompile Include="src\editor\editor.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\frame_graph.cpp" />
@@ -198,6 +200,8 @@
     <ClInclude Include="src\core\logging.hpp" />
     <ClInclude Include="src\core\uuid.hpp" />
     <ClInclude Include="src\core\window.hpp" />
+    <ClInclude Include="src\debugging\debug.hpp" />
+    <ClInclude Include="src\debugging\debug_draw.hpp" />
     <ClInclude Include="src\editor\editor.hpp" />
     <ClInclude Include="src\editor\imgui_inspector.hpp" />
     <ClInclude Include="src\rendering\frame_graph.hpp" />

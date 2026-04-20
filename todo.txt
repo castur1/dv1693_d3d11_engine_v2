@@ -5,7 +5,7 @@
     * Particle system
     * Dynamic cube mapping
     * Tessellation
-    * Hierarchical view frustum culling
+    ? Hierarchical view frustum culling
     X Normal mapping
 
 * Refactor the Blinn-Phong implementation
@@ -26,6 +26,8 @@
 
     * Display camera position (and rotation)
 
+    * isStatic
+
 * XMVECTOR versions of Get/Set in Transform
 
 * Minor problem with the current component culling approach is that only whole models are culled or not, rather than
@@ -41,3 +43,17 @@ entire component.
 * "Scene-global"? Why are we only submitting them to the primary view?
 
 * Verify that the octree actually works. Debug lines or smth
+
+    * Move camera without moving frustum (or the opposite), and show bounding box wireframes?
+
+* Use an array instead of a vector in the octree node. Should be faster, right?
+
+* Some sort of actual debug system as a core system in the engine would be nice.
+
+
+I need some global way to read/write variables for debugging. Both for setting options in the editor to read elsewhere, and
+to set data that I want to display in the editor. I'll probably do something similar to my current Input system where it's
+directly globally accessible. How would I handle different data types? Do I want to keep "setting" (bools) and generic data seperate?
+Probably keep it per-frame (for data?), not persisten. I also need some way of drawing things to the screen for visual debugging. 
+Maybe I could add a render pass for that in my frame graph at the very end, seems like the easiest solution. Maybe keeping a global line list
+as part of the debug system would suffice. "Debug" (for data) and "DebugDraw" (for drawing), or just one system? Maybe other names. 

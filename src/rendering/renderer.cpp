@@ -747,7 +747,7 @@ bool Renderer::Resize(int width, int height) {
     return true;
 }
 
-void Renderer::Begin() {
+void Renderer::NewFrame() {
     this->views.clear();
 }
 

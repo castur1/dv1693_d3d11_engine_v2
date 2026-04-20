@@ -4,15 +4,15 @@
 
 Input::Key_state Input::keyStates[0xFF] = {};
 
-int Input::mouseX = 0;
-int Input::mouseY = 0;
-int Input::prevMouseX = 0;
-int Input::prevMouseY = 0;
+int Input::mouseX      = 0;
+int Input::mouseY      = 0;
+int Input::prevMouseX  = 0;
+int Input::prevMouseY  = 0;
 int Input::mouseDeltaX = 0;
 int Input::mouseDeltaY = 0;
 
 bool Input::isMouseCaptured = false;
-HWND Input::capturedWindow = nullptr;
+HWND Input::capturedWindow  = nullptr;
 
 void Input::Update() {
     for (int i = 0; i < 0xFF; ++i) {

@@ -5,6 +5,7 @@
 #include "scene/component.hpp"
 #include "editor/imgui_inspector.hpp"
 #include "core/input.hpp"
+#include "debugging/debug.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -55,10 +56,10 @@ void Editor::DrawFPSOverlay(float deltaTime) {
     const float margin = 10.0f;
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImVec2 position = {
-        viewport->WorkPos.x + viewport->WorkSize.x - margin,
+        viewport->WorkPos.x + margin,
         viewport->WorkPos.y + margin
     };
-    ImGui::SetNextWindowPos(position, ImGuiCond_Always, {1.0f, 0.0f});
+    ImGui::SetNextWindowPos(position, ImGuiCond_Always, {0.0f, 0.0f});
     ImGui::SetNextWindowBgAlpha(0.5f);
     ImGui::SetNextWindowSize({0.0f, 0.0f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -73,7 +74,10 @@ void Editor::DrawFPSOverlay(float deltaTime) {
 
     if (ImGui::Begin("##fps", nullptr, flags)) {
         ImGui::Text("%-6.1f fps", this->fpsSmoothed);
-        ImGui::Text("%.2f ms/f", deltaTime * 1000.0f);
+        ImGui::Text("%.2f ms/f", 1000.0f / this->fpsSmoothed);
+
+        for (const auto &[name, value] : Debug::GetCurrentStats())
+            ImGui::Text("%s: %s", name.c_str(), value.c_str());
     }
     ImGui::End();
 
