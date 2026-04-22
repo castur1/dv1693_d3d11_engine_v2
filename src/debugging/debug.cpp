@@ -1,7 +1,7 @@
 #include "debug.hpp"
 
-std::unordered_map<std::string, bool> Debug::settings;
-std::unordered_map<std::string, std::string> Debug::stats;
+std::map<std::string, bool> Debug::settings;
+std::map<std::string, std::string> Debug::stats;
 
 void Debug::NewFrame() { 
     stats.clear(); 
@@ -35,10 +35,16 @@ void Debug::SetStat(const std::string &name, bool value) {
     stats[name] = std::to_string(value); 
 }
 
-const std::unordered_map<std::string, bool> &Debug::GetCurrentSettings() {
+void Debug::SetStat(const std::string &name, XMFLOAT3 value) {
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "[%.2f, %.2f, %.2f]", value.x, value.y, value.z);
+    stats[name]= buffer;
+}
+
+const std::map<std::string, bool> &Debug::GetCurrentSettings() {
     return settings;
 }
 
-const std::unordered_map<std::string, std::string> &Debug::GetCurrentStats() {
+const std::map<std::string, std::string> &Debug::GetCurrentStats() {
     return stats;
 }

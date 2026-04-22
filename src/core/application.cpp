@@ -3,6 +3,7 @@
 #include "scene/component_registry.hpp"
 #include "core/input.hpp"
 #include "debugging/debug.hpp"
+#include "debugging/debug_draw.hpp"
 
 #include <Windows.h>
 #include <stdio.h>
@@ -75,6 +76,9 @@ bool Application::Initialize() {
         return false;
 
     if (!this->editor.Initalize(this->window.GetHandle(), this->renderer.GetDevice(), this->renderer.GetDeviceContext()))
+        return false;
+
+    if (!DebugDraw::Initialize(this->renderer.GetDevice()))
         return false;
 
     LogUnindent();
@@ -158,6 +162,7 @@ void Application::Run() {
     LogInfo("\n");
     LogInfo("Shutdown...\n");
 
+    DebugDraw::Shutdown();
     this->editor.Shutdown();
     this->sceneManager.Shutdown();
 

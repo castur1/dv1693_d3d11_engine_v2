@@ -2,6 +2,7 @@
 #include "core/logging.hpp"
 #include "resources/asset_manager.hpp"
 #include "scene/scene.hpp"
+#include "debugging/debug_draw.hpp"
 
 #include <fstream>
 #include <vector>
@@ -182,13 +183,6 @@ bool Renderer::CreateConstantBuffers() {
         LogError("Failed to create debug resolve constant buffer");
         return false;
     }
-
-    //bufferDesc.ByteWidth = sizeof(Lighting_data);
-    //result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->lightingBuffer);
-    //if (FAILED(result)) {
-    //    LogError("Failed to create lighting constant buffer");
-    //    return false;
-    //}
 
     LogInfo("Constant buffers created\n");
 
@@ -772,6 +766,20 @@ void Renderer::Render(Scene *scene) {
     this->frameGraph.Execute(this->deviceContext, this->views);
 
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
+
+    // TODO: Remove
+    BoundingBox box;
+    DebugDraw::Box(box);
+
+    const Render_view *primary = nullptr;
+    for (const Render_view &view : this->views) {
+        if (view.type == View_type::primary) {
+            primary = &view;
+            break;
+        }
+    }
+    if (primary)
+        DebugDraw::Render(this->deviceContext, primary->viewProjectionMatrix);
 }
 
 void Renderer::Present() {

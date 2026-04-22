@@ -6,6 +6,7 @@
 #include "scene/entity.hpp"
 #include "rendering/renderer.hpp"
 #include "core/input.hpp"
+#include "debugging/debug.hpp"
 
 void CameraController::OnStart(const Engine_context &context) {}
 
@@ -122,6 +123,9 @@ void CameraController::Update(const Frame_context &context) {
         LogInfo("Position: [%.2f, %.2f, %.2f]\n", position.x, position.y, position.z);
         LogInfo("Rotation: [%.2f, %.2f, %.2f]\n", rotation.x, rotation.y, rotation.z);
     }
+
+    Debug::SetStat("position", position);
+    Debug::SetStat("rotation", rotation);
 }
 
 void CameraController::Render(const Render_view &view, RenderQueue &queue) {}

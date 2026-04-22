@@ -226,9 +226,6 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
             "octree.culledDynamic", 
             std::to_string(dynamicCount - dynamicVisible) + "/" + std::to_string(dynamicCount)
         );
-
-        // LogInfo("Culled dynamic: %d/%d\n", (int)this->dynamicRenderables.size() - dynamicCount, (int)this->dynamicRenderables.size());
-        // LogInfo("Culled static: %d/%d\n", this->octree.Count() - staticCount, this->octree.Count());
     }
 }
 

@@ -282,5 +282,7 @@
     <FxCompile Include="src\shaders\cs_lighting.hlsl" />
     <FxCompile Include="src\shaders\vs_resolve.hlsl" />
     <FxCompile Include="src\shaders\ps_resolve.hlsl" />
+    <FxCompile Include="src\shaders\ps_debug.hlsl" />
+    <FxCompile Include="src\shaders\vs_debug.hlsl" />
   </ItemGroup>
 </Project>

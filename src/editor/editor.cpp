@@ -6,6 +6,7 @@
 #include "editor/imgui_inspector.hpp"
 #include "core/input.hpp"
 #include "debugging/debug.hpp"
+#include "debugging/debug_draw.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -234,7 +235,7 @@ void Editor::DrawInspector() {
 }
 
 void Editor::NewFrame(float deltaTime, Scene *scene) {
-    // TODO: There's a bug where the game freezes temporarily when a mouse button is held down,
+    // NOTE: There's a bug where the game freezes temporarily when a mouse button is held down,
     // the mouse is captured, and there's an ImGui window over (0, 0)
     ImGuiIO &io = ImGui::GetIO();
     if (Input::IsMouseCaptured())
@@ -261,6 +262,14 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
     this->DrawFPSOverlay(deltaTime);
     this->DrawEntityHierarchy(scene);
     this->DrawInspector();
+
+    if (this->selectedEntity) {
+        for (Component *component : this->selectedEntity->GetComponents()) {
+            BoundingBox bounds;
+            if (component->GetWorldBounds(bounds))
+                DebugDraw::Box(bounds, {1.0f, 1.0f, 0.5, 1.0f});
+        }
+    }
 }
 
 void Editor::Render() {

@@ -1,12 +1,16 @@
 #ifndef DEBUG_HPP
 #define DEBUG_HPP
 
-#include <unordered_map>
+#include <map>
 #include <string>
 
+#include <DirectXMath.h>
+
+using namespace DirectX;
+
 class Debug {
-    static std::unordered_map<std::string, bool> settings;
-    static std::unordered_map<std::string, std::string> stats;
+    static std::map<std::string, bool> settings;
+    static std::map<std::string, std::string> stats;
 
 public:
     static void NewFrame();
@@ -18,9 +22,10 @@ public:
     static void SetStat(const std::string &name, int value);
     static void SetStat(const std::string &name, float value);
     static void SetStat(const std::string &name, bool value);
+    static void SetStat(const std::string &name, XMFLOAT3 value);
 
-    static const std::unordered_map<std::string, bool> &GetCurrentSettings();
-    static const std::unordered_map<std::string, std::string> &GetCurrentStats();
+    static const std::map<std::string, bool> &GetCurrentSettings();
+    static const std::map<std::string, std::string> &GetCurrentStats();
 };
 
 #endif
