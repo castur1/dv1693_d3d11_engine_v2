@@ -111,6 +111,11 @@ void CameraController::Update(const Frame_context &context) {
 
     context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix, transform->GetWorldPosition());
 
+    if (Input::IsKeyPressed('1'))
+        context.engineContext.sceneManager->RequestSceneChange("demo_0");
+    if (Input::IsKeyPressed('2'))
+        context.engineContext.sceneManager->RequestSceneChange("demo_1");
+
     // Debug //
 
     int debugMode = renderer->GetDebugMode();

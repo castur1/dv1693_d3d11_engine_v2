@@ -767,10 +767,6 @@ void Renderer::Render(Scene *scene) {
 
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 
-    // TODO: Remove
-    BoundingBox box;
-    DebugDraw::Box(box);
-
     const Render_view *primary = nullptr;
     for (const Render_view &view : this->views) {
         if (view.type == View_type::primary) {

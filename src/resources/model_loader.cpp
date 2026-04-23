@@ -112,6 +112,8 @@ Model *ModelLoader::Load(const std::string &path) {
         return nullptr;
     }
 
+    baseDir = baseDir.substr(this->assetManager->GetAssetDirectory().size());
+
     std::vector<AssetHandle<Material>> modelMaterials(materials.size());
 
     for (int i = 0; i < materials.size(); ++i) {
@@ -129,7 +131,6 @@ Model *ModelLoader::Load(const std::string &path) {
 
         newMaterial->pipelineState = defaultMaterial->pipelineState;
 
-        baseDir = baseDir.substr(this->assetManager->GetAssetDirectory().size());
         if (!materials[i].diffuse_texname.empty()) {
             AssetID textureID = this->assetManager->PathToUUID(baseDir + materials[i].diffuse_texname);
             newMaterial->diffuseTexture = this->assetManager->GetHandle<Texture2D>(textureID);

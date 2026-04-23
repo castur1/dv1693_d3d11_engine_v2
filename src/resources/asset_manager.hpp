@@ -34,7 +34,8 @@ public:
 };
 
 class AssetManager {
-    ID3D11Device *device = nullptr;
+    ID3D11Device *device               = nullptr;
+    ID3D11DeviceContext *deviceContext = nullptr;
 
     AssetRegistry registry;
 
@@ -65,7 +66,7 @@ public:
     AssetManager() = default;
     ~AssetManager() = default;
 
-    bool Initialize(ID3D11Device *device);
+    bool Initialize(ID3D11Device *device, ID3D11DeviceContext *deviceContext);
 
     // LoaderType implements AssetLoader<T>
     template <typename T, typename LoaderType>
@@ -76,6 +77,7 @@ public:
         auto loader = std::make_unique<LoaderType>(this);
 
         loader->SetDevice(this->device);
+        loader->SetDeviceContext(this->deviceContext);
         cache->SetDefault(loader->CreateDefault());
 
         this->caches[typeIndex] = std::move(cache);

@@ -69,7 +69,7 @@ bool Application::Initialize() {
     if (!this->renderer.Initialize(this->window.GetHandle()))
         return false;
 
-    if (!this->assetManager.Initialize(this->renderer.GetDevice()))
+    if (!this->assetManager.Initialize(this->renderer.GetDevice(), this->renderer.GetDeviceContext()))
         return false;
 
     if (!this->sceneManager.Initialize(this->context))

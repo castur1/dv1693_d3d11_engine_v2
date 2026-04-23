@@ -18,6 +18,7 @@ Material *MaterialLoader::CreateDefault() {
 
     Texture2DLoader loader(this->assetManager);
     loader.SetDevice(this->device);
+    loader.SetDeviceContext(this->deviceContext);
 
     const UINT width  = 1;
     const UINT height = 1;
@@ -25,7 +26,7 @@ Material *MaterialLoader::CreateDefault() {
         0xFFFF8080
     };
 
-    Texture2D *normalTexture = loader.CreateFromBitmap(pixels, width, height);
+    Texture2D *normalTexture = loader.CreateFromBitmap(pixels, width, height, false);
 
     material->normalTexture = this->assetManager->AddAsset<Texture2D>(normalTexture, true);
 

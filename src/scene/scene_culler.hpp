@@ -49,6 +49,8 @@ public:
     int Count() const;
 
     bool IsBuilt() const { return this->root != nullptr; }
+
+    // CONTINUE HERE! Add debug draw
 };
 
 class SceneCuller {

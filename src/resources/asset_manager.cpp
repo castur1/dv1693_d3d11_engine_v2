@@ -6,11 +6,12 @@
 
 #include <fstream>
 
-bool AssetManager::Initialize(ID3D11Device *device) {
+bool AssetManager::Initialize(ID3D11Device *device, ID3D11DeviceContext *deviceContext) {
     LogInfo("Creating asset manager...\n");
     LogIndent();
 
     this->device = device;
+    this->deviceContext = deviceContext;
 
     this->registry.SetAssetDirectory(this->assetDir);
     this->registry.RegisterAssets();

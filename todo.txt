@@ -52,6 +52,8 @@ entire component.
 
 * Are the model bounding boxes being calculated correctly? They seem bigger than they should be.
 
+* Editor currently crashes if you change scene while an entity is selected
+
 
 I need some global way to read/write variables for debugging. Both for setting options in the editor to read elsewhere, and
 to set data that I want to display in the editor. I'll probably do something similar to my current Input system where it's

@@ -14,8 +14,9 @@ public:
 template <typename T>
 class AssetLoader : public AssetLoaderBase {
 protected:
-    ID3D11Device *device       = nullptr;
-    AssetManager *assetManager = nullptr;
+    ID3D11Device *device               = nullptr;
+    ID3D11DeviceContext *deviceContext = nullptr;
+    AssetManager *assetManager         = nullptr;
 
 public:
     AssetLoader<T>(AssetManager *assetManager) : assetManager(assetManager) {}
@@ -24,6 +25,7 @@ public:
     virtual T *CreateDefault() = 0;
 
     void SetDevice(ID3D11Device *device) { this->device = device; }
+    void SetDeviceContext(ID3D11DeviceContext *deviceContext) { this->deviceContext = deviceContext; }
 };
 
 #endif

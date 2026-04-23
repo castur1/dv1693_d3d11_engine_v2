@@ -273,6 +273,7 @@
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
     <Text Include="todo.txt" />
+    <Text Include="scenes\demo_1.txt" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\ps_default.hlsl" />

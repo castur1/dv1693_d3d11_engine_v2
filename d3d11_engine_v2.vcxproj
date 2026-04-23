@@ -228,6 +228,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
+    <Text Include="scenes\demo_1.txt" />
     <Text Include="todo.txt" />
   </ItemGroup>
   <ItemGroup>
