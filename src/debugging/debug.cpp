@@ -16,7 +16,7 @@ bool Debug::GetSetting(const std::string &name, bool defaultValue) {
     if (iter != settings.end())
         return iter->second;
 
-    return defaultValue;
+    return settings[name] = defaultValue;
 }
 
 void Debug::SetStat(const std::string &name, const std::string &value) { 

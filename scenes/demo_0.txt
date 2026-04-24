@@ -72,6 +72,102 @@ entity 0142-de23-fa87-1237
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
 
+entity 0142-de23-fa87-ab43
+    name: "monkey_4"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-20.0, -3.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-0145
+    name: "monkey_5"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-18.0, 3.0, 3.0]
+        rotation: [0.0, 45.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-fed3
+    name: "monkey_6"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-21.0, -6.0, -2.0]
+        rotation: [0.0, 90.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-0513
+    name: "monkey_7"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-12.0, -6.0, -2.0]
+        rotation: [0.0, -45.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-1225
+    name: "monkey_8"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-16.0, -6.0, 5.0]
+        rotation: [0.0, 180.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0142-de23-fa87-1337
+    name: "monkey_9"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-18.0, -4.0, 9.0]
+        rotation: [0.0, 270.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "0dbc-caa8-2206-5ca7"
+
 entity 7632-12ac-76de-fe23
     name: "dragon"
     isActive: true

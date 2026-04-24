@@ -27,7 +27,7 @@ entity a1b2-c3d4-e5f6-0123
 entity 123a-ffff-3242-0011
     name: "sponza"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: null
 
     component Transform

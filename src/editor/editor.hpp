@@ -16,11 +16,13 @@ class Editor {
     bool showFPSOverlay      = true;
     bool showEntityHierarchy = true;
     bool showInspector       = true;
+    bool showSettings        = true;
 
     void DrawFPSOverlay(float deltaTime);
     void DrawEntityNodeRecursive(Entity *entity);
     void DrawEntityHierarchy(Scene *scene);
     void DrawInspector();
+    void DrawSettings();
 
 public:
     Editor()  = default;

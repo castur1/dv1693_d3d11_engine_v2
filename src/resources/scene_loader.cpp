@@ -233,6 +233,10 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 std::string uuidStr = TrimWhitespace(line.substr(7)); // Skip "entity "
                 EntityID uuid = EntityID::FromString(uuidStr);
 
+                auto iter = localLookup.find(uuid);
+                if (iter != localLookup.end())
+                    LogWarn("Entity with UUID '%s' already exists in scene!\n", uuidStr.c_str());
+
                 currentEntity = scene.AddEntity(uuid);
                 localLookup[uuid] = currentEntity;
 

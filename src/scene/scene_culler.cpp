@@ -4,6 +4,7 @@
 #include "rendering/render_view.hpp"
 #include "debugging/debug.hpp"
 #include "scene/entity.hpp"
+#include "debugging/debug_draw.hpp"
 
 #include <algorithm>
 
@@ -111,7 +112,7 @@ void Octree::Build(const std::vector<std::pair<Component *, BoundingBox>> &items
         if (this->root->bounds.Intersects(bounds))
             this->Insert(this->root.get(), component, bounds, 0);
 
-    LogInfo("Octree build: %zu static renderables\n", items.size());
+    LogInfo("Octree built: %zu static renderables\n", items.size());
 }
 
 void Octree::Query(const BoundingFrustum &frustum, std::vector<Component *> &outComponents) const {
@@ -128,6 +129,34 @@ int Octree::Count() const {
     std::sort(components.begin(), components.end());
     components.erase(std::unique(components.begin(), components.end()), components.end());
     return components.size();
+}
+
+void Octree::DebugDrawNode(const Node *node, int depth) {
+    if (!node)
+        return;
+
+    float colour = (float)(MAX_DEPTH - depth * 0.6f) / MAX_DEPTH;
+    DebugDraw::Box(node->bounds, {colour, colour * colour * 0.6f, colour * colour * 0.8f, 1.0f});
+
+    if (node->IsLeaf()) {
+        for (Component *component : node->components) {
+            if (!component->GetOwner()->IsActive())
+                continue;
+
+            BoundingBox bounds;
+            component->GetWorldBounds(bounds);
+
+            DebugDraw::Box(bounds, {1.0f, 0.0, 0.0f, 1.0f});
+        }
+        return;
+    }
+
+    for (const auto &child : node->children)
+        this->DebugDrawNode(child.get(), depth + 1);
+}
+
+void Octree::DebugDraw() {
+    this->DebugDrawNode(this->root.get(), 0);
 }
 
 void SceneCuller::AddComponent(Component *component, bool isStatic) {
@@ -194,7 +223,7 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
 
         // dynamic
         for (Component *component : this->dynamicRenderables) {
-            if (!component->GetOwner()->IsActive())
+            if (!component->GetOwner()->IsActive() || !component->isActive)
                 continue;
 
             BoundingBox bounds;
@@ -234,4 +263,8 @@ void SceneCuller::Clear() {
     this->staticRenderablesPending.clear();
     this->dynamicRenderables.clear();
     this->needsRebuild = false;
+}
+
+void SceneCuller::DebugDraw() {
+    this->octree.DebugDraw();
 }

@@ -30,7 +30,7 @@ bool SceneManager::Initialize(const Engine_context &context) {
 
     this->currentScene.SetEngineContext(&context);
 
-    this->RequestSceneChange("demo_1");
+    this->RequestSceneChange("demo_0");
 
     return true;
 }

@@ -50,14 +50,6 @@ entire component.
 
     * Problem with overlapping renderables. 
 
-* Are the model bounding boxes being calculated correctly? They seem bigger than they should be.
-
 * Editor currently crashes if you change scene while an entity is selected
 
-
-I need some global way to read/write variables for debugging. Both for setting options in the editor to read elsewhere, and
-to set data that I want to display in the editor. I'll probably do something similar to my current Input system where it's
-directly globally accessible. How would I handle different data types? Do I want to keep "setting" (bools) and generic data seperate?
-Probably keep it per-frame (for data?), not persisten. I also need some way of drawing things to the screen for visual debugging. 
-Maybe I could add a render pass for that in my frame graph at the very end, seems like the easiest solution. Maybe keeping a global line list
-as part of the debug system would suffice. "Debug" (for data) and "DebugDraw" (for drawing), or just one system? Maybe other names. 
+* RenderDoc

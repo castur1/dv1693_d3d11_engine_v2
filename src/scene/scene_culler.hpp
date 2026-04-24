@@ -37,6 +37,8 @@ class Octree {
 
     void Query(const Node *node, const BoundingFrustum &frustum, std::vector<Component *> &outComponents) const;
 
+    void DebugDrawNode(const Node *node, int depth);
+
 public:
     Octree() = default;
     ~Octree() = default;
@@ -50,7 +52,7 @@ public:
 
     bool IsBuilt() const { return this->root != nullptr; }
 
-    // CONTINUE HERE! Add debug draw
+    void DebugDraw();
 };
 
 class SceneCuller {
@@ -75,6 +77,8 @@ public:
     void Clear();
 
     bool NeedsRebuild() const { return this->needsRebuild; }
+
+    void DebugDraw();
 };
 
 #endif

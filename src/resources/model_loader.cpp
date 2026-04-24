@@ -230,6 +230,7 @@ Model *ModelLoader::Load(const std::string &path) {
     std::vector<Vertex> finalVertices;
     std::vector<UINT> finalIndices;
 
+    bool isFirstSubModel = true;
     for (int i = 0; i < buckets.size(); ++i) {
         Mesh_bucket &bucket = buckets[i];
 
@@ -243,7 +244,14 @@ Model *ModelLoader::Load(const std::string &path) {
         subModel.mesh.baseVertex = 0;
 
         BoundingBox::CreateFromPoints(subModel.localBounds, bucket.vertices.size(), &bucket.vertices[0].position, sizeof(Vertex));
-        BoundingBox::CreateMerged(newModel->localBounds, newModel->localBounds, subModel.localBounds);
+
+        if (isFirstSubModel) {
+            newModel->localBounds = subModel.localBounds;
+            isFirstSubModel = false;
+        }
+        else {
+            BoundingBox::CreateMerged(newModel->localBounds, newModel->localBounds, subModel.localBounds);
+        }
 
         if (i < modelMaterials.size())
             subModel.material = modelMaterials[i];

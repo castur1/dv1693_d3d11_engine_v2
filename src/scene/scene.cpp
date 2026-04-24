@@ -3,6 +3,7 @@
 #include "rendering/renderer.hpp"
 #include "core/logging.hpp"
 #include "scene/component.hpp"
+#include "debugging/debug.hpp"
 
 #include <algorithm>
 
@@ -26,6 +27,9 @@ void Scene::Update(const Frame_context &context) {
         this->UpdateEntityRecursive(entity, context); 
 
     this->ResolveEntitiesToDestroy();
+
+    if (Debug::GetSetting("octree.showWireframe", false))
+        this->culler.DebugDraw();
 }
 
 void Scene::GatherVisibility(std::vector<Render_view> &views) {

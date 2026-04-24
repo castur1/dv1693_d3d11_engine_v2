@@ -234,6 +234,26 @@ void Editor::DrawInspector() {
     ImGui::End();
 }
 
+void Editor::DrawSettings() {
+    if (!this->showSettings)
+        return;
+
+    ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
+
+    if (!ImGui::Begin("Settings", &this->showSettings, ImGuiWindowFlags_NoFocusOnAppearing)) {
+        ImGui::End();
+        return;
+    }
+
+    for (const auto &[name, value] : Debug::GetCurrentSettings()) {
+        bool newValue = value;
+        if (ImGui::Checkbox(name.c_str(), &newValue))
+            Debug::SetSetting(name, newValue);
+    }
+
+    ImGui::End();
+}
+
 void Editor::NewFrame(float deltaTime, Scene *scene) {
     // NOTE: There's a bug where the game freezes temporarily when a mouse button is held down,
     // the mouse is captured, and there's an ImGui window over (0, 0)
@@ -253,6 +273,7 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
             ImGui::MenuItem("FPS overlay", nullptr, &this->showFPSOverlay);
             ImGui::MenuItem("Hierarchy", nullptr, &this->showEntityHierarchy);
             ImGui::MenuItem("Inspector", nullptr, &this->showInspector);
+            ImGui::MenuItem("Settings", nullptr, &this->showSettings);
 
             ImGui::EndMenu();
         }
@@ -262,6 +283,7 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
     this->DrawFPSOverlay(deltaTime);
     this->DrawEntityHierarchy(scene);
     this->DrawInspector();
+    this->DrawSettings();
 
     if (this->selectedEntity) {
         for (Component *component : this->selectedEntity->GetComponents()) {
