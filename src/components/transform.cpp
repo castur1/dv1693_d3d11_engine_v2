@@ -88,6 +88,7 @@ XMFLOAT3 Transform::QuaternionToEulerAngles(const XMFLOAT4 &quaternion) const {
     return euler;
 }
 
+// TODO: This doesn't mark dirty correctly. Also, should only set value if value actually changes. Bool on inspector->Field()?
 void Transform::Reflect(ComponentRegistry::Inspector *inspector) {
     inspector->Field("position", this->localPosition);
 

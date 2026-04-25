@@ -71,13 +71,13 @@ bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
     Model *model = this->modelHandle.Get();
     if (!model) {
         LogWarn("Model was nullptr\n");
-        return true;
+        return false;
     }
 
     Transform *transform = this->GetOwner()->GetComponent<Transform>();
     if (!transform) {
         LogWarn("Transform was nullptr\n");
-        return true;
+        return false;
     }
 
     if (transform->IsWorldDirty())

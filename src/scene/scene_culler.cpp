@@ -62,7 +62,7 @@ void Octree::CollectAll(const Node *node, std::vector<Component *> &outComponent
 
     if (node->IsLeaf()) {
         for (Component *component : node->components)
-            if (component->GetOwner()->IsActive())
+            if (component->GetOwner()->IsActive() && component->isActive)
                 outComponents.push_back(component);
 
         return;

@@ -5,7 +5,7 @@
     * Particle system
     * Dynamic cube mapping
     * Tessellation
-    ? Hierarchical view frustum culling
+    X Hierarchical view frustum culling
     X Normal mapping
 
 * Refactor the Blinn-Phong implementation
@@ -53,3 +53,13 @@ entire component.
 * Editor currently crashes if you change scene while an entity is selected
 
 * RenderDoc
+
+* Freezing camera in place while moving the view frustum (for culling visualization)
+
+* SamplerComparisonState? Percentage-Closer Filtering? D3D11_RASTERIZER_DESC DepthBias/SlopeScaledDepthBias?
+
+    * Texture2DArray for shadow maps (for spot lights, only a single texture for directional lights probably)
+
+    * Oriented Bounding Box for orthographic view culling (directional light)
+
+* Make renderer debugMode a setting instead, maybe?

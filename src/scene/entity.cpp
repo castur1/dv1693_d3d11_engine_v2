@@ -36,7 +36,7 @@ void Entity::SetParent(Entity *newParent) {
     }
 
     if (this->parent) {
-        std::vector<Entity *> siblings = this->parent->children;
+        std::vector<Entity *> &siblings = this->parent->children;
         siblings.erase(std::remove(siblings.begin(), siblings.end(), this), siblings.end());
     }
 
