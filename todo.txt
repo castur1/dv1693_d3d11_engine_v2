@@ -63,3 +63,5 @@ entire component.
     * Oriented Bounding Box for orthographic view culling (directional light)
 
 * Make renderer debugMode a setting instead, maybe?
+
+* Static lights, so that we don't have to recompute all the matrices and stuff each frame?

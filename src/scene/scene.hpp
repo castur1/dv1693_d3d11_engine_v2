@@ -14,13 +14,13 @@ class Entity;
 class SceneManager;
 
 class Scene {
-    std::vector<std::unique_ptr<Entity>>   entities;
+    std::vector<std::unique_ptr<Entity>> entities;
     std::unordered_map<EntityID, Entity *> uuidLookup;
 
     std::vector<Entity *> rootEntities;
 
     std::vector<std::unique_ptr<Entity>> entitiesToAdd;
-    std::vector<Entity *>                entitiesToRemove;
+    std::vector<Entity *> entitiesToRemove;
 
     const Engine_context *context;
 
@@ -40,7 +40,7 @@ public:
     ~Scene();
 
     void Update(const Frame_context &context);
-    
+
     void GatherVisibility(std::vector<Render_view> &views); // TODO: Don't know how I feel about this name
 
     void Clear();

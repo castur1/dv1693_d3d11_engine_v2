@@ -4,18 +4,17 @@
 #include "rendering/render_commands.hpp"
 
 #include <vector>
-#include <optional>
 
 class RenderQueue {
 public:
     std::vector<Geometry_command> geometryCommands;
     std::vector<Spot_light_command> spotLightCommands;
-    std::optional<Directional_light_command> directionalLightCommand;
+    std::vector<Directional_light_command> directionalLightCommands;
 
     void Clear() {
         this->geometryCommands.clear();
         this->spotLightCommands.clear();
-        this->directionalLightCommand.reset();
+        this->directionalLightCommands.clear();
     }
 
     void Submit(const Geometry_command &command) {
@@ -27,7 +26,7 @@ public:
     }
 
     void Submit(const Directional_light_command &command) {
-        this->directionalLightCommand = command;
+        this->directionalLightCommands.push_back(command);
     }
 };
 

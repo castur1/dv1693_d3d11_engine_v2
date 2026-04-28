@@ -27,6 +27,8 @@ struct Directional_light_command {
     float    intensity = 0.0f;
 
     XMFLOAT3 ambientColour = {0.0f, 0.0f, 0.0f};
+
+    bool castsShadows = false;
 };
 
 struct Spot_light_command {
@@ -36,13 +38,10 @@ struct Spot_light_command {
     float    intensity = 0.0f;
     float    range     = 0.0f;
 
-    // Radians
-    float    innerConeAngle = 0.0f;
-    float    outerConeAngle = 0.0f;
+    float innerConeAngle = 0.0f; // Radians
+    float outerConeAngle = 0.0f; // Radians
 
-    bool      castsShadows = false;
-
-    // TODO: viewProjectionMatrix
+    bool castsShadows = false;
 };
 
 #endif

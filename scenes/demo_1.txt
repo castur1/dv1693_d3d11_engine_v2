@@ -18,6 +18,7 @@ entity a1b2-c3d4-e5f6-0123
         fieldOfView: 75.0
         nearPlane: 0.1
         farPlane: 512.0
+        shadowDistance: 40.0
         moveSpeed: 8.0
         acceleration: 8.0
         drag: 2.0
@@ -49,7 +50,7 @@ entity faff-6543-8755-014a
     component Transform
         isActive: true
         position: [0.0, 0.0, 0.0]
-        rotation: [45.0, 45.0, 0.0]
+        rotation: [80.0, 70.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component DirectionalLight
@@ -57,6 +58,7 @@ entity faff-6543-8755-014a
         colour: [1.0, 0.95, 0.8]
         intensity: 3.0
         ambient: [0.05, 0.08, 0.12]
+        castsShadows: true
 
 assets:
     6352-476b-78ad-0ed0

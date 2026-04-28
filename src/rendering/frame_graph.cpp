@@ -271,8 +271,8 @@ void FrameGraph::CreateTemporaryResources() {
             height = resource.desc.height;
         }
         else {
-            width  = this->backbufferWidth  * resource.desc.widthScale;
-            height = this->backbufferHeight * resource.desc.heightScale;
+            width  = this->backbufferWidth  * resource.desc.width;
+            height = this->backbufferHeight * resource.desc.height;
         }
 
         width  = width  < 1u ? 1u : width;

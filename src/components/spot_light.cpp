@@ -12,6 +12,9 @@ void SpotLight::Render(const Render_view &view, RenderQueue &queue) {
     if (!this->isActive)
         return;
 
+    if (view.type != View_type::primary)
+        return;
+
     Transform *transform = this->GetOwner()->GetComponent<Transform>();
     if (!transform) {
         LogWarn("Missing Transform component on owner\n");

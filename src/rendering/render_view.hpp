@@ -10,13 +10,14 @@ using namespace DirectX;
 
 enum class View_type {
     primary,
-    shadowMap,
+    shadowMapDirectional,
+    shadowMapSpot,
     cubeFace
 };
 
 struct Render_view {
     View_type type = View_type::primary;
-    int index      = 0;
+    int index = 0;
 
     XMFLOAT4X4 viewMatrix{};
     XMFLOAT4X4 projectionMatrix{};
@@ -25,9 +26,12 @@ struct Render_view {
 
     XMFLOAT3 cameraPosition{};
     float nearPlane = 0.1f;
-    float farPlane  = 1000.0f;
+    float farPlane = 1000.0f;
 
     BoundingFrustum frustum;
+    bool skipFrustumCulling; // TODO: Orthographic views don't work with BoundingFrustum; could use OBB instead
+
+    float shadowDistance = 80.0f;
 
     RenderQueue queue;
 };

@@ -8,13 +8,12 @@
 using namespace DirectX;
 
 class SpotLight : public Component {
-    XMFLOAT3 colour    = {1.0f, 1.0f, 1.0f};
-    float    intensity = 0.0f;
-    float    range     = 0.0f;
+    XMFLOAT3 colour = {1.0f, 1.0f, 1.0f};
+    float intensity = 0.0f;
+    float range = 0.0f;
 
-    // Degrees
-    float innerConeAngle = 30.0f;
-    float outerConeAngle = 40.0f;
+    float innerConeAngle = 30.0f; // Degrees
+    float outerConeAngle = 40.0f; // Degrees
 
     bool castsShadows = false;
 

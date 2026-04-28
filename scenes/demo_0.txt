@@ -18,6 +18,7 @@ entity a1b2-c3d4-e5f6-0123
         fieldOfView: 75.0
         nearPlane: 0.1
         farPlane: 512.0
+        shadowDistance: 80.0
         moveSpeed: 12.0
         acceleration: 12.0
         drag: 2.0
@@ -248,6 +249,38 @@ entity 9347-ad23-cf26-eb95
         isActive: true
         modelID: "e679-318b-f448-3109"
 
+entity 9347-ad23-cf26-af32
+    name: "apple_3"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-7.0, 33.0, 44.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [2.0, 2.0, 2.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+
+entity 9347-ad23-cf26-fee3
+    name: "apple_4"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 13.0, 68.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+
 entity faff-6543-8755-014a
     name: "sun"
     isActive: true
@@ -265,6 +298,7 @@ entity faff-6543-8755-014a
         colour: [1.0, 0.95, 0.8]
         intensity: 1.5
         ambient: [0.05, 0.08, 0.12]
+        castsShadows: true
 
 entity deef-ac43-8744-0ae2
     name: "spot_light_1"

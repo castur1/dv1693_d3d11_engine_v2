@@ -15,7 +15,7 @@ struct Render_view;
 class RenderQueue;
 
 class Octree {
-    static constexpr int MAX_DEPTH       = 6;
+    static constexpr int MAX_DEPTH = 6;
     static constexpr int SPLIT_THRESHOLD = 4;
 
     struct Node {
@@ -46,6 +46,7 @@ public:
     void Build(const std::vector<std::pair<Component *, BoundingBox>> &items, const BoundingBox &sceneBounds);
 
     void Query(const BoundingFrustum &frustum, std::vector<Component *> &outComponents) const;
+    void QueryAll(std::vector<Component *> &outComponents) const;
 
     void Clear();
     int Count() const;

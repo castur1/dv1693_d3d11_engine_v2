@@ -285,5 +285,6 @@
     <FxCompile Include="src\shaders\ps_resolve.hlsl" />
     <FxCompile Include="src\shaders\ps_debug.hlsl" />
     <FxCompile Include="src\shaders\vs_debug.hlsl" />
+    <FxCompile Include="src\shaders\vs_shadow.hlsl" />
   </ItemGroup>
 </Project>

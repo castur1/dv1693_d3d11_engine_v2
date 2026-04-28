@@ -14,9 +14,9 @@ public:
 template <typename T>
 class AssetLoader : public AssetLoaderBase {
 protected:
-    ID3D11Device *device               = nullptr;
+    ID3D11Device *device = nullptr;
     ID3D11DeviceContext *deviceContext = nullptr;
-    AssetManager *assetManager         = nullptr;
+    AssetManager *assetManager = nullptr;
 
 public:
     AssetLoader<T>(AssetManager *assetManager) : assetManager(assetManager) {}

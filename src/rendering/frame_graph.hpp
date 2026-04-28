@@ -23,11 +23,9 @@ public:
         };
 
         Size_mode sizeMode = Size_mode::relative;
-        UINT width         = 0;
-        UINT height        = 0;
-        float widthScale   = 1.0f;
-        float heightScale  = 1.0f;
-        UINT mipLevels     = 1;
+        float width = 0.0f;
+        float height = 0.0f;
+        UINT mipLevels = 1;
         DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
         UINT bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -41,8 +39,9 @@ public:
         FrameGraph &frameGraph;
         PassHandle passHandle;
 
-        RenderPassBuilder(FrameGraph &frameGraph, PassHandle passHandle) 
-            : frameGraph(frameGraph), passHandle(passHandle) {}
+        RenderPassBuilder(FrameGraph &frameGraph, PassHandle passHandle)
+            : frameGraph(frameGraph), passHandle(passHandle) {
+        }
 
         Render_pass_base *GetRenderPass();
 
@@ -61,10 +60,11 @@ public:
         FrameGraph &frameGraph;
 
         ExecutionContext(ID3D11DeviceContext *deviceContext, std::vector<Render_view> &views, FrameGraph &frameGraph)
-            : deviceContext(deviceContext), views(views), frameGraph(frameGraph) {}
+            : deviceContext(deviceContext), views(views), frameGraph(frameGraph) {
+        }
 
     public:
-        ID3D11DeviceContext *GetDeviceContext()  { return this->deviceContext; }
+        ID3D11DeviceContext *GetDeviceContext() { return this->deviceContext; }
         std::vector<Render_view> &GetViews() { return this->views; }
 
         Render_view *GetView(View_type type, int index = 0);
@@ -81,15 +81,15 @@ private:
         Texture_desc desc;
         bool wasImported = false;
 
-        ID3D11Texture2D *texture                       = nullptr;
-        ID3D11ShaderResourceView *shaderResourceView   = nullptr;
-        ID3D11RenderTargetView *renderTargetView       = nullptr;
-        ID3D11DepthStencilView *depthStencilView       = nullptr;
+        ID3D11Texture2D *texture = nullptr;
+        ID3D11ShaderResourceView *shaderResourceView = nullptr;
+        ID3D11RenderTargetView *renderTargetView = nullptr;
+        ID3D11DepthStencilView *depthStencilView = nullptr;
         ID3D11UnorderedAccessView *unorderedAccessView = nullptr;
 
         PassHandle firstWrite = INVALID_HANDLE;
-        PassHandle lastRead   = INVALID_HANDLE;
-        int readRefCount      = 0;
+        PassHandle lastRead = INVALID_HANDLE;
+        int readRefCount = 0;
     };
 
     struct Render_pass_base {
@@ -101,7 +101,7 @@ private:
         bool writesBackbuffer = false;
 
         bool isCulled = false;
-        int refCount  = 0;
+        int refCount = 0;
 
         virtual ~Render_pass_base() = default;
 
@@ -125,7 +125,7 @@ private:
     std::vector<std::unique_ptr<Render_pass_base>> renderPasses;
     std::vector<PassHandle> sortedPassHandles;
 
-    int backbufferWidth  = 0;
+    int backbufferWidth = 0;
     int backbufferHeight = 0;
 
     bool isCompiled = false;

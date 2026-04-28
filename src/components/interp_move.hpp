@@ -15,11 +15,11 @@ enum class Easing_function_type {
 };
 
 class InterpMove : public Component {
-    float moveTimer  = 0.0f;
+    float moveTimer = 0.0f;
     float pauseTimer = 0.0f;
 
     bool shouldPingPong = false;
-    bool isReverse      = false;
+    bool isReverse = false;
 
     void EaseHelper(float t);
     void EaseLinear();
@@ -33,11 +33,11 @@ class InterpMove : public Component {
 public:
     XMFLOAT3 startPosition = {0.0f, 0.0f, 0.0f};
     XMFLOAT3 startRotation = {0.0f, 0.0f, 0.0f}; // Degrees
-    XMFLOAT3 startScale    = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 startScale = {1.0f, 1.0f, 1.0f};
 
     XMFLOAT3 endPosition = {0.0f, 0.0f, 0.0f};
     XMFLOAT3 endRotation = {0.0f, 0.0f, 0.0f}; // Degrees
-    XMFLOAT3 endScale    = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 endScale = {1.0f, 1.0f, 1.0f};
 
     // TODO: Should this work with quaternions instead?
     // It would make rotations smoother, but can't handle rotations >180 degrees
@@ -45,9 +45,9 @@ public:
 
     bool shouldIgnorePosition = false;
     bool shouldIgnoreRotation = false;
-    bool shouldIgnoreScale    = false;
+    bool shouldIgnoreScale = false;
 
-    float moveDuration  = 1.0f;
+    float moveDuration = 1.0f;
     float pauseDuration = 0.0f;
 
     Easing_function_type easingFunctionType = Easing_function_type::linear;

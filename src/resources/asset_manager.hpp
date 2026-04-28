@@ -26,7 +26,8 @@ public:
     AssetHandle() = default;
 
     AssetHandle(const AssetID &uuid, AssetManager *assetManager)
-        : uuid(uuid), cachedPtr(nullptr), assetManager(assetManager) {}
+        : uuid(uuid), cachedPtr(nullptr), assetManager(assetManager) {
+    }
 
     ~AssetHandle() = default;
 
@@ -34,7 +35,7 @@ public:
 };
 
 class AssetManager {
-    ID3D11Device *device               = nullptr;
+    ID3D11Device *device = nullptr;
     ID3D11DeviceContext *deviceContext = nullptr;
 
     AssetRegistry registry;

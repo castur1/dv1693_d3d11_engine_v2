@@ -5,9 +5,9 @@
 
 class Window {
     bool shouldClose = true;
-    bool wasResized  = false;
+    bool wasResized = false;
 
-    int width  = 0;
+    int width = 0;
     int height = 0;
 
     HINSTANCE hInst{};

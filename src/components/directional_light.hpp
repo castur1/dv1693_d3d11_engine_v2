@@ -8,9 +8,11 @@
 using namespace DirectX;
 
 class DirectionalLight : public Component {
-    XMFLOAT3 colour    = {1.0f, 1.0f, 1.0f};
-    float    intensity = 0.0f;
-    XMFLOAT3 ambient   = {0.0f, 0.0f, 0.0f};
+    XMFLOAT3 colour = {1.0f, 1.0f, 1.0f};
+    float intensity = 0.0f;
+    XMFLOAT3 ambient = {0.0f, 0.0f, 0.0f};
+
+    bool castsShadows = false;
 
 public:
     DirectionalLight(Entity *owner, bool isActive) : Component(owner, isActive) {}
@@ -25,6 +27,8 @@ public:
         BIND(colour);
         BIND(intensity);
         BIND(ambient);
+
+        BIND(castsShadows);
     }
 };
 

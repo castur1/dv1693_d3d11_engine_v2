@@ -5,17 +5,19 @@
 
 class CameraController : public Component {
     float fieldOfView = 75.0f; // Degrees
-    float nearPlane   = 0.1f;
-    float farPlane    = 512.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 512.0f;
+
+    float shadowDistance = 80.0f;
 
     XMFLOAT3 velocity{};
 
 public:
-    float moveSpeed    = 12.0f;
+    float moveSpeed = 12.0f;
     float acceleration = 12.0f;
-    float drag         = 2.0f;
+    float drag = 2.0f;
 
-    float rotationSpeed    = 90.0;
+    float rotationSpeed = 90.0;
     float mouseSensitivity = 0.09f;
 
     CameraController(Entity *owner, bool isActive) : Component(owner, isActive) {}
@@ -30,6 +32,8 @@ public:
         BIND(fieldOfView);
         BIND(nearPlane);
         BIND(farPlane);
+
+        BIND(shadowDistance);
 
         BIND(moveSpeed);
         BIND(acceleration);

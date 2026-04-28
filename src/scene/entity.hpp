@@ -12,7 +12,7 @@ class Component;
 class Scene;
 
 class Entity {
-    Scene *scene  = nullptr;
+    Scene *scene = nullptr;
 
     EntityID uuid = EntityID::invalid;
     bool isActive = true;
@@ -54,7 +54,7 @@ public:
     T *GetComponent() {
         for (auto &component : this->components) {
             T *ptr = dynamic_cast<T *>(component.get());
-            if (ptr) 
+            if (ptr)
                 return ptr;
         }
 

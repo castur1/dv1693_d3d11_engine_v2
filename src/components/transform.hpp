@@ -12,7 +12,7 @@ using namespace DirectX;
 class Transform : public Component {
     XMFLOAT3 localPosition = {0.0f, 0.0f, 0.0f};
     XMFLOAT4 localRotation = {0.0f, 0.0f, 0.0f, 1.0f}; // Quaternion
-    XMFLOAT3 localScale    = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 localScale = {1.0f, 1.0f, 1.0f};
 
     mutable XMFLOAT4X4 cachedLocal{};
     mutable bool isLocalDirty = true;

@@ -12,6 +12,10 @@
 Renderer::~Renderer() {
     this->frameGraph.Clear();
 
+    SafeRelease(this->shadowVS);
+    SafeRelease(this->shadowLayout);
+    SafeRelease(this->shadowRS);
+    SafeRelease(this->shadowSampler);
     SafeRelease(this->gBufferVS);
     SafeRelease(this->gBufferPS);
     SafeRelease(this->gBufferLayout);
@@ -19,12 +23,25 @@ Renderer::~Renderer() {
     SafeRelease(this->resolveVS);
     SafeRelease(this->resolvePS);
 
+    SafeRelease(this->shadowMapDirectionalSRV);
+    for (int i = 0; i < MAX_DIRECTIONAL_SHADOW_MAPS; ++i)
+        SafeRelease(this->shadowMapDirectionalDSVs[i]);
+    SafeRelease(this->shadowMapDirectionalTexture);
+
+    SafeRelease(this->shadowMapSpotSRV);
+    for (int i = 0; i < MAX_SPOT_SHADOW_MAPS; ++i)
+        SafeRelease(this->shadowMapSpotDSVs[i]);
+    SafeRelease(this->shadowMapSpotTexture);
+
+    SafeRelease(this->shadowBuffer);
     SafeRelease(this->perFrameBuffer);
     SafeRelease(this->perObjectBuffer);
     SafeRelease(this->perMaterialBuffer);
     SafeRelease(this->lightingBuffer);
     SafeRelease(this->debugResolveBuffer); // Debug
 
+    SafeRelease(this->directionalLightBufferSRV);
+    SafeRelease(this->directionalLightBuffer);
     SafeRelease(this->spotLightBufferSRV);
     SafeRelease(this->spotLightBuffer);
 
@@ -189,38 +206,6 @@ bool Renderer::CreateConstantBuffers() {
     return true;
 }
 
-bool Renderer::CreateStructuredBuffers() {
-    D3D11_BUFFER_DESC bufferDesc{};
-    bufferDesc.ByteWidth = sizeof(Spot_light_data) * Renderer::MAX_SPOT_LIGHTS;
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    bufferDesc.StructureByteStride = sizeof(Spot_light_data);
-
-    HRESULT result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->spotLightBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create spot light structured buffer");
-        return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.NumElements = Renderer::MAX_SPOT_LIGHTS;
-
-    result = this->device->CreateShaderResourceView(this->spotLightBuffer, &srvDesc, &this->spotLightBufferSRV);
-    if (FAILED(result)) {
-        LogError("Failed to create spot light structured buffer SRV");
-        return false;
-    }
-
-    LogInfo("Structured buffers created\n");
-
-    return true;
-}
-
 bool Renderer::CreateCommonSamplerStates() {
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.MipLODBias = 0.0f;
@@ -332,6 +317,216 @@ bool Renderer::LoadDeferredShaders() {
     return true;
 }
 
+static bool CreateDepthArray(
+    ID3D11Device *device,
+    int resolution,
+    int arraySize,
+    ID3D11Texture2D **outTexture,
+    ID3D11DepthStencilView **outDSVs,
+    ID3D11ShaderResourceView **outSRV,
+    const char *debugName
+) {
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = resolution;
+    desc.Height = resolution;
+    desc.MipLevels = 1;
+    desc.ArraySize = arraySize;
+    desc.Format = DXGI_FORMAT_R32_TYPELESS;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+    HRESULT result = device->CreateTexture2D(&desc, nullptr, outTexture);
+    if (FAILED(result)) {
+        LogError("Failed to create depth texture array '%s'", debugName);
+        return false;
+    }
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+    dsvDesc.Texture2DArray.MipSlice = 0;
+    dsvDesc.Texture2DArray.ArraySize = 1;
+
+    for (int i = 0; i < arraySize; ++i) {
+        dsvDesc.Texture2DArray.FirstArraySlice = i;
+
+        result = device->CreateDepthStencilView(*outTexture, &dsvDesc, &outDSVs[i]);
+        if (FAILED(result)) {
+            LogError("Failed to create DSV[%d] for '%s'", i, debugName);
+            return false;
+        }
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+    srvDesc.Texture2DArray.MipLevels = 1;
+    srvDesc.Texture2DArray.MostDetailedMip = 0;
+    srvDesc.Texture2DArray.FirstArraySlice = 0;
+    srvDesc.Texture2DArray.ArraySize = arraySize;
+
+    result = device->CreateShaderResourceView(*outTexture, &srvDesc, outSRV);
+    if (FAILED(result)) {
+        LogError("Failed to create SRV for '%s'", debugName);
+        return false;
+    }
+
+    return true;
+}
+
+static bool CreateStructuredBuffer(
+    ID3D11Device *device, 
+    UINT elementSize, 
+    UINT elementCount, 
+    ID3D11Buffer **outBuffer, 
+    ID3D11ShaderResourceView **outSRV, 
+    const char *debugName
+) {
+    D3D11_BUFFER_DESC desc{};
+    desc.ByteWidth = elementSize * elementCount;
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    desc.StructureByteStride = elementSize;
+
+    HRESULT result = device->CreateBuffer(&desc, nullptr, outBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create structured buffer '%s'", debugName);
+        return false;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.NumElements = elementCount;
+
+    result = device->CreateShaderResourceView(*outBuffer, &srvDesc, outSRV);
+    if (FAILED(result)) {
+        LogError("Failed to create SRV for '%s'", debugName);
+        return false;
+    }
+
+    return true;
+}
+
+bool Renderer::CreateShadowResources() {
+    if (!CreateDepthArray(
+        this->device,
+        SHADOW_MAP_DIRECTIONAL_RESOLUTION,
+        MAX_DIRECTIONAL_SHADOW_MAPS,
+        &this->shadowMapDirectionalTexture,
+        this->shadowMapDirectionalDSVs,
+        &this->shadowMapDirectionalSRV,
+        "directional"
+    )) {
+        return false;
+    }
+
+    if (!CreateStructuredBuffer(
+        this->device,
+        sizeof(Directional_light_data),
+        MAX_DIRECTIONAL_LIGHTS,
+        &this->directionalLightBuffer,
+        &this->directionalLightBufferSRV,
+        "directional"
+    )) {
+        return false;
+    }
+
+    if (!CreateDepthArray(
+        this->device,
+        SHADOW_MAP_SPOT_RESOLUTION,
+        MAX_SPOT_SHADOW_MAPS,
+        &this->shadowMapSpotTexture,
+        this->shadowMapSpotDSVs,
+        &this->shadowMapSpotSRV,
+        "spot"
+    )) {
+        return false;
+    }
+
+    if (!CreateStructuredBuffer(
+        this->device,
+        sizeof(Spot_light_data),
+        MAX_SPOT_LIGHTS,
+        &this->spotLightBuffer,
+        &this->spotLightBufferSRV,
+        "spot"
+    )) {
+        return false;
+    }
+
+    const std::string shaderDir = "assets/shaders/";
+    std::vector<uint8_t> bytecode;
+
+    if (!LoadShaderBytecode(shaderDir + "vs_shadow.cso", bytecode))
+        return false;
+
+    HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->shadowVS);
+    if (FAILED(result)) {
+        LogError("Failed to create vertex shader");
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+
+    result = this->device->CreateInputLayout(layoutDesc, 1, bytecode.data(), bytecode.size(), &this->shadowLayout);
+    if (FAILED(result)) {
+        LogError("Failed to create input layout");
+        return false;
+    }
+
+    D3D11_BUFFER_DESC bufferDesc{};
+    bufferDesc.ByteWidth = sizeof(XMFLOAT4X4);
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->shadowBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create constant buffer");
+        return false;
+    }
+
+    D3D11_RASTERIZER_DESC rasterizerDesc{};
+    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerDesc.CullMode = D3D11_CULL_BACK; // TODO: D3D11_CULL_FRONT?
+    rasterizerDesc.DepthBias = 1000;
+    rasterizerDesc.SlopeScaledDepthBias = 1.0f;
+    rasterizerDesc.DepthBiasClamp = 0.01f;
+    rasterizerDesc.DepthClipEnable = true;
+
+    result = this->device->CreateRasterizerState(&rasterizerDesc, &this->shadowRS);
+    if (FAILED(result)) {
+        LogError("Failed to create rasterizer state");
+        return false;
+    }
+
+    D3D11_SAMPLER_DESC samplerDesc{};
+    samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.BorderColor[0] = samplerDesc.BorderColor[1] = samplerDesc.BorderColor[2] = 1.0f;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    result = this->device->CreateSamplerState(&samplerDesc, &this->shadowSampler);
+    if (FAILED(result)) {
+        LogError("Failed to create sampler");
+        return false;
+    }
+
+    LogInfo("Shadow resources created\n");
+
+    return true;
+}
+
 void Renderer::SetViewport(int width, int height) {
     this->viewport.TopLeftX = 0.0f;
     this->viewport.TopLeftY = 0.0f;
@@ -354,57 +549,124 @@ void Renderer::UploadPerFrameData(const Render_view &view) {
     data.invViewProjectionMatrix = view.invViewProjectionMatrix;
     data.cameraPosition          = view.cameraPosition;
 
-    this->UploadConstantBuffer<Per_frame_data>(this->perFrameBuffer, data);
+    this->UploadConstantBuffer(this->perFrameBuffer, data);
 }
 
 void Renderer::UploadLightData(const Render_view &view) {
     Lighting_data lightingData{};
+    lightingData.directionalLightCount = view.queue.directionalLightCommands.size();
+    lightingData.spotLightCount = view.queue.spotLightCommands.size();
 
-    if (view.queue.directionalLightCommand.has_value()) {
-        const Directional_light_command &dlc = view.queue.directionalLightCommand.value();
-        lightingData.directionalLightDirection = dlc.direction;
-        lightingData.directionalLightColour    = dlc.colour;
-        lightingData.directionalLightIntensity = dlc.intensity;
-        lightingData.ambientColour             = dlc.ambientColour;
+    for (const auto &dlc : view.queue.directionalLightCommands) {
+        lightingData.ambientColour.x += dlc.ambientColour.x;
+        lightingData.ambientColour.y += dlc.ambientColour.y;
+        lightingData.ambientColour.z += dlc.ambientColour.z;
     }
 
-    lightingData.spotLightCount = min(MAX_SPOT_LIGHTS, view.queue.spotLightCommands.size());
+    this->UploadConstantBuffer(this->lightingBuffer, lightingData);
 
-    this->UploadConstantBuffer<Lighting_data>(this->lightingBuffer, lightingData);
+    // Directional
 
-    if (lightingData.spotLightCount <= 0)
-        return;
+    int directionalCommandToSlot[MAX_DIRECTIONAL_LIGHTS];
+    memset(directionalCommandToSlot, -1, sizeof(directionalCommandToSlot));
+    for (int i = 0; i < this->perFrameShadowData.directionalCount; ++i)
+        directionalCommandToSlot[this->perFrameShadowData.directionalSlotToCommand[i]] = i;
+
+    int directionalCount = min(MAX_DIRECTIONAL_LIGHTS, view.queue.directionalLightCommands.size());
+
+    Directional_light_data directionalData[MAX_DIRECTIONAL_LIGHTS];
+    for (int i = 0; i < directionalCount; ++i) {
+        const Directional_light_command &dlc = view.queue.directionalLightCommands[i];
+        Directional_light_data &entry = directionalData[i];
+
+        entry.direction        = dlc.direction;
+        entry.intensity        = dlc.intensity;
+        entry.colour           = dlc.colour;
+        entry.castsShadows     = dlc.castsShadows ? 1 : 0;
+        entry.shadowSliceIndex = directionalCommandToSlot[i];
+
+        if (entry.shadowSliceIndex >= 0)
+            entry.viewProjectionMatrix = this->perFrameShadowData.directionalViewProjectionMatrices[entry.shadowSliceIndex];
+        else
+            XMStoreFloat4x4(&entry.viewProjectionMatrix, XMMatrixIdentity());
+    }
 
     D3D11_MAPPED_SUBRESOURCE mapped;
-    HRESULT result = this->deviceContext->Map(this->spotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    HRESULT result = this->deviceContext->Map(this->directionalLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    if (FAILED(result)) {
+        LogWarn("Failed to map directional light buffer\n");
+        return;
+    }
+
+    memcpy(mapped.pData, directionalData, sizeof(Directional_light_data) * directionalCount);
+    this->deviceContext->Unmap(this->directionalLightBuffer, 0);
+    
+    // Spot
+
+    int spotCommandToSlot[MAX_SPOT_LIGHTS];
+    memset(spotCommandToSlot, -1, sizeof(spotCommandToSlot));
+    for (int i = 0; i < this->perFrameShadowData.spotCount; ++i)
+        spotCommandToSlot[this->perFrameShadowData.spotSlotToCommand[i]] = i;
+
+    int spotCount = min(MAX_SPOT_LIGHTS, view.queue.spotLightCommands.size());
+
+    Spot_light_data spotData[MAX_SPOT_LIGHTS];
+    for (int i = 0; i < spotCount; ++i) {
+        const Spot_light_command &slc = view.queue.spotLightCommands[i];
+        Spot_light_data &entry = spotData[i];
+
+        entry.position         = slc.position;
+        entry.intensity        = slc.intensity;
+        entry.direction        = slc.direction;
+        entry.range            = slc.range;
+        entry.colour           = slc.colour;
+        entry.cosInnerAngle    = cosf(slc.innerConeAngle);
+        entry.cosOuterAngle    = cosf(slc.outerConeAngle);
+        entry.castsShadows     = slc.castsShadows ? 1 : 0;
+        entry.shadowSliceIndex = spotCommandToSlot[i];
+
+        if (entry.shadowSliceIndex >= 0)
+            entry.viewProjectionMatrix = this->perFrameShadowData.spotViewProjectionMatrices[entry.shadowSliceIndex];
+        else
+            XMStoreFloat4x4(&entry.viewProjectionMatrix, XMMatrixIdentity());
+    }
+
+    result = this->deviceContext->Map(this->spotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     if (FAILED(result)) {
         LogWarn("Failed to map spot light buffer\n");
         return;
     }
 
-    Spot_light_data *dest = static_cast<Spot_light_data *>(mapped.pData);
-    for (int i = 0; i < lightingData.spotLightCount; ++i) {
-        const Spot_light_command &src = view.queue.spotLightCommands[i];
-        dest[i].position      = src.position;
-        dest[i].intensity     = src.intensity;
-        dest[i].direction     = src.direction;
-        dest[i].range         = src.range;
-        dest[i].colour        = src.colour;
-        dest[i].cosInnerAngle = cosf(src.innerConeAngle);
-        dest[i].cosOuterAngle = cosf(src.outerConeAngle);
-        dest[i].castsShadows  = src.castsShadows ? 1 : 0;
-
-        XMStoreFloat4x4(&dest[i].viewProjectionMatrix, XMMatrixIdentity()); // TODO
-    }
-
+    memcpy(mapped.pData, spotData, sizeof(Spot_light_data) * spotCount);
     this->deviceContext->Unmap(this->spotLightBuffer, 0);
 }
 
 void Renderer::BuildFrameGraph() {
     this->frameGraph.Clear();
 
-    this->backbufferHandle = this->frameGraph.ImportTexture("Backbuffer", nullptr, this->renderTargetView);
+    this->backbufferHandle = this->frameGraph.ImportTexture(
+        "Backbuffer", 
+        nullptr, 
+        this->renderTargetView
+    );
 
+    this->shadowMapDirectionalHandle = this->frameGraph.ImportTexture(
+        "ShadowMap_directional",
+        this->shadowMapDirectionalTexture,
+        nullptr,
+        this->shadowMapDirectionalSRV,
+        this->shadowMapDirectionalDSVs[0]
+    );
+
+    this->shadowMapSpotHandle = this->frameGraph.ImportTexture(
+        "ShadowMap_spot",
+        this->shadowMapSpotTexture,
+        nullptr,
+        this->shadowMapSpotSRV,
+        this->shadowMapSpotDSVs[0]
+    );
+
+    // G-buffers:
     // T0: R8G8B8A8_UNORM    = albedo.rgb | specular exponent / 1000 = 32 bits
     // T1: R10G10B10A2_UNORM = encoded normal | unused               = 32 bits
     // T2: R11G11B10_FLOAT   = specular colour                       = 32 bits
@@ -413,11 +675,11 @@ void Renderer::BuildFrameGraph() {
     // TODO: Per-object ambient?
 
     FrameGraph::Texture_desc desc{};
-    desc.sizeMode    = FrameGraph::Texture_desc::Size_mode::relative;
-    desc.widthScale  = 1.0f;
-    desc.heightScale = 1.0f;
-    desc.mipLevels   = 1;
-    desc.bindFlags   = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::relative;
+    desc.width = 1.0f;
+    desc.height = 1.0f;
+    desc.mipLevels = 1;
+    desc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
     desc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
     auto albedoHandle = this->frameGraph.CreateTexture("GBuffer_albedo", desc);
@@ -435,6 +697,94 @@ void Renderer::BuildFrameGraph() {
     desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
     desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
     auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
+
+    struct Shadow_pass_data {
+        FrameGraph::TextureHandle shadowMapDirectional;
+        FrameGraph::TextureHandle shadowMapSpot;
+    };
+
+    this->frameGraph.AddRenderPass<Shadow_pass_data>(
+        "Shadow pass",
+        [&](Shadow_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.shadowMapDirectional = builder.Write(this->shadowMapDirectionalHandle);
+            data.shadowMapSpot        = builder.Write(this->shadowMapSpotHandle);
+        },
+        [this](const Shadow_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            deviceContext->RSSetState(this->shadowRS);
+
+            deviceContext->IASetInputLayout(this->shadowLayout);
+            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            deviceContext->VSSetShader(this->shadowVS, nullptr, 0);
+            deviceContext->PSSetShader(nullptr, nullptr, 0);
+
+            D3D11_VIEWPORT viewport{};
+            viewport.Width = viewport.Height = SHADOW_MAP_DIRECTIONAL_RESOLUTION;
+            viewport.MaxDepth = 1.0f;
+            deviceContext->RSSetViewports(1, &viewport);
+
+            deviceContext->VSSetConstantBuffers(0, 1, &this->shadowBuffer);
+            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+
+            for (int i = 0; i < this->perFrameShadowData.directionalCount; ++i) {
+                Render_view *view = context.GetView(View_type::shadowMapDirectional, i);
+                if (!view)
+                    break;
+
+                deviceContext->ClearDepthStencilView(this->shadowMapDirectionalDSVs[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
+                
+                deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapDirectionalDSVs[i]);
+
+                this->UploadConstantBuffer(this->shadowBuffer, view->viewProjectionMatrix);
+
+                for (const Geometry_command &command : view->queue.geometryCommands) {
+                    Per_object_data perObjectData{};
+                    perObjectData.worldMatrix = command.worldMatrix;
+                    this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+
+                    const UINT stride = sizeof(Vertex);
+                    const UINT offset = 0;
+                    deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
+                    deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                    deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
+                }
+            }
+
+            viewport.Width = viewport.Height = SHADOW_MAP_SPOT_RESOLUTION;
+            deviceContext->RSSetViewports(1, &viewport);
+
+            for (int i = 0; i < this->perFrameShadowData.spotCount; ++i) {
+                Render_view *view = context.GetView(View_type::shadowMapSpot, i);
+                if (!view)
+                    break;
+
+                deviceContext->ClearDepthStencilView(this->shadowMapSpotDSVs[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
+                
+                deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapSpotDSVs[i]);
+
+                this->UploadConstantBuffer(this->shadowBuffer, view->viewProjectionMatrix);
+
+                for (const Geometry_command &command : view->queue.geometryCommands) {
+                    Per_object_data perObjectData{};
+                    perObjectData.worldMatrix = command.worldMatrix;
+                    this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+
+                    const UINT stride = sizeof(Vertex);
+                    const UINT offset = 0;
+                    deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
+                    deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                    deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
+                }
+            }
+
+            deviceContext->RSSetState(nullptr);
+            deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+        }
+    );
 
     struct Geometry_pass_data {
         FrameGraph::TextureHandle albedo;
@@ -483,10 +833,15 @@ void Renderer::BuildFrameGraph() {
 
             deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             deviceContext->IASetInputLayout(this->gBufferLayout);
+
             deviceContext->VSSetShader(this->gBufferVS, nullptr, 0);
             deviceContext->PSSetShader(this->gBufferPS, nullptr, 0);
 
             deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+            deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
+
+            deviceContext->RSSetViewports(1, &this->viewport);
 
             for (Geometry_command &command : view->queue.geometryCommands) {
                 Per_object_data perObjectData{};
@@ -496,8 +851,7 @@ void Renderer::BuildFrameGraph() {
                     XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
                 );
 
-                this->UploadConstantBuffer<Per_object_data>(this->perObjectBuffer, perObjectData);
-                deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+                this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
 
                 Material *material = command.material.Get();
                 if (material) {
@@ -507,8 +861,7 @@ void Renderer::BuildFrameGraph() {
                     perMaterialData.materialSpecular         = material->specularColour;
                     perMaterialData.materialSpecularExponent = material->specularExponent;
 
-                    this->UploadConstantBuffer<Per_material_data>(this->perMaterialBuffer, perMaterialData);
-                    deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
+                    this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
 
                     ID3D11ShaderResourceView *srvs[2] = {
                         material->diffuseTexture.Get()->shaderResourceView,
@@ -517,8 +870,8 @@ void Renderer::BuildFrameGraph() {
                     deviceContext->PSSetShaderResources(0, 2, srvs);
                 }
 
-                UINT stride = sizeof(Vertex);
-                UINT offset = 0;
+                const UINT stride = sizeof(Vertex);
+                const UINT offset = 0;
                 deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
                 deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
@@ -539,6 +892,9 @@ void Renderer::BuildFrameGraph() {
         FrameGraph::TextureHandle specular;
         FrameGraph::TextureHandle depth;
 
+        FrameGraph::TextureHandle shadowMapDirectional;
+        FrameGraph::TextureHandle shadowMapSpot;
+
         FrameGraph::TextureHandle output;
     };
 
@@ -549,6 +905,9 @@ void Renderer::BuildFrameGraph() {
             data.normal   = builder.Read(normalHandle);
             data.specular = builder.Read(specularHandle);
             data.depth    = builder.Read(depthHandle);
+
+            data.shadowMapDirectional = builder.Read(this->shadowMapDirectionalHandle);
+            data.shadowMapSpot        = builder.Read(this->shadowMapSpotHandle);
 
             data.output = builder.Write(lightingOutputHandle);
         },
@@ -567,15 +926,20 @@ void Renderer::BuildFrameGraph() {
             deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
             deviceContext->CSSetConstantBuffers(1, 1, &this->lightingBuffer);
 
-            ID3D11ShaderResourceView *srvs[4] = {
+            ID3D11ShaderResourceView *srvs[8] = {
                 context.GetShaderResourceView(data.albedo),
                 context.GetShaderResourceView(data.normal),
                 context.GetShaderResourceView(data.specular),
-                context.GetShaderResourceView(data.depth)
+                context.GetShaderResourceView(data.depth),
+                context.GetShaderResourceView(data.shadowMapDirectional),
+                context.GetShaderResourceView(data.shadowMapSpot),
+                this->directionalLightBufferSRV,
+                this->spotLightBufferSRV
             };
-            deviceContext->CSSetShaderResources(0, 4, srvs);
+            deviceContext->CSSetShaderResources(0, 8, srvs);
 
-            deviceContext->CSSetShaderResources(4, 1, &this->spotLightBufferSRV);
+            // TODO: Make common sampler? This currently overwrites the 2nd common sampler, I think
+            deviceContext->CSSetSamplers(1, 1, &this->shadowSampler);
 
             ID3D11UnorderedAccessView *uav = context.GetUnorderedAccessView(data.output);
             deviceContext->ClearUnorderedAccessViewFloat(uav, this->clearColour);
@@ -585,8 +949,8 @@ void Renderer::BuildFrameGraph() {
             UINT groupsY = (this->height + 7) / 8;
             deviceContext->Dispatch(groupsX, groupsY, 1);
 
-            ID3D11ShaderResourceView *nullSrvs[5] = {};
-            deviceContext->CSSetShaderResources(0, 5, nullSrvs);
+            ID3D11ShaderResourceView *nullSrvs[8] = {};
+            deviceContext->CSSetShaderResources(0, 8, nullSrvs);
 
             ID3D11UnorderedAccessView *nullUav = nullptr;
             deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUav, nullptr);
@@ -630,7 +994,7 @@ void Renderer::BuildFrameGraph() {
                 this->currentDebugData.farPlane  = view->farPlane;
             }
 
-            this->UploadConstantBuffer<Debug_resolve_data>(this->debugResolveBuffer, this->currentDebugData);
+            this->UploadConstantBuffer(this->debugResolveBuffer, this->currentDebugData);
             deviceContext->PSSetConstantBuffers(3, 1, &this->debugResolveBuffer); // Debug
 
             ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);
@@ -670,6 +1034,159 @@ void Renderer::BuildFrameGraph() {
     this->frameGraph.Compile(this->width, this->height);
 }
 
+void Renderer::ComputeDirectionalLightMatrices(
+    XMMATRIX &outView, 
+    XMMATRIX &outProjection, 
+    const Directional_light_command &command, 
+    const Render_view &primaryView
+) {
+    XMFLOAT3 corners[8];
+    primaryView.frustum.GetCorners(corners);
+
+    float t = min(primaryView.shadowDistance / primaryView.farPlane, 1.0f);
+    for (int i = 0; i < 4; ++i)
+        XMStoreFloat3(&corners[i + 4], XMVectorLerp(XMLoadFloat3(&corners[i]), XMLoadFloat3(&corners[i + 4]), t));
+
+    XMVECTOR centre = XMVectorZero();
+    for (const XMFLOAT3 &corner : corners)
+        centre += XMLoadFloat3(&corner);
+    centre /= 8.0f;
+
+    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
+    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
+    outView = XMMatrixLookToLH(centre, direction, up);
+
+    float minX = FLT_MAX;
+    float maxX = -FLT_MAX;
+    float minY = FLT_MAX;
+    float maxY = -FLT_MAX;
+    float minZ = FLT_MAX;
+    float maxZ = -FLT_MAX;
+
+    for (const XMFLOAT3 &corner : corners) {
+        XMFLOAT3 pos;
+        XMStoreFloat3(&pos, XMVector3Transform(XMLoadFloat3(&corner), outView));
+
+        minX = min(minX, pos.x);
+        maxX = max(maxX, pos.x);
+        minY = min(minY, pos.y);
+        maxY = max(maxY, pos.y);
+        minZ = min(minZ, pos.z);
+        maxZ = max(maxZ, pos.z);
+    }
+
+    minZ -= 500.0f;
+
+    float texelX = (maxX - minX) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
+    float texelY = (maxY - minY) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
+    minX = floorf(minX / texelX) * texelX;
+    maxX = floorf(maxX / texelX) * texelX;
+    minY = floorf(minY / texelY) * texelY;
+    maxY = floorf(maxY / texelY) * texelY;
+
+    outProjection = XMMatrixOrthographicOffCenterLH(minX, maxX, minY, maxY, minZ, maxZ);
+}
+
+void Renderer::ComputeSpotLightMatrices(
+    XMMATRIX &outView, 
+    XMMATRIX &outProjection, 
+    const Spot_light_command &command
+) {
+    XMVECTOR position = XMLoadFloat3(&command.position);
+    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
+    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
+
+    outView = XMMatrixLookToLH(position, direction, up);
+    outProjection = XMMatrixPerspectiveFovLH(command.outerConeAngle * 2.0f, 1.0f, 0.1f, command.range);
+}
+
+Render_view *Renderer::GetView(View_type type, int index) {
+    for (Render_view &view : this->views)
+        if (view.type == type && view.index == index)
+            return &view;
+
+    return nullptr;
+}
+
+void Renderer::SetupShadowViews(Scene *scene) {
+    if (!scene)
+        return;
+
+    Render_view *primaryView = this->GetView(View_type::primary);
+    if (!primaryView)
+        return;
+
+    this->perFrameShadowData.directionalCount = 0;
+    this->perFrameShadowData.spotCount = 0;
+
+    std::vector<Render_view> shadowViews;
+
+    for (int i = 0; i < primaryView->queue.directionalLightCommands.size(); ++i) {
+        if (this->perFrameShadowData.directionalCount >= MAX_DIRECTIONAL_SHADOW_MAPS)
+            break;
+
+        const Directional_light_command &command = primaryView->queue.directionalLightCommands[i];
+        if (!command.castsShadows)
+            continue;
+
+        int slot = this->perFrameShadowData.directionalCount;
+        XMMATRIX viewMatrix;
+        XMMATRIX projectionMatrix;
+        this->ComputeDirectionalLightMatrices(viewMatrix, projectionMatrix, command, *primaryView);
+        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
+
+        Render_view view{};
+        view.type = View_type::shadowMapDirectional;
+        view.index = slot;
+        view.skipFrustumCulling = true;
+        XMStoreFloat4x4(&view.viewProjectionMatrix, viewProjectionMatrix);
+
+        shadowViews.push_back(view);
+
+        XMStoreFloat4x4(
+            &this->perFrameShadowData.directionalViewProjectionMatrices[slot], 
+            viewProjectionMatrix
+        );
+        this->perFrameShadowData.directionalSlotToCommand[slot] = i;
+        ++this->perFrameShadowData.directionalCount;
+    }
+
+    for (int i = 0; i < primaryView->queue.spotLightCommands.size(); ++i) {
+        if (this->perFrameShadowData.spotCount >= MAX_SPOT_SHADOW_MAPS)
+            break;
+
+        const Spot_light_command &command = primaryView->queue.spotLightCommands[i];
+        if (!command.castsShadows)
+            continue;
+
+        int slot = this->perFrameShadowData.spotCount;
+        XMMATRIX viewMatrix;
+        XMMATRIX projectionMatrix;
+        this->ComputeSpotLightMatrices(viewMatrix, projectionMatrix, command);
+        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
+
+        Render_view view{};
+        view.type = View_type::shadowMapSpot;
+        view.index = slot;
+        XMStoreFloat4x4(&view.viewProjectionMatrix, viewProjectionMatrix);
+
+        BoundingFrustum::CreateFromMatrix(view.frustum, projectionMatrix);
+        view.frustum.Transform(view.frustum, XMMatrixInverse(nullptr, viewMatrix));
+
+        shadowViews.push_back(view);
+
+        XMStoreFloat4x4(
+            &this->perFrameShadowData.spotViewProjectionMatrices[slot], 
+            viewProjectionMatrix
+        );
+        this->perFrameShadowData.spotSlotToCommand[slot] = i;
+        ++this->perFrameShadowData.spotCount;
+    }
+
+    scene->GatherVisibility(shadowViews);
+    this->views.insert(this->views.end(), shadowViews.begin(), shadowViews.end());
+}
+
 bool Renderer::Initialize(HWND hWnd) {
     LogInfo("Creating renderer...\n");
     LogIndent();
@@ -688,13 +1205,13 @@ bool Renderer::Initialize(HWND hWnd) {
     if (!this->CreateConstantBuffers())
         return false;
 
-    if (!this->CreateStructuredBuffers())
-        return false;
-
     if (!this->CreateCommonSamplerStates())
         return false;
 
     if (!this->LoadDeferredShaders())
+        return false;
+
+    if (!this->CreateShadowResources())
         return false;
 
     this->SetViewport(this->width, this->height);
@@ -757,23 +1274,16 @@ void Renderer::Render(Scene *scene) {
         this->renderTargetView
     );
 
-    deviceContext->RSSetViewports(1, &this->viewport);
-
     this->BindCommonSamplerStates();
 
     scene->GatherVisibility(this->views);
-
+    this->SetupShadowViews(scene);
     this->frameGraph.Execute(this->deviceContext, this->views);
 
+    // Needed for DebugDraw and ImGui
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 
-    const Render_view *primary = nullptr;
-    for (const Render_view &view : this->views) {
-        if (view.type == View_type::primary) {
-            primary = &view;
-            break;
-        }
-    }
+    const Render_view *primary = this->GetView(View_type::primary);
     if (primary)
         DebugDraw::Render(this->deviceContext, primary->viewProjectionMatrix);
 }
@@ -783,16 +1293,20 @@ void Renderer::Present() {
 }
 
 void Renderer::AddView(const Render_view &view) {
+    if (view.type == View_type::primary) {
+        for (Render_view &other : this->views) {
+            if (other.type == View_type::primary) {
+                other = view;
+                return;
+            }
+        }
+    }
+
     this->views.push_back(view);
 }
 
 void Renderer::AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
-    Render_view v{};
-    v.type  = view.type;
-    v.index = view.index;
-
-    v.nearPlane = view.nearPlane;
-    v.farPlane  = view.farPlane;
+    Render_view v = view;
 
     XMMATRIX worldMatrix = XMMatrixInverse(nullptr, viewMatrix);
 

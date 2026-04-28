@@ -28,7 +28,7 @@ public:
     Application();
     ~Application() = default;
 
-    Application(const Application &other)            = delete;
+    Application(const Application &other) = delete;
     Application &operator=(const Application &other) = delete;
 
     bool Initialize();

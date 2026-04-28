@@ -119,6 +119,10 @@ void Octree::Query(const BoundingFrustum &frustum, std::vector<Component *> &out
     this->Query(this->root.get(), frustum, outComponents);
 }
 
+void Octree::QueryAll(std::vector<Component *> &outComponents) const {
+    this->CollectAll(this->root.get(), outComponents);
+}
+
 void Octree::Clear() {
     this->root.reset();
 }
@@ -212,49 +216,48 @@ void SceneCuller::GatherVisibility(std::vector<Render_view> &views) const {
     for (Render_view &view : views) {
         std::vector<Component *> visible;
 
-        // static
-        this->octree.Query(view.frustum, visible);
+        if (view.skipFrustumCulling) {
+            // Static
+            this->octree.QueryAll(visible);
 
-        // TODO: This is not necessary. It's just to get the stats
-        std::sort(visible.begin(), visible.end());
-        visible.erase(std::unique(visible.begin(), visible.end()), visible.end());
+            // Dynamic
+            for (Component *component : this->dynamicRenderables)
+                if (component->GetOwner()->IsActive() && component->isActive)
+                    visible.push_back(component);
+        }
+        else {
+            // Static
+            this->octree.Query(view.frustum, visible);
 
-        int staticVisible = visible.size();
+            // Dynamic
+            for (Component *component : this->dynamicRenderables) {
+                if (!component->GetOwner()->IsActive() || !component->isActive)
+                    continue;
 
-        // dynamic
-        for (Component *component : this->dynamicRenderables) {
-            if (!component->GetOwner()->IsActive() || !component->isActive)
-                continue;
+                BoundingBox bounds;
+                if (!component->GetWorldBounds(bounds))
+                    continue;
 
-            BoundingBox bounds;
-            if (!component->GetWorldBounds(bounds))
-                continue;
-
-            if (view.frustum.Contains(bounds) != DISJOINT)
-                visible.push_back(component);
+                if (view.frustum.Contains(bounds) != DISJOINT)
+                    visible.push_back(component);
+            }
         }
 
         std::sort(visible.begin(), visible.end());
         visible.erase(std::unique(visible.begin(), visible.end()), visible.end());
 
-        int dynamicVisible = visible.size() - staticVisible;
-
         for (Component *component : visible)
             component->Render(view, view.queue);
 
-        // Debug
-        int staticCount = this->octree.Count();
-        int dynamicCount = this->dynamicRenderables.size();
+        //Debug::SetStat(
+        //    "octree.culledStatic", 
+        //    std::to_string(staticCount - staticVisible) + "/" + std::to_string(staticCount)
+        //);
 
-        Debug::SetStat(
-            "octree.culledStatic", 
-            std::to_string(staticCount - staticVisible) + "/" + std::to_string(staticCount)
-        );
-
-        Debug::SetStat(
-            "octree.culledDynamic", 
-            std::to_string(dynamicCount - dynamicVisible) + "/" + std::to_string(dynamicCount)
-        );
+        //Debug::SetStat(
+        //    "octree.culledDynamic", 
+        //    std::to_string(dynamicCount - dynamicVisible) + "/" + std::to_string(dynamicCount)
+        //);
     }
 }
 

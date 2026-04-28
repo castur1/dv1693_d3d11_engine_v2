@@ -28,7 +28,7 @@ public:
 namespace std {
     template<>
     struct hash<UUID_> {
-        std::size_t operator()(const UUID_& uuid) const {
+        std::size_t operator()(const UUID_ &uuid) const {
             return hash<uint64_t>()(uuid);
         }
     };

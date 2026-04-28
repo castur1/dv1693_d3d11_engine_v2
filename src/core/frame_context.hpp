@@ -6,7 +6,7 @@ class AssetManager;
 class Renderer;
 
 struct Engine_context {
-    Renderer     *renderer     = nullptr;
+    Renderer *renderer = nullptr;
     SceneManager *sceneManager = nullptr;
     AssetManager *assetManager = nullptr;
 };

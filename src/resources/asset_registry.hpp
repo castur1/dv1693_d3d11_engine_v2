@@ -14,7 +14,7 @@ class AssetRegistry {
 
 public:
     AssetRegistry() = default;
-     ~AssetRegistry() = default;
+    ~AssetRegistry() = default;
 
     void RegisterAssets();
     void Clear();

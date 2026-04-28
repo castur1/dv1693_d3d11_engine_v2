@@ -109,6 +109,8 @@ void CameraController::Update(const Frame_context &context) {
     view.nearPlane = this->nearPlane;
     view.farPlane  = this->farPlane;
 
+    view.shadowDistance = this->shadowDistance;
+
     context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix, transform->GetWorldPosition());
 
     if (Input::IsKeyPressed('1'))

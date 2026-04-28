@@ -23,7 +23,7 @@ struct Vertex {
 
     // For std::unordered_map
     // We don't consider tangent since it is computed after vertex deduplication
-    bool operator==(const Vertex& other) const {
+    bool operator==(const Vertex &other) const {
         if (position.x != other.position.x) return false;
         if (position.y != other.position.y) return false;
         if (position.z != other.position.z) return false;
@@ -68,8 +68,8 @@ namespace std {
 
 struct Pipeline_state {
     ID3D11VertexShader *vertexShader = nullptr;
-    ID3D11PixelShader  *pixelShader  = nullptr;
-    ID3D11InputLayout  *inputLayout  = nullptr;
+    ID3D11PixelShader *pixelShader = nullptr;
+    ID3D11InputLayout *inputLayout = nullptr;
 
     // TODO: Fixed-function states?
 
@@ -85,7 +85,7 @@ struct Pipeline_state {
 struct Texture2D {
     ID3D11ShaderResourceView *shaderResourceView = nullptr;
 
-    int width  = 0;
+    int width = 0;
     int height = 0;
 
     ~Texture2D() {
@@ -99,15 +99,15 @@ struct Material {
     AssetHandle<Texture2D> diffuseTexture;
     AssetHandle<Texture2D> normalTexture;
 
-    XMFLOAT3 ambientColour  = {1.0f, 1.0f, 1.0f};
-    XMFLOAT3 diffuseColour  = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 ambientColour = {1.0f, 1.0f, 1.0f};
+    XMFLOAT3 diffuseColour = {1.0f, 1.0f, 1.0f};
     XMFLOAT3 specularColour = {1.0f, 1.0f, 1.0f};
-    float specularExponent  = 32.0f;
+    float specularExponent = 32.0f;
 };
 
 struct Model {
     ID3D11Buffer *vertexBuffer = nullptr;
-    ID3D11Buffer *indexBuffer  = nullptr;
+    ID3D11Buffer *indexBuffer = nullptr;
 
     BoundingBox localBounds;
 
