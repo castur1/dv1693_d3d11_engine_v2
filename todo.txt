@@ -1,7 +1,7 @@
 * Requirements:
 
     X Deferred rendering
-    * Shadow mapping
+    X Shadow mapping
     * Particle system
     * Dynamic cube mapping
     * Tessellation
@@ -65,3 +65,7 @@ entire component.
 * Make renderer debugMode a setting instead, maybe?
 
 * Static lights, so that we don't have to recompute all the matrices and stuff each frame?
+
+* Toggle shadow on/off as a setting
+
+* Spherical bounds in Renderer::ComputeDirectionalLightMatrices

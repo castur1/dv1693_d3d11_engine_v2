@@ -1052,39 +1052,39 @@ void Renderer::ComputeDirectionalLightMatrices(
         centre += XMLoadFloat3(&corner);
     centre /= 8.0f;
 
-    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
-    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
-    outView = XMMatrixLookToLH(centre, direction, up);
-
-    float minX = FLT_MAX;
-    float maxX = -FLT_MAX;
-    float minY = FLT_MAX;
-    float maxY = -FLT_MAX;
-    float minZ = FLT_MAX;
-    float maxZ = -FLT_MAX;
-
+    float radius = 0.0f;
     for (const XMFLOAT3 &corner : corners) {
-        XMFLOAT3 pos;
-        XMStoreFloat3(&pos, XMVector3Transform(XMLoadFloat3(&corner), outView));
-
-        minX = min(minX, pos.x);
-        maxX = max(maxX, pos.x);
-        minY = min(minY, pos.y);
-        maxY = max(maxY, pos.y);
-        minZ = min(minZ, pos.z);
-        maxZ = max(maxZ, pos.z);
+        float distance = XMVectorGetX(XMVector3Length(XMLoadFloat3(&corner) - centre));
+        radius = max(radius, distance);
     }
 
+    float worldUnitsPerTexel = (2.0f * radius) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
+
+    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
+    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
+
+    XMMATRIX refView = XMMatrixLookToLH(XMVectorZero(), direction, up);
+    XMMATRIX invRefView = XMMatrixInverse(nullptr, refView);
+
+    XMFLOAT3 centreRef;
+    XMStoreFloat3(&centreRef, XMVector3Transform(centre, refView));
+
+    centreRef.x = floorf(centreRef.x / worldUnitsPerTexel) * worldUnitsPerTexel;
+    centreRef.y = floorf(centreRef.y / worldUnitsPerTexel) * worldUnitsPerTexel;
+    
+    XMVECTOR snappedCentre = XMVector3Transform(XMLoadFloat3(&centreRef), invRefView);
+    outView = XMMatrixLookToLH(snappedCentre, direction, up);
+
+    float minZ = FLT_MAX;
+    float maxZ = -FLT_MAX;
+    for (const XMFLOAT3 &corner : corners) {
+        float z = XMVectorGetZ(XMVector3Transform(XMLoadFloat3(&corner), outView));
+        minZ = min(minZ, z);
+        maxZ = max(maxZ, z);
+    }
     minZ -= 500.0f;
 
-    float texelX = (maxX - minX) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
-    float texelY = (maxY - minY) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
-    minX = floorf(minX / texelX) * texelX;
-    maxX = floorf(maxX / texelX) * texelX;
-    minY = floorf(minY / texelY) * texelY;
-    maxY = floorf(maxY / texelY) * texelY;
-
-    outProjection = XMMatrixOrthographicOffCenterLH(minX, maxX, minY, maxY, minZ, maxZ);
+    outProjection = XMMatrixOrthographicOffCenterLH(-radius, radius, -radius, radius, minZ, maxZ);
 }
 
 void Renderer::ComputeSpotLightMatrices(
