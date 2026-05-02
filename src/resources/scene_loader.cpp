@@ -358,8 +358,12 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
     }
 
     if (this->assetManager) {
-        for (const AssetID &uuid : assets)
-            this->assetManager->MarkAsUsed(uuid);
+        // TODO: Assets that are loaded by other assets (e.g. textures loaded by models)
+        // are not present in the asset section and will thus be unloaded. Since the owning
+        // asset is still loaded, those child asset will never get reloaded.
+  
+        //for (const AssetID &uuid : assets)
+        //    this->assetManager->MarkAsUsed(uuid);
 
         this->assetManager->CleanUpUnused();
     }

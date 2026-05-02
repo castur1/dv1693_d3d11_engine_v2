@@ -66,6 +66,7 @@ namespace std {
     };
 }
 
+// TODO: This is basically unused at the moment. Remove?
 struct Pipeline_state {
     ID3D11VertexShader *vertexShader = nullptr;
     ID3D11PixelShader *pixelShader = nullptr;
@@ -128,6 +129,15 @@ struct Model {
     ~Model() {
         SafeRelease(this->indexBuffer);
         SafeRelease(this->vertexBuffer);
+    }
+};
+
+struct Texture_cube {
+    ID3D11ShaderResourceView *shaderResourceView = nullptr;
+    int resolution = 0;
+
+    ~Texture_cube() {
+        SafeRelease(this->shaderResourceView);
     }
 };
 

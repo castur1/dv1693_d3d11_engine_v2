@@ -28,44 +28,45 @@
 
     * isStatic
 
+    * Editor currently crashes if you change scene while an entity is selected
+
 * XMVECTOR versions of Get/Set in Transform
-
-* Minor problem with the current component culling approach is that only whole models are culled or not, rather than
-its sub-models. Culling the sub-models could potentially be faster but there's no good way of doing that if we're culling the
-entire component.
-
-    * Solution! The ModelRenderer can do culling on its sub-models itself! That way we get the best of both worlds :D
-
-* When I add/remove components from an entity, am I correctly updating the octree? Look for other bugs like that.
-
-    * No, I don't think I am. Component are only added to culling at load. Fix!
-
-* "Scene-global"? Why are we only submitting them to the primary view?
-
-* Verify that the octree actually works. Debug lines or smth
-
-    * Move camera without moving frustum (or the opposite), and show bounding box wireframes?
-
-* Use an array instead of a vector in the octree node. Should be faster, right?
-
-    * Problem with overlapping renderables. 
-
-* Editor currently crashes if you change scene while an entity is selected
-
-* RenderDoc
-
-* Freezing camera in place while moving the view frustum (for culling visualization)
-
-* SamplerComparisonState? Percentage-Closer Filtering? D3D11_RASTERIZER_DESC DepthBias/SlopeScaledDepthBias?
-
-    * Texture2DArray for shadow maps (for spot lights, only a single texture for directional lights probably)
-
-    * Oriented Bounding Box for orthographic view culling (directional light)
 
 * Make renderer debugMode a setting instead, maybe?
 
-* Static lights, so that we don't have to recompute all the matrices and stuff each frame?
+* Assets that are loaded by other assets (e.g. textures loaded by models) are not present in the asset section and 
+  will thus be unloaded. Since the owning asset is still loaded, those child asset will never get reloaded.
 
-* Toggle shadow on/off as a setting
+    * Rethink asset reuse. Or just include the sub-assets in the asset list. 
 
-* Spherical bounds in Renderer::ComputeDirectionalLightMatrices
+* Improve culling
+
+    * Freezing camera in place while moving the view frustum (for culling visualization)
+
+    * Use an array instead of a vector in the octree node. Should be faster, right?
+
+        * Problem with overlapping renderables?
+
+    * When I add/remove components from an entity, am I correctly updating the octree? Look for other bugs like that.
+
+        * No, I don't think I am. Component are only added to culling at load. Fix!
+
+    * Minor problem with the current component culling approach is that only whole models are culled or not, rather than
+      its sub-models. Culling the sub-models could potentially be faster but there's no good way of doing that if we're culling the
+      entire component.
+
+        * Solution! The ModelRenderer can do culling on its sub-models itself! That way we get the best of both worlds :D
+
+* Improve shadows
+
+    * Cascading shadow maps?
+
+    * Oriented Bounding Box for orthographic view culling (directional light)
+
+    * Toggle shadow on/off as a setting
+
+    * Static lights, so that we don't have to recompute all the matrices and stuff each frame?
+
+    * Something about offsetting bias by the surface normal? Shadows are currently "spiky"
+
+* Better error handling

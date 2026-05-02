@@ -127,6 +127,7 @@ void Octree::Clear() {
     this->root.reset();
 }
 
+// TODO: This is unnecessarily expensive. Fine if used infrequently, otherwise a maintained counter would be better.
 int Octree::Count() const {
     std::vector<Component *> components;
     this->CollectAll(this->root.get(), components);

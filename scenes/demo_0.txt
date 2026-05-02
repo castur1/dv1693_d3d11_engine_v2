@@ -29,7 +29,7 @@ entity 123a-ffff-3242-0011
     name: "monkey_1"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -45,7 +45,7 @@ entity 8654-adce-1006-0012
     name: "monkey_2"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -61,7 +61,7 @@ entity 0142-de23-fa87-1237
     name: "monkey_3"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -77,7 +77,7 @@ entity 0142-de23-fa87-ab43
     name: "monkey_4"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -93,7 +93,7 @@ entity 0142-de23-fa87-0145
     name: "monkey_5"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -109,7 +109,7 @@ entity 0142-de23-fa87-fed3
     name: "monkey_6"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -125,7 +125,7 @@ entity 0142-de23-fa87-0513
     name: "monkey_7"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -141,7 +141,7 @@ entity 0142-de23-fa87-1225
     name: "monkey_8"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -157,7 +157,7 @@ entity 0142-de23-fa87-1337
     name: "monkey_9"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "0123-4567-89ab-cdef"
 
     component Transform
         isActive: true
@@ -168,6 +168,18 @@ entity 0142-de23-fa87-1337
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+
+entity 0123-4567-89ab-cdef
+    name: "monkeys"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
 
 entity 7632-12ac-76de-fe23
     name: "dragon"

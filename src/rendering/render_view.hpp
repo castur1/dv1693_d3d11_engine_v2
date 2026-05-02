@@ -29,7 +29,7 @@ struct Render_view {
     float farPlane = 1000.0f;
 
     BoundingFrustum frustum;
-    bool skipFrustumCulling; // TODO: Orthographic views don't work with BoundingFrustum; could use OBB instead
+    bool skipFrustumCulling = false; // TODO: Orthographic views don't work with BoundingFrustum; could use OBB instead
 
     float shadowDistance = 80.0f;
 

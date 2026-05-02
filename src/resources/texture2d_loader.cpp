@@ -6,48 +6,43 @@
 
 // TODO: Description as argument?
 Texture2D *Texture2DLoader::CreateFromBitmap(UINT32 *pixels, UINT width, UINT height, bool generateMips) {
-    D3D11_TEXTURE2D_DESC textureDesc{};
-    textureDesc.Width = width;
-    textureDesc.Height = height;
-    textureDesc.ArraySize = 1;
-    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    textureDesc.SampleDesc.Count = 1;
-    textureDesc.SampleDesc.Quality = 0;
-    textureDesc.Usage = D3D11_USAGE_DEFAULT;
-    textureDesc.CPUAccessFlags = 0;
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = width;
+    desc.Height = height;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.CPUAccessFlags = 0;
 
     if (generateMips) {
-        textureDesc.MipLevels = 0;
-        textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-        textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        desc.MipLevels = 0;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+        desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
     }
     else {
-        textureDesc.MipLevels = 1;
-        textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        textureDesc.MiscFlags = 0;
+        desc.MipLevels = 1;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.MiscFlags = 0;
     }
 
-    ID3D11Texture2D *texture{};
-    HRESULT result = this->device->CreateTexture2D(&textureDesc, nullptr, &texture);
+    ID3D11Texture2D *texture = nullptr;
+    HRESULT result = this->device->CreateTexture2D(&desc, nullptr, &texture);
     if (FAILED(result)) {
         LogWarn("Failed to create Texture2D\n");
         return nullptr;
     }
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc{};
-    shaderResourceViewDesc.Format = textureDesc.Format;
-    shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-    shaderResourceViewDesc.Texture2D.MipLevels = -1;
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = desc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = -1;
 
     Texture2D *texture2D = new Texture2D();
 
-    result = this->device->CreateShaderResourceView(
-        texture, 
-        &shaderResourceViewDesc, 
-        &texture2D->shaderResourceView
-    );
-
+    result = this->device->CreateShaderResourceView(texture, &srvDesc, &texture2D->shaderResourceView);
     if (FAILED(result)) {
         delete texture2D;
         texture->Release();

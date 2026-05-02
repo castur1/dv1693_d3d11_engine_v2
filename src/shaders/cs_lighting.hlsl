@@ -130,8 +130,7 @@ void main(uint3 id : SV_DispatchThreadID)
 
     float3 colour = ambientColour * albedoColour;
 
-    for (int d = 0; d < directionalLightCount; ++d)
-    {
+    for (int d = 0; d < directionalLightCount; ++d) {
         float3 lightV = normalize(-directionalLights[d].direction);
         float diffuseFactor = saturate(dot(normalV, lightV));
 
@@ -142,8 +141,7 @@ void main(uint3 id : SV_DispatchThreadID)
         colour += directionalLights[d].colour * directionalLights[d].intensity
                   * albedoColour * diffuseFactor * shadow;
 
-        if (diffuseFactor > 0.0f && shadow > 0.0f)
-        {
+        if (diffuseFactor > 0.0f && shadow > 0.0f) {
             float3 halfV = normalize(lightV + viewV);
             float specularFactor = saturate(dot(normalV, halfV));
             colour += directionalLights[d].colour * directionalLights[d].intensity
@@ -151,8 +149,7 @@ void main(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    for (int s = 0; s < spotLightCount; ++s)
-    {
+    for (int s = 0; s < spotLightCount; ++s) {
         float3 toLight = spotLights[s].position - worldPos;
         float lightDist = length(toLight);
 
@@ -178,8 +175,7 @@ void main(uint3 id : SV_DispatchThreadID)
 
         colour += spotLights[s].colour * factor * albedoColour * diffuseFactor * shadow;
 
-        if (diffuseFactor > 0.0f && shadow > 0.0f)
-        {
+        if (diffuseFactor > 0.0f && shadow > 0.0f) {
             float3 halfV = normalize(lightV + viewV);
             float specularFactor = saturate(dot(normalV, halfV));
             colour += spotLights[s].colour * factor

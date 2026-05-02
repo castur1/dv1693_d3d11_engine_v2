@@ -169,6 +169,8 @@ class Renderer {
     };
     Per_frame_shadow_data perFrameShadowData;
 
+    // CONTINUE HERE! Probably get the skybox up and running first, and then tackle reflection probes
+
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
     bool CreateConstantBuffers();

@@ -60,5 +60,47 @@ entity faff-6543-8755-014a
         ambient: [0.05, 0.08, 0.12]
         castsShadows: true
 
+entity deef-ac43-8744-0ae2
+    name: "spot_light_1"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-20.0, 4.0, 10.0]
+        rotation: [22.5, 180.0, 0.0]
+        scale: [0.2, 0.2, 0.2]
+
+    component SpotLight
+        isActive: true
+        colour: [1.0, 0.1, 0.3]
+        intensity: 25.0
+        range: 20.0
+        innerConeAngle: 30.0
+        outerConeAngle: 40.0
+        castsShadows: true
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+
+    component InterpMove
+        isActive: true
+        startPosition: [-20.0, 4.0, -1.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [18.0, 4.0, -1.0]
+        endRotation: [0.0, 0.0, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: false
+        shouldIgnoreRotation: true
+        shouldIgnoreScale: true
+        moveDuration: 8.0
+        pauseDuration: 0.0
+        shouldPingPong: true
+        easingFunctionType: 3
+
 assets:
     6352-476b-78ad-0ed0
+    e679-318b-f448-3109

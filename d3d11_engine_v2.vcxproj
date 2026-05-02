@@ -171,6 +171,7 @@
     <ClCompile Include="src\resources\pipeline_state_loader.cpp" />
     <ClCompile Include="src\resources\scene_loader.cpp" />
     <ClCompile Include="src\resources\texture2d_loader.cpp" />
+    <ClCompile Include="src\resources\texture_cube_loader.cpp" />
     <ClCompile Include="src\scene\entity.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
     <ClCompile Include="src\scene\scene_culler.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="src\resources\pipeline_state_loader.hpp" />
     <ClInclude Include="src\resources\scene_loader.hpp" />
     <ClInclude Include="src\resources\texture2d_loader.hpp" />
+    <ClInclude Include="src\resources\texture_cube_loader.hpp" />
     <ClInclude Include="src\scene\component.hpp" />
     <ClInclude Include="src\scene\component_registry.hpp" />
     <ClInclude Include="src\scene\entity.hpp" />

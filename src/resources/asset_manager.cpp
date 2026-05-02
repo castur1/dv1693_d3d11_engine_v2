@@ -3,6 +3,7 @@
 #include "resources/texture2d_loader.hpp"
 #include "resources/material_loader.hpp"
 #include "resources/model_loader.hpp"
+#include "resources/texture_cube_loader.hpp"
 
 #include <fstream>
 
@@ -20,6 +21,7 @@ bool AssetManager::Initialize(ID3D11Device *device, ID3D11DeviceContext *deviceC
     this->RegisterAssetType<Texture2D, Texture2DLoader>();
     this->RegisterAssetType<Material, MaterialLoader>();
     this->RegisterAssetType<Model, ModelLoader>();
+    this->RegisterAssetType<Texture_cube, TextureCubeLoader>();
 
     LogUnindent();
 
