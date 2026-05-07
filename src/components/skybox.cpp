@@ -3,7 +3,7 @@
 #include "rendering/render_commands.hpp"
 
 void Skybox::OnStart(const Engine_context &context) {
-    this->textureCubeHandle = context.assetManager->GetHandle<Texture_cube>(this->textureID);
+    this->textureCubeHandle = context.assetManager->GetHandle<Texture_cube>(this->textureCubeHandle.GetID());
 }
 
 void Skybox::Update(const Frame_context &context) {}
@@ -12,7 +12,7 @@ void Skybox::Render(const Render_view &view, RenderQueue &queue) {
     if (!this->isActive)
         return;
 
-    if (view.type != View_type::primary)
+    if (view.type != View_type::primary && view.type != View_type::cubeFace)
         return;
 
     Skybox_command command{};

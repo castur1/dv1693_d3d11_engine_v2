@@ -9,8 +9,28 @@
 
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
 
+static const std::string shaderDir = "assets/shaders/";
+
 Renderer::~Renderer() {
     this->frameGraph.Clear();
+
+    SafeRelease(this->skyboxCS);
+
+    SafeRelease(this->reflectionVS);
+    SafeRelease(this->reflectionPS);
+    SafeRelease(this->reflectionLayout);
+
+    SafeRelease(this->reflectionProbeSRV);
+    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
+        SafeRelease(this->reflectionProbeRTVs[i]);
+        SafeRelease(this->reflectionProbeUAVs[i]);
+    }
+    SafeRelease(this->reflectionProbeTexture);
+    SafeRelease(this->reflectionProbeDepthDSV);
+    SafeRelease(this->reflectionProbeDepth);
+
+    SafeRelease(this->reflectionProbeBufferSRV);
+    SafeRelease(this->reflectionProbeBuffer);
 
     SafeRelease(this->shadowVS);
     SafeRelease(this->shadowLayout);
@@ -250,8 +270,6 @@ static bool LoadShaderBytecode(const std::string &path, std::vector<uint8_t> &ou
 }
 
 bool Renderer::LoadDeferredShaders() {
-    const std::string shaderDir = "assets/shaders/";
-
     std::vector<uint8_t> bytecode;
 
     if (!LoadShaderBytecode(shaderDir + "vs_gbuffer.cso", bytecode))
@@ -459,7 +477,6 @@ bool Renderer::CreateShadowResources() {
         return false;
     }
 
-    const std::string shaderDir = "assets/shaders/";
     std::vector<uint8_t> bytecode;
 
     if (!LoadShaderBytecode(shaderDir + "vs_shadow.cso", bytecode))
@@ -527,6 +544,148 @@ bool Renderer::CreateShadowResources() {
     return true;
 }
 
+bool Renderer::CreateReflectionProbeResources() {
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = REFLECTION_PROBE_RESOLUTION;
+    desc.Height = REFLECTION_PROBE_RESOLUTION;
+    desc.MipLevels = 0;
+    desc.ArraySize = MAX_REFLECTION_PROBES * 6;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE | D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+    HRESULT result = this->device->CreateTexture2D(&desc, nullptr, &this->reflectionProbeTexture);
+    if (FAILED(result)) {
+        LogError("Failed to create texture cube array");
+        return false;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = desc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+    srvDesc.TextureCubeArray.MostDetailedMip = 0;
+    srvDesc.TextureCubeArray.MipLevels = -1;
+    srvDesc.TextureCubeArray.First2DArrayFace = 0;
+    srvDesc.TextureCubeArray.NumCubes = MAX_REFLECTION_PROBES;
+
+    result = this->device->CreateShaderResourceView(this->reflectionProbeTexture, &srvDesc, &this->reflectionProbeSRV);
+    if (FAILED(result)) {
+        LogError("Failed to create SRV");
+        return false;
+    }
+
+    D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
+    rtvDesc.Format = desc.Format;
+    rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+    rtvDesc.Texture2DArray.MipSlice = 0;
+    rtvDesc.Texture2DArray.ArraySize = 1;
+
+    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
+        rtvDesc.Texture2DArray.FirstArraySlice = i;
+        result = this->device->CreateRenderTargetView(this->reflectionProbeTexture, &rtvDesc, &this->reflectionProbeRTVs[i]);
+        if (FAILED(result)) {
+            LogError("Failed to create RTV[%d]", i);
+            return false;
+        }
+    }
+
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+    uavDesc.Format = desc.Format;
+    uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+    uavDesc.Texture2DArray.MipSlice = 0;
+    uavDesc.Texture2DArray.ArraySize = 1;
+
+    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
+        uavDesc.Texture2DArray.FirstArraySlice = i;
+        result = this->device->CreateUnorderedAccessView(this->reflectionProbeTexture, &uavDesc, &this->reflectionProbeUAVs[i]);
+        if (FAILED(result)) {
+            LogError("Failed to create UAV[%d]", i);
+            return false;
+        }
+    }
+
+    D3D11_TEXTURE2D_DESC dsDesc{};
+    dsDesc.Width = REFLECTION_PROBE_RESOLUTION;
+    dsDesc.Height = REFLECTION_PROBE_RESOLUTION;
+    dsDesc.MipLevels = 1;
+    dsDesc.ArraySize = 1;
+    dsDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsDesc.SampleDesc.Count = 1;
+    dsDesc.Usage = D3D11_USAGE_DEFAULT;
+    dsDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+    result = this->device->CreateTexture2D(&dsDesc, nullptr, &this->reflectionProbeDepth);
+    if (FAILED(result)) {
+        LogError("Failed to create depth stencil texture");
+        return false;
+    }
+
+    result = this->device->CreateDepthStencilView(this->reflectionProbeDepth, nullptr, &this->reflectionProbeDepthDSV);
+    if (FAILED(result)) {
+        LogError("Failed to create DSV");
+        return false;
+    }
+
+    if (!CreateStructuredBuffer(
+        this->device,
+        sizeof(Reflection_probe_data),
+        MAX_REFLECTION_PROBES,
+        &this->reflectionProbeBuffer,
+        &this->reflectionProbeBufferSRV,
+        "reflection"
+    )) {
+        return false;
+    }
+
+    std::vector<uint8_t> bytecode;
+
+    if (!LoadShaderBytecode(shaderDir + "vs_reflection.cso", bytecode))
+        return false;
+
+    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->reflectionVS);
+    if (FAILED(result)) {
+        LogError("Failed to create vertex shader");
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+
+    result = this->device->CreateInputLayout(layoutDesc, 4, bytecode.data(), bytecode.size(), &this->reflectionLayout);
+    if (FAILED(result)) {
+        LogError("Failed to create input layout");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ps_reflection.cso", bytecode))
+        return false;
+
+    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->reflectionPS);
+    if (FAILED(result)) {
+        LogError("Failed to create pixel shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "cs_skybox.cso", bytecode))
+        return false;
+
+    result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->skyboxCS);
+    if (FAILED(result)) {
+        LogError("Failed to create skybox compute shader");
+        return false;
+    }
+
+    LogInfo("Reflection probe resources created\n");
+
+    return true;
+}
+
 void Renderer::SetViewport(int width, int height) {
     this->viewport.TopLeftX = 0.0f;
     this->viewport.TopLeftY = 0.0f;
@@ -556,6 +715,8 @@ void Renderer::UploadLightData(const Render_view &view) {
     Lighting_data lightingData{};
     lightingData.directionalLightCount = view.queue.directionalLightCommands.size();
     lightingData.spotLightCount = view.queue.spotLightCommands.size();
+    lightingData.reflectionProbeCount = this->perFrameReflectionProbeData.count;
+    lightingData.hasSkybox = view.queue.skyboxCommand.has_value() ? 1 : 0;
 
     for (const auto &dlc : view.queue.directionalLightCommands) {
         lightingData.ambientColour.x += dlc.ambientColour.x;
@@ -641,6 +802,28 @@ void Renderer::UploadLightData(const Render_view &view) {
     this->deviceContext->Unmap(this->spotLightBuffer, 0);
 }
 
+void Renderer::UploadReflectionProbeData() {
+    if (this->perFrameReflectionProbeData.count <= 0)
+        return;
+
+    Reflection_probe_data data[MAX_REFLECTION_PROBES];
+    for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
+        data[i].position = this->perFrameReflectionProbeData.entries[i].position;
+        data[i].radius = this->perFrameReflectionProbeData.entries[i].radius;
+        data[i].slotIndex = i;
+    }
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    HRESULT result = this->deviceContext->Map(this->reflectionProbeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    if (FAILED(result)) {
+        LogWarn("Failed to map reflection probe buffer\n");
+        return;
+    }
+
+    memcpy(mapped.pData, data, sizeof(Reflection_probe_data) * this->perFrameReflectionProbeData.count);
+    this->deviceContext->Unmap(this->reflectionProbeBuffer, 0);
+}
+
 void Renderer::BuildFrameGraph() {
     this->frameGraph.Clear();
 
@@ -650,7 +833,7 @@ void Renderer::BuildFrameGraph() {
         this->renderTargetView
     );
 
-    this->shadowMapDirectionalHandle = this->frameGraph.ImportTexture(
+    auto shadowMapDirectionalHandle = this->frameGraph.ImportTexture(
         "ShadowMap_directional",
         this->shadowMapDirectionalTexture,
         nullptr,
@@ -658,12 +841,19 @@ void Renderer::BuildFrameGraph() {
         this->shadowMapDirectionalDSVs[0]
     );
 
-    this->shadowMapSpotHandle = this->frameGraph.ImportTexture(
+    auto shadowMapSpotHandle = this->frameGraph.ImportTexture(
         "ShadowMap_spot",
         this->shadowMapSpotTexture,
         nullptr,
         this->shadowMapSpotSRV,
         this->shadowMapSpotDSVs[0]
+    );
+
+    auto reflectionProbeHandle = this->frameGraph.ImportTexture(
+        "ReflectionProbe", 
+        this->reflectionProbeTexture, 
+        nullptr, 
+        this->reflectionProbeSRV
     );
 
     // G-buffers:
@@ -698,6 +888,134 @@ void Renderer::BuildFrameGraph() {
     desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
     auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
 
+    struct Reflection_pass_data {
+        FrameGraph::TextureHandle reflectionProbes;
+    };
+
+    this->frameGraph.AddRenderPass<Reflection_pass_data>(
+        "Reflection pass",
+        [&](Reflection_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.reflectionProbes = builder.Write(reflectionProbeHandle);
+        },
+        [this](const Reflection_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            if (this->perFrameReflectionProbeData.count <= 0)
+                return;
+
+            Render_view *primaryView = context.GetView(View_type::primary);
+            if (!primaryView) {
+                LogWarn("Primary view was nullptr\n");
+                return;
+            }
+
+            this->UploadLightData(*primaryView);
+
+            ID3D11ShaderResourceView *skyboxSRV = nullptr;
+            if (primaryView->queue.skyboxCommand.has_value())
+                skyboxSRV = primaryView->queue.skyboxCommand->textureCubeHandle.Get()->shaderResourceView;
+
+            if (skyboxSRV) {
+                deviceContext->CSSetShader(this->skyboxCS, nullptr, 0);
+                deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+                deviceContext->CSSetShaderResources(0, 1, &skyboxSRV);
+                
+                const UINT groups = (REFLECTION_PROBE_RESOLUTION + 7) / 8;
+
+                for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
+                    for (int face = 0; face < 6; ++face) {
+                        Render_view *view = context.GetView(View_type::cubeFace, i * 6 + face);
+                        if (!view)
+                            continue;
+
+                        this->UploadPerFrameData(*view);
+
+                        ID3D11UnorderedAccessView *uav = this->reflectionProbeUAVs[i * 6 + face];
+                        deviceContext->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+                        deviceContext->Dispatch(groups, groups, 1);
+                    }
+                }
+
+                deviceContext->CSSetShader(nullptr, nullptr, 0);
+                ID3D11ShaderResourceView *nullSRV = nullptr;
+                deviceContext->CSGetShaderResources(0, 1, &nullSRV);
+                ID3D11UnorderedAccessView *nullUAV = nullptr;
+                deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+            }
+
+            D3D11_VIEWPORT viewport{};
+            viewport.Width = viewport.Height = REFLECTION_PROBE_RESOLUTION;
+            viewport.MaxDepth = 1.0f;
+            deviceContext->RSSetViewports(1, &viewport);
+
+            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            deviceContext->IASetInputLayout(this->reflectionLayout);
+            deviceContext->VSSetShader(this->reflectionVS, nullptr, 0);
+            deviceContext->PSSetShader(this->reflectionPS, nullptr, 0);
+            deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+            deviceContext->PSSetConstantBuffers(1, 1, &this->lightingBuffer);
+            deviceContext->PSSetShaderResources(0, 1, &this->directionalLightBufferSRV);
+            
+            for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
+                for (int face = 0; face < 6; ++face) {
+                    Render_view *view = context.GetView(View_type::cubeFace, i * 6 + face);
+                    if (!view)
+                        continue;
+
+                    ID3D11RenderTargetView *rtv = this->reflectionProbeRTVs[i * 6 + face];
+
+                    if (!skyboxSRV)
+                        deviceContext->ClearRenderTargetView(rtv, this->clearColour);
+
+                    deviceContext->ClearDepthStencilView(this->reflectionProbeDepthDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+                    deviceContext->OMSetRenderTargets(1, &rtv, this->reflectionProbeDepthDSV);
+
+                    this->UploadPerFrameData(*view);
+
+                    for (const Geometry_command &command : view->queue.geometryCommands) {
+                        Per_object_data perObjectData{};
+                        perObjectData.worldMatrix = command.worldMatrix;
+                        XMStoreFloat4x4(
+                            &perObjectData.worldMatrixInvTranspose, 
+                            XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
+                        );
+
+                        this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+
+                        Material *material = command.material.Get();
+                        if (material) {
+                            // TODO: This doesn't do full Blinn-Phong, only directional light
+
+                            //Per_material_data perMaterialData{};
+                            //perMaterialData.materialAmbient          = material->ambientColour;
+                            //perMaterialData.materialDiffuse          = material->diffuseColour;
+                            //perMaterialData.materialSpecular         = material->specularColour;
+                            //perMaterialData.materialSpecularExponent = material->specularExponent;
+
+                            //this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
+
+                            deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView);
+                        }
+
+                        const UINT stride = sizeof(Vertex);
+                        const UINT offset = 0;
+                        deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
+                        deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                        deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
+                    }
+                }
+            }
+
+            deviceContext->GenerateMips(this->reflectionProbeSRV);
+
+            deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+            ID3D11ShaderResourceView *nullSRVs[2] = {};
+            deviceContext->PSSetShaderResources(0, 2, nullSRVs);
+        }
+    );
+
     struct Shadow_pass_data {
         FrameGraph::TextureHandle shadowMapDirectional;
         FrameGraph::TextureHandle shadowMapSpot;
@@ -706,8 +1024,8 @@ void Renderer::BuildFrameGraph() {
     this->frameGraph.AddRenderPass<Shadow_pass_data>(
         "Shadow pass",
         [&](Shadow_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
-            data.shadowMapDirectional = builder.Write(this->shadowMapDirectionalHandle);
-            data.shadowMapSpot        = builder.Write(this->shadowMapSpotHandle);
+            data.shadowMapDirectional = builder.Write(shadowMapDirectionalHandle);
+            data.shadowMapSpot        = builder.Write(shadowMapSpotHandle);
         },
         [this](const Shadow_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
@@ -895,6 +1213,8 @@ void Renderer::BuildFrameGraph() {
         FrameGraph::TextureHandle shadowMapDirectional;
         FrameGraph::TextureHandle shadowMapSpot;
 
+        FrameGraph::TextureHandle reflectionProbes;
+
         FrameGraph::TextureHandle output;
     };
 
@@ -906,8 +1226,10 @@ void Renderer::BuildFrameGraph() {
             data.specular = builder.Read(specularHandle);
             data.depth    = builder.Read(depthHandle);
 
-            data.shadowMapDirectional = builder.Read(this->shadowMapDirectionalHandle);
-            data.shadowMapSpot        = builder.Read(this->shadowMapSpotHandle);
+            data.shadowMapDirectional = builder.Read(shadowMapDirectionalHandle);
+            data.shadowMapSpot        = builder.Read(shadowMapSpotHandle);
+
+            data.reflectionProbes = builder.Read(reflectionProbeHandle);
 
             data.output = builder.Write(lightingOutputHandle);
         },
@@ -921,12 +1243,17 @@ void Renderer::BuildFrameGraph() {
             }
 
             this->UploadLightData(*view);
+            this->UploadReflectionProbeData();
 
             deviceContext->CSSetShader(this->lightingCS, nullptr, 0);
             deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
             deviceContext->CSSetConstantBuffers(1, 1, &this->lightingBuffer);
 
-            ID3D11ShaderResourceView *srvs[8] = {
+            ID3D11ShaderResourceView *skyboxSRV = nullptr;
+            if (view->queue.skyboxCommand.has_value())
+                skyboxSRV = view->queue.skyboxCommand->textureCubeHandle.Get()->shaderResourceView;
+
+            ID3D11ShaderResourceView *srvs[11] = {
                 context.GetShaderResourceView(data.albedo),
                 context.GetShaderResourceView(data.normal),
                 context.GetShaderResourceView(data.specular),
@@ -934,9 +1261,12 @@ void Renderer::BuildFrameGraph() {
                 context.GetShaderResourceView(data.shadowMapDirectional),
                 context.GetShaderResourceView(data.shadowMapSpot),
                 this->directionalLightBufferSRV,
-                this->spotLightBufferSRV
+                this->spotLightBufferSRV,
+                context.GetShaderResourceView(data.reflectionProbes),
+                this->reflectionProbeBufferSRV,
+                skyboxSRV
             };
-            deviceContext->CSSetShaderResources(0, 8, srvs);
+            deviceContext->CSSetShaderResources(0, 11, srvs);
 
             // TODO: Make common sampler? This currently overwrites the 2nd common sampler, I think
             deviceContext->CSSetSamplers(1, 1, &this->shadowSampler);
@@ -949,8 +1279,8 @@ void Renderer::BuildFrameGraph() {
             UINT groupsY = (this->height + 7) / 8;
             deviceContext->Dispatch(groupsX, groupsY, 1);
 
-            ID3D11ShaderResourceView *nullSrvs[8] = {};
-            deviceContext->CSSetShaderResources(0, 8, nullSrvs);
+            ID3D11ShaderResourceView *nullSrvs[11] = {};
+            deviceContext->CSSetShaderResources(0, 11, nullSrvs);
 
             ID3D11UnorderedAccessView *nullUav = nullptr;
             deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUav, nullptr);
@@ -1187,6 +1517,81 @@ void Renderer::SetupShadowViews(Scene *scene) {
     this->views.insert(this->views.end(), shadowViews.begin(), shadowViews.end());
 }
 
+void Renderer::SetupReflectionProbeViews(Scene *scene) {
+    if (!scene)
+        return;
+
+    Render_view *primaryView = this->GetView(View_type::primary);
+    if (!primaryView)
+        return;
+
+    this->perFrameReflectionProbeData.count = 0;
+
+    const auto &reflectionProbeCommands = primaryView->queue.reflectionProbeCommands;
+    if (reflectionProbeCommands.empty())
+        return;
+
+    struct Face {
+        XMFLOAT3 forward;
+        XMFLOAT3 up;
+    };
+    static constexpr Face faces[6] = {
+        {{ 1,  0,  0}, {0,  1,  0}}, // +x
+        {{-1,  0,  0}, {0,  1,  0}}, // -x
+        {{ 0,  1,  0}, {0,  0, -1}}, // +y
+        {{ 0, -1,  0}, {0,  0,  1}}, // -y
+        {{ 0,  0,  1}, {0,  1,  0}}, // +z
+        {{ 0,  0, -1}, {0,  1,  0}}  // -z
+    };
+
+    std::vector<Render_view> reflectionProbeViews;
+
+    for (int i = 0; i < reflectionProbeCommands.size(); ++i) {
+        if (this->perFrameReflectionProbeData.count >= MAX_REFLECTION_PROBES)
+            break;
+
+        const Reflection_probe_command &command = reflectionProbeCommands[i];
+        int slot = this->perFrameReflectionProbeData.count;
+
+        XMVECTOR position = XMLoadFloat3(&command.position);
+        XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV2, 1.0f, command.nearPlane, command.farPlane);
+
+        for (int face = 0; face < 6; ++face) {
+            XMVECTOR forward = XMLoadFloat3(&faces[face].forward);
+            XMVECTOR up = XMLoadFloat3(&faces[face].up);
+
+            XMMATRIX viewMatrix = XMMatrixLookToLH(position, forward, up);
+            XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+            XMMATRIX invViewProjectionMatrix = XMMatrixInverse(nullptr, viewProjectionMatrix);
+
+            Render_view view{};
+            view.type = View_type::cubeFace;
+            view.index = slot * 6 + face;
+
+            XMStoreFloat4x4(&view.viewMatrix, XMMatrixTranspose(viewMatrix));
+            XMStoreFloat4x4(&view.projectionMatrix, XMMatrixTranspose(projectionMatrix));
+            XMStoreFloat4x4(&view.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
+            XMStoreFloat4x4(&view.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
+
+            view.cameraPosition = command.position;
+            view.nearPlane = command.nearPlane;
+            view.farPlane = command.farPlane;
+
+            BoundingFrustum::CreateFromMatrix(view.frustum, projectionMatrix);
+            view.frustum.Transform(view.frustum, XMMatrixInverse(nullptr, viewMatrix));
+
+            reflectionProbeViews.push_back(view);
+        }
+
+        this->perFrameReflectionProbeData.entries[slot] = {command.position, command.radius};
+
+        ++this->perFrameReflectionProbeData.count;
+    }
+
+    scene->GatherVisibility(reflectionProbeViews);
+    this->views.insert(this->views.end(), reflectionProbeViews.begin(), reflectionProbeViews.end());
+}
+
 bool Renderer::Initialize(HWND hWnd) {
     LogInfo("Creating renderer...\n");
     LogIndent();
@@ -1212,6 +1617,9 @@ bool Renderer::Initialize(HWND hWnd) {
         return false;
 
     if (!this->CreateShadowResources())
+        return false;
+
+    if (!this->CreateReflectionProbeResources())
         return false;
 
     this->SetViewport(this->width, this->height);
@@ -1277,6 +1685,7 @@ void Renderer::Render(Scene *scene) {
     this->BindCommonSamplerStates();
 
     scene->GatherVisibility(this->views);
+    this->SetupReflectionProbeViews(scene);
     this->SetupShadowViews(scene);
     this->frameGraph.Execute(this->deviceContext, this->views);
 

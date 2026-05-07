@@ -9,7 +9,6 @@
 #include <DirectXCollision.h>
 
 class ModelRenderer : public Component {
-    AssetID modelID = AssetID::invalid;
     AssetHandle<Model> modelHandle;
 
     mutable BoundingBox cachedWorldBounds{};
@@ -29,7 +28,9 @@ public:
     bool GetWorldBounds(BoundingBox &outBounds) const override;
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
+        AssetID modelID = this->modelHandle.GetID();
         BIND(modelID);
+        this->modelHandle.SetID(modelID);
     }
 };
 

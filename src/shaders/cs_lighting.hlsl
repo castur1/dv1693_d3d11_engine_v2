@@ -11,7 +11,9 @@ cbuffer Lighting_data : register(b1) {
     float3 ambientColour;
     int directionalLightCount;
     int spotLightCount;
-    float pad1[3];
+    int reflectionProbeCount;
+    int hasSkybox;
+    float pad1;
 }
 
 struct Directional_light_data {
@@ -38,6 +40,13 @@ struct Spot_light_data {
     float4x4 viewProjectionMatrix;
 };
 
+struct Reflection_probe_data {
+    float3 position;
+    float radius;
+    int slotIndex;
+    float3 pad4;
+};
+
 Texture2D<float4> gbufferAlbedo : register(t0);
 Texture2D<float4> gbufferNormal : register(t1);
 Texture2D<float4> gbufferSpecular : register(t2);
@@ -49,6 +58,11 @@ Texture2DArray<float> shadowMapSpot : register(t5);
 StructuredBuffer<Directional_light_data> directionalLights : register(t6);
 StructuredBuffer<Spot_light_data> spotLights : register(t7);
 
+TextureCubeArray reflectionCubeMap : register(t8);
+StructuredBuffer<Reflection_probe_data> reflectionProbes : register(t9);
+TextureCube skybox : register(t10);
+
+SamplerState linearSampler : register(s0);
 SamplerComparisonState shadowSampler : register(s1);
 
 RWTexture2D<float4> outputTexture : register(u0);
@@ -114,8 +128,16 @@ void main(uint3 id : SV_DispatchThreadID)
     int2 pixel = int2(id.xy);
 
     float depth = depthBuffer[pixel].r;
-    if (depth >= 1.0f)
+    if (depth >= 1.0f) {
+        if (hasSkybox) {
+            float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
+            float3 worldPosition = ReconstructWorldPosition(uv, 1.0f);
+            float3 direction = normalize(worldPosition - cameraPosition);
+            outputTexture[pixel] = 2 * float4(skybox.SampleLevel(linearSampler, direction, 0).rgb, 1.0f);
+        }
+        
         return;
+    }
 
     float4 albedoSample = gbufferAlbedo[pixel];
     float3 albedoColour = albedoSample.rgb;
@@ -182,6 +204,8 @@ void main(uint3 id : SV_DispatchThreadID)
                       * specularColour * pow(specularFactor, specularExponent) * shadow;
         }
     }
+    
+    // CONTINUE HERE! Reflection probe stuff
 
     outputTexture[pixel] = float4(colour, 1.0f);
 }

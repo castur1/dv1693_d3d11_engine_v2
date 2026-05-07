@@ -44,7 +44,9 @@ struct Lighting_data {
     XMFLOAT3 ambientColour;
     int      directionalLightCount;
     int      spotLightCount;
-    float    pad0[3];
+    int      reflectionProbeCount;
+    int      hasSkybox;
+    float    pad0;
 };
 static_assert(sizeof(Lighting_data) % 16 == 0);
 
@@ -85,6 +87,15 @@ struct Spot_light_data {
 };
 static_assert(sizeof(Spot_light_data) % 16 == 0);
 
+// Structured buffer element
+struct Reflection_probe_data {
+    XMFLOAT3 position;
+    float    radius;
+    int      slotIndex;
+    float    pad0[3];
+};
+static_assert(sizeof(Reflection_probe_data) % 16 == 0);
+
 enum class Sampler_state_type {
     linearWrap = 0,
     count
@@ -108,21 +119,21 @@ class Renderer {
 
     FrameGraph frameGraph;
     FrameGraph::TextureHandle backbufferHandle = FrameGraph::INVALID_HANDLE;
-    FrameGraph::TextureHandle shadowMapDirectionalHandle = FrameGraph::INVALID_HANDLE;
-    FrameGraph::TextureHandle shadowMapSpotHandle = FrameGraph::INVALID_HANDLE;
 
     std::vector<Render_view> views;
 
-    ID3D11VertexShader *shadowVS = nullptr;
-    ID3D11InputLayout *shadowLayout = nullptr;
-    ID3D11RasterizerState *shadowRS = nullptr;
-    ID3D11SamplerState *shadowSampler = nullptr;
     ID3D11VertexShader *gBufferVS = nullptr;
     ID3D11PixelShader *gBufferPS = nullptr;
     ID3D11InputLayout *gBufferLayout = nullptr;
     ID3D11ComputeShader *lightingCS = nullptr;
     ID3D11VertexShader *resolveVS = nullptr;
     ID3D11PixelShader *resolvePS = nullptr;
+
+    ID3D11Buffer *perObjectBuffer = nullptr;
+    ID3D11Buffer *perFrameBuffer = nullptr;
+    ID3D11Buffer *perMaterialBuffer = nullptr;
+    ID3D11Buffer *lightingBuffer = nullptr;
+    ID3D11Buffer *debugResolveBuffer = nullptr; // Debug
 
     static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
     static constexpr int MAX_SPOT_LIGHTS = 64;
@@ -133,6 +144,11 @@ class Renderer {
     static constexpr int MAX_DIRECTIONAL_SHADOW_MAPS = 2;
     static constexpr int MAX_SPOT_SHADOW_MAPS = 8;
 
+    ID3D11VertexShader *shadowVS = nullptr;
+    ID3D11InputLayout *shadowLayout = nullptr;
+    ID3D11RasterizerState *shadowRS = nullptr;
+    ID3D11SamplerState *shadowSampler = nullptr;
+
     ID3D11Texture2D *shadowMapDirectionalTexture = nullptr; // Texture2DArray
     ID3D11ShaderResourceView *shadowMapDirectionalSRV = nullptr;
     ID3D11DepthStencilView *shadowMapDirectionalDSVs[MAX_DIRECTIONAL_SHADOW_MAPS] = {};
@@ -142,11 +158,6 @@ class Renderer {
     ID3D11DepthStencilView *shadowMapSpotDSVs[MAX_SPOT_SHADOW_MAPS] = {};
 
     ID3D11Buffer *shadowBuffer = nullptr;
-    ID3D11Buffer *perObjectBuffer = nullptr;
-    ID3D11Buffer *perFrameBuffer = nullptr;
-    ID3D11Buffer *perMaterialBuffer = nullptr;
-    ID3D11Buffer *lightingBuffer = nullptr;
-    ID3D11Buffer *debugResolveBuffer = nullptr; // Debug
 
     ID3D11Buffer *directionalLightBuffer = nullptr;
     ID3D11ShaderResourceView *directionalLightBufferSRV = nullptr;
@@ -154,10 +165,7 @@ class Renderer {
     ID3D11Buffer *spotLightBuffer = nullptr;
     ID3D11ShaderResourceView *spotLightBufferSRV = nullptr;
 
-    Per_frame_data currentFrameData{};
-    Debug_resolve_data currentDebugData{}; // Debug
-
-    // TODO: Is all this necessary?
+    // TODO: There has to be some better way to do this
     struct Per_frame_shadow_data {
         int directionalCount = 0;
         XMFLOAT4X4 directionalViewProjectionMatrices[MAX_DIRECTIONAL_SHADOW_MAPS] = {};
@@ -166,10 +174,37 @@ class Renderer {
         int spotCount = 0;
         XMFLOAT4X4 spotViewProjectionMatrices[MAX_SPOT_SHADOW_MAPS] = {};
         int spotSlotToCommand[MAX_SPOT_SHADOW_MAPS] = {};
-    };
-    Per_frame_shadow_data perFrameShadowData;
+    } perFrameShadowData;
 
-    // CONTINUE HERE! Probably get the skybox up and running first, and then tackle reflection probes
+    static constexpr int MAX_REFLECTION_PROBES = 4;
+    static constexpr int REFLECTION_PROBE_RESOLUTION = 256;
+
+    ID3D11ComputeShader *skyboxCS = nullptr;
+
+    ID3D11VertexShader *reflectionVS = nullptr;
+    ID3D11PixelShader *reflectionPS = nullptr;
+    ID3D11InputLayout *reflectionLayout = nullptr;
+
+    ID3D11Texture2D *reflectionProbeTexture = nullptr;
+    ID3D11ShaderResourceView *reflectionProbeSRV = nullptr;
+    ID3D11RenderTargetView *reflectionProbeRTVs[MAX_REFLECTION_PROBES * 6] = {};
+    ID3D11UnorderedAccessView *reflectionProbeUAVs[MAX_REFLECTION_PROBES * 6] = {};
+    ID3D11Texture2D *reflectionProbeDepth = nullptr; // TODO: Could this not be handled by the frame graph?
+    ID3D11DepthStencilView *reflectionProbeDepthDSV = nullptr;
+
+    ID3D11Buffer *reflectionProbeBuffer = nullptr;
+    ID3D11ShaderResourceView *reflectionProbeBufferSRV = nullptr;
+
+    struct Per_frame_reflection_probe_data {
+        int count = 0;
+        struct Entry {
+            XMFLOAT3 position;
+            float radius;
+        } entries[MAX_REFLECTION_PROBES];
+    } perFrameReflectionProbeData;
+
+    Per_frame_data currentFrameData{};
+    Debug_resolve_data currentDebugData{}; // Debug
 
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
@@ -177,18 +212,22 @@ class Renderer {
     bool CreateCommonSamplerStates();
     bool LoadDeferredShaders();
     bool CreateShadowResources();
+    bool CreateReflectionProbeResources();
     void SetViewport(int width, int height);
 
     void BindCommonSamplerStates();
 
     void UploadPerFrameData(const Render_view &view);
     void UploadLightData(const Render_view &view);
+    void UploadReflectionProbeData();
 
     void BuildFrameGraph();
 
     void ComputeDirectionalLightMatrices(XMMATRIX &outView, XMMATRIX &outProjection, const Directional_light_command &command, const Render_view &primaryView);
     void ComputeSpotLightMatrices(XMMATRIX &outView, XMMATRIX &outProjection, const Spot_light_command &command);
     void SetupShadowViews(Scene *scene);
+
+    void SetupReflectionProbeViews(Scene *scene);
 
     template <typename T>
     void UploadConstantBuffer(ID3D11Buffer *buffer, const T &data) {

@@ -25,6 +25,10 @@ entity a1b2-c3d4-e5f6-0123
         rotationSpeed: 90.0
         mouseSensitivity: 0.09
 
+    component Skybox
+        isActive: true
+        textureID: "220f-2c7f-91c2-0e6e"
+
 entity 123a-ffff-3242-0011
     name: "monkey_1"
     isActive: true

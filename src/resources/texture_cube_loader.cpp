@@ -40,7 +40,7 @@ Texture_cube *TextureCubeLoader::Load(const std::string &path) {
         std::string facePath = base + FACE_SUFFIXES[i] + extension;
 
         int width, height, components;
-        pixels[i] = (UINT32 *)stbi_load(path.c_str(), &width, &height, &components, 4);
+        pixels[i] = (UINT32 *)stbi_load(facePath.c_str(), &width, &height, &components, 4);
 
         if (!pixels[i]) {
             LogWarn("Failed to load image file '%s': '%s'\n", facePath.c_str(), stbi_failure_reason());
@@ -65,7 +65,7 @@ Texture_cube *TextureCubeLoader::Load(const std::string &path) {
 
     Texture_cube *textureCube = nullptr;
     if (didSucceed)
-        this->CreateFromBitmaps(pixels, resolution);
+        textureCube = this->CreateFromBitmaps(pixels, resolution);
 
     for (int i = 0; i < 6 && pixels[i]; ++i)
         stbi_image_free(pixels[i]);

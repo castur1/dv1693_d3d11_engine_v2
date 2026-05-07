@@ -70,3 +70,17 @@
     * Something about offsetting bias by the surface normal? Shadows are currently "spiky"
 
 * Better error handling
+
+* Look everything over. Everything. Lots of things could probably be refactored. 
+
+    * The way I submit lights and cube maps feels a bit weird. Renderer is also way too big, probably
+
+
+For skyboxes:
+bk -> pz
+dn -> ny
+ft -> nz
+lf -> nx
+rt -> px
+up -> py
+...and then a 90 degree rotation CCW

@@ -7,6 +7,7 @@
 #include "rendering/renderer.hpp"
 #include "core/input.hpp"
 #include "debugging/debug.hpp"
+#include "components/skybox.hpp"
 
 void CameraController::OnStart(const Engine_context &context) {}
 
@@ -123,6 +124,42 @@ void CameraController::Update(const Frame_context &context) {
     int debugMode = renderer->GetDebugMode();
     if (Input::IsKeyPressed('C'))
         debugMode = (debugMode + 1) % 6;
+
+    static int skyboxIndex = 0;
+    if (Input::IsKeyPressed('F')) {
+        skyboxIndex = (skyboxIndex + 1) % 8;
+
+        Skybox *skybox = this->GetOwner()->GetComponent<Skybox>();
+        if (skybox) {
+            switch (skyboxIndex) {
+                case 0:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("220f-2c7f-91c2-0e6e"));
+                    break;
+                case 1:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("88b8-d931-0b5b-d141"));
+                    break;
+                case 2:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("cf25-b8d0-ac68-2630"));
+                    break;
+                case 3:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("8987-5239-c4b9-e148"));
+                    break;
+                case 4:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("b3b6-8117-f6f0-0f9f"));
+                    break;
+                case 5:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("269e-0a2c-a060-833b"));
+                    break;
+                case 6:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("e262-8483-154f-c662"));
+                    break;
+                case 7:
+                    skybox->textureCubeHandle.SetID(AssetID::FromString("f094-dfd7-d324-10c3"));
+                    break;
+            }
+            
+        }
+    }
 
     renderer->SetDebugData(debugMode, this->nearPlane, this->farPlane);
 

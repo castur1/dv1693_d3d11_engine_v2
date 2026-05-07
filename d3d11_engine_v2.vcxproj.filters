@@ -126,6 +126,12 @@
     <ClCompile Include="src\resources\texture_cube_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\reflection_probe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\components\skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\application.hpp">
@@ -275,6 +281,12 @@
     <ClInclude Include="src\resources\texture_cube_loader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\components\reflection_probe.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\components\skybox.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
@@ -292,5 +304,8 @@
     <FxCompile Include="src\shaders\ps_debug.hlsl" />
     <FxCompile Include="src\shaders\vs_debug.hlsl" />
     <FxCompile Include="src\shaders\vs_shadow.hlsl" />
+    <FxCompile Include="src\shaders\vs_reflection.hlsl" />
+    <FxCompile Include="src\shaders\ps_reflection.hlsl" />
+    <FxCompile Include="src\shaders\cs_skybox.hlsl" />
   </ItemGroup>
 </Project>

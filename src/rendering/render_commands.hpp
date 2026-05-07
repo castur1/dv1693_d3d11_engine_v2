@@ -49,15 +49,12 @@ struct Skybox_command {
     AssetHandle<Texture_cube> textureCubeHandle{};
 };
 
-// TODO: Look this over
 struct Reflection_probe_command {
-    XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
-    float nearPlane   = 0.1f;
-    float farPlane    = 100.0f;
-    float radius      = 10.0f;
-
-    int slotIndex    = -1;   // TODO: Do something similar with the light sources?
-    bool needsUpdate = true; // ?
+    XMFLOAT3 position    = {0.0f, 0.0f, 0.0f};
+    float    nearPlane   = 0.1f;
+    float    farPlane    = 100.0f;
+    float    radius      = 10.0f;
+    bool     needsUpdate = true;
 };
 
 #endif

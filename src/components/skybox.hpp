@@ -6,10 +6,9 @@
 #include "resources/model.hpp"
 
 class Skybox : public Component {
-    AssetID textureID = AssetID::invalid;
+public:
     AssetHandle<Texture_cube> textureCubeHandle;
 
-public:
     Skybox(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~Skybox() = default;
 
@@ -19,7 +18,9 @@ public:
     void OnDestroy(const Engine_context &context) override;
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
+        AssetID textureID = this->textureCubeHandle.GetID();
         BIND(textureID);
+        this->textureCubeHandle.SetID(textureID);
     }
 };
 

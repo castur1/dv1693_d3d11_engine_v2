@@ -25,6 +25,10 @@ entity a1b2-c3d4-e5f6-0123
         rotationSpeed: 90.0
         mouseSensitivity: 0.09
 
+    component Skybox
+        isActive: true
+        textureID: "220f-2c7f-91c2-0e6e"
+
 entity 123a-ffff-3242-0011
     name: "sponza"
     isActive: true
@@ -100,6 +104,47 @@ entity deef-ac43-8744-0ae2
         pauseDuration: 0.0
         shouldPingPong: true
         easingFunctionType: 3
+
+entity deef-9870-ad32-7644
+    name: "spot_light_2"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-25.0, 13.0, 8.0]
+        rotation: [0, 0.0, 0.0]
+        scale: [0.2, 0.2, 0.2]
+
+    component SpotLight
+        isActive: true
+        colour: [0.1, 1.0, 0.3]
+        intensity: 25.0
+        range: 20.0
+        innerConeAngle: 30.0
+        outerConeAngle: 40.0
+        castsShadows: true
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+
+    component InterpMove
+        isActive: true
+        startPosition: [0.0, 0.0, 0.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [0.0, 0.0, 0.0]
+        endRotation: [0.0, 360.0, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
+        moveDuration: 2.0
+        pauseDuration: 0.0
+        shouldPingPong: false
+        easingFunctionType: 0
 
 assets:
     6352-476b-78ad-0ed0

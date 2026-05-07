@@ -24,7 +24,7 @@ void ModelRenderer::UpdateWorldBounds() const {
 }
 
 void ModelRenderer::OnStart(const Engine_context &context) {
-    this->modelHandle = context.assetManager->GetHandle<Model>(this->modelID);
+    this->modelHandle = context.assetManager->GetHandle<Model>(this->modelHandle.GetID());
     this->isWorldBoundsDirty = true;
 }
 
