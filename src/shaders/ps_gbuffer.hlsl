@@ -1,6 +1,6 @@
 cbuffer Per_material : register(b2) {
     float3 materialAmbient;
-    float pad0;
+    int isReflective;
     float3 materialDiffuse;
     float pad1;
     float3 materialSpecular;
@@ -38,7 +38,7 @@ Pixel_shader_output main(Pixel_shader_input input) {
         normalize(input.bitangent),
         normalize(input.normal)
     );
-    output.normal = float4(normalize(mul(normal, tbnMatrix)) * 0.5f + 0.5f, 0.0f);
+    output.normal = float4(normalize(mul(normal, tbnMatrix)) * 0.5f + 0.5f, isReflective);
 
     output.specular = float4(materialSpecular, 0.0f);
 

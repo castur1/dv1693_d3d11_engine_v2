@@ -44,6 +44,7 @@ entity 123a-ffff-3242-0011
     component ModelRenderer
         isActive: true
         modelID: "6352-476b-78ad-0ed0"
+        isReflective: false
 
 entity faff-6543-8755-014a
     name: "sun"
@@ -88,6 +89,7 @@ entity deef-ac43-8744-0ae2
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
     component InterpMove
         isActive: true
@@ -129,6 +131,7 @@ entity deef-9870-ad32-7644
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
     component InterpMove
         isActive: true
@@ -146,6 +149,30 @@ entity deef-9870-ad32-7644
         shouldPingPong: false
         easingFunctionType: 0
 
+entity 0976-ffe5-2348-1209
+    name: "reflection"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 5.0, 1.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [3.0, 3.0, 3.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "4429-118e-4188-675f"
+        isReflective: true
+
+    component ReflectionProbe
+        isActive: true
+        nearPlane: 0.1
+        farPlane: 100.0
+        radius: 10.0
+
 assets:
     6352-476b-78ad-0ed0
     e679-318b-f448-3109
+    4429-118e-4188-675f

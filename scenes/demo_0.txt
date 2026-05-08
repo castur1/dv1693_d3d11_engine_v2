@@ -44,6 +44,7 @@ entity 123a-ffff-3242-0011
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 8654-adce-1006-0012
     name: "monkey_2"
@@ -60,6 +61,7 @@ entity 8654-adce-1006-0012
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-1237
     name: "monkey_3"
@@ -76,6 +78,7 @@ entity 0142-de23-fa87-1237
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-ab43
     name: "monkey_4"
@@ -92,6 +95,7 @@ entity 0142-de23-fa87-ab43
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-0145
     name: "monkey_5"
@@ -108,6 +112,7 @@ entity 0142-de23-fa87-0145
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-fed3
     name: "monkey_6"
@@ -124,6 +129,7 @@ entity 0142-de23-fa87-fed3
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-0513
     name: "monkey_7"
@@ -140,6 +146,7 @@ entity 0142-de23-fa87-0513
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-1225
     name: "monkey_8"
@@ -156,6 +163,7 @@ entity 0142-de23-fa87-1225
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0142-de23-fa87-1337
     name: "monkey_9"
@@ -172,6 +180,7 @@ entity 0142-de23-fa87-1337
     component ModelRenderer
         isActive: true
         modelID: "0dbc-caa8-2206-5ca7"
+        isReflective: false
 
 entity 0123-4567-89ab-cdef
     name: "monkeys"
@@ -200,6 +209,7 @@ entity 7632-12ac-76de-fe23
     component ModelRenderer
         isActive: true
         modelID: "5488-7f75-fd77-3eb3"
+        isReflective: false
 
 entity 7432-fe32-48ac-cd73
     name: "apple_1"
@@ -216,6 +226,7 @@ entity 7432-fe32-48ac-cd73
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
     component InterpMove
         isActive: true
@@ -264,6 +275,7 @@ entity 9347-ad23-cf26-eb95
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
 entity 0976-ffe5-2348-1209
     name: "reflection"
@@ -280,12 +292,13 @@ entity 0976-ffe5-2348-1209
     component ModelRenderer
         isActive: true
         modelID: "4429-118e-4188-675f"
+        isReflective: true
 
     component ReflectionProbe
         isActive: true
         nearPlane: 0.1
         farPlane: 100.0
-        radius: 3.5
+        radius: 10.0
 
 entity 9347-ad23-cf26-af32
     name: "apple_3"
@@ -302,6 +315,7 @@ entity 9347-ad23-cf26-af32
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
 entity 9347-ad23-cf26-fee3
     name: "apple_4"
@@ -318,6 +332,7 @@ entity 9347-ad23-cf26-fee3
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
 entity faff-6543-8755-014a
     name: "sun"
@@ -362,6 +377,7 @@ entity deef-ac43-8744-0ae2
     component ModelRenderer
         isActive: true
         modelID: "e679-318b-f448-3109"
+        isReflective: false
 
     component InterpMove
         isActive: true

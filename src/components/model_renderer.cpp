@@ -58,6 +58,7 @@ void ModelRenderer::Render(const Render_view &view, RenderQueue &queue) {
         command.baseVertex = subModel.mesh.baseVertex;
 
         command.material = subModel.material;
+        command.isReflective = this->isReflective;
 
         XMStoreFloat4x4(&command.worldMatrix, worldMatrix);
 

@@ -550,7 +550,7 @@ bool Renderer::CreateReflectionProbeResources() {
     desc.Height = REFLECTION_PROBE_RESOLUTION;
     desc.MipLevels = 0;
     desc.ArraySize = MAX_REFLECTION_PROBES * 6;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = DXGI_FORMAT_R11G11B10_FLOAT; // HDR output
     desc.SampleDesc.Count = 1;
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
@@ -858,7 +858,7 @@ void Renderer::BuildFrameGraph() {
 
     // G-buffers:
     // T0: R8G8B8A8_UNORM    = albedo.rgb | specular exponent / 1000 = 32 bits
-    // T1: R10G10B10A2_UNORM = encoded normal | unused               = 32 bits
+    // T1: R10G10B10A2_UNORM = encoded normal | isReflective flag    = 32 bits
     // T2: R11G11B10_FLOAT   = specular colour                       = 32 bits
     //                                                               = 96 bits
     // Position is reconstructed from the depth map
@@ -952,10 +952,17 @@ void Renderer::BuildFrameGraph() {
             deviceContext->IASetInputLayout(this->reflectionLayout);
             deviceContext->VSSetShader(this->reflectionVS, nullptr, 0);
             deviceContext->PSSetShader(this->reflectionPS, nullptr, 0);
+
             deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
             deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
-            deviceContext->PSSetConstantBuffers(1, 1, &this->lightingBuffer);
+
+            deviceContext->PSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+            deviceContext->PSSetConstantBuffers(1, 1, &this->perObjectBuffer);
+            deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
+            deviceContext->PSSetConstantBuffers(3, 1, &this->lightingBuffer);
+
             deviceContext->PSSetShaderResources(0, 1, &this->directionalLightBufferSRV);
+            deviceContext->PSSetShaderResources(1, 1, &this->spotLightBufferSRV);
             
             for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
                 for (int face = 0; face < 6; ++face) {
@@ -974,6 +981,9 @@ void Renderer::BuildFrameGraph() {
                     this->UploadPerFrameData(*view);
 
                     for (const Geometry_command &command : view->queue.geometryCommands) {
+                        if (command.isReflective)
+                            continue;
+
                         Per_object_data perObjectData{};
                         perObjectData.worldMatrix = command.worldMatrix;
                         XMStoreFloat4x4(
@@ -985,17 +995,16 @@ void Renderer::BuildFrameGraph() {
 
                         Material *material = command.material.Get();
                         if (material) {
-                            // TODO: This doesn't do full Blinn-Phong, only directional light
+                            Per_material_data perMaterialData{};
+                            perMaterialData.materialAmbient          = material->ambientColour;
+                            perMaterialData.isReflective             = command.isReflective;
+                            perMaterialData.materialDiffuse          = material->diffuseColour;
+                            perMaterialData.materialSpecular         = material->specularColour;
+                            perMaterialData.materialSpecularExponent = material->specularExponent;
 
-                            //Per_material_data perMaterialData{};
-                            //perMaterialData.materialAmbient          = material->ambientColour;
-                            //perMaterialData.materialDiffuse          = material->diffuseColour;
-                            //perMaterialData.materialSpecular         = material->specularColour;
-                            //perMaterialData.materialSpecularExponent = material->specularExponent;
+                            this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
 
-                            //this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
-
-                            deviceContext->PSSetShaderResources(1, 1, &material->diffuseTexture.Get()->shaderResourceView);
+                            deviceContext->PSSetShaderResources(2, 1, &material->diffuseTexture.Get()->shaderResourceView);
                         }
 
                         const UINT stride = sizeof(Vertex);
@@ -1011,8 +1020,8 @@ void Renderer::BuildFrameGraph() {
             deviceContext->GenerateMips(this->reflectionProbeSRV);
 
             deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-            ID3D11ShaderResourceView *nullSRVs[2] = {};
-            deviceContext->PSSetShaderResources(0, 2, nullSRVs);
+            ID3D11ShaderResourceView *nullSRVs[3] = {};
+            deviceContext->PSSetShaderResources(0, 3, nullSRVs);
         }
     );
 
@@ -1175,6 +1184,7 @@ void Renderer::BuildFrameGraph() {
                 if (material) {
                     Per_material_data perMaterialData{};
                     perMaterialData.materialAmbient          = material->ambientColour;
+                    perMaterialData.isReflective             = command.isReflective;
                     perMaterialData.materialDiffuse          = material->diffuseColour;
                     perMaterialData.materialSpecular         = material->specularColour;
                     perMaterialData.materialSpecularExponent = material->specularExponent;

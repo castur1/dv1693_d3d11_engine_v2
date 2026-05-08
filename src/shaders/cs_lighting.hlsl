@@ -144,11 +144,34 @@ void main(uint3 id : SV_DispatchThreadID)
     float specularExponent = albedoSample.a * 1000.0f;
 
     float3 normalV = normalize(gbufferNormal[pixel].rgb * 2.0f - 1.0f);
+    bool isReflective = gbufferNormal[pixel].a > 0.5f;
     float3 specularColour = gbufferSpecular[pixel].rgb;
 
     float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
     float3 worldPos = ReconstructWorldPosition(uv, depth);
     float3 viewV = normalize(cameraPosition - worldPos);
+    
+    if (isReflective) {
+        float3 reflectV = reflect(-viewV, normalV);
+        float3 envColour = float3(0.0f, 0.0f, 0.0f);
+        bool foundProbe = false;
+
+        for (int p = 0; p < reflectionProbeCount; ++p) {
+            float3 delta = worldPos - reflectionProbes[p].position;
+            if (dot(delta, delta) <= reflectionProbes[p].radius * reflectionProbes[p].radius) {
+                envColour = reflectionCubeMap.SampleLevel(
+                linearSampler, float4(reflectV, (float) reflectionProbes[p].slotIndex), 0.0f).rgb;
+                foundProbe = true;
+                break;
+            }
+        }
+
+        if (!foundProbe && hasSkybox)
+            envColour = skybox.SampleLevel(linearSampler, reflectV, 0.0f).rgb;
+
+        outputTexture[pixel] = float4(albedoColour * envColour, 1.0f);
+        return;
+    }
 
     float3 colour = ambientColour * albedoColour;
 
@@ -204,32 +227,6 @@ void main(uint3 id : SV_DispatchThreadID)
                       * specularColour * pow(specularFactor, specularExponent) * shadow;
         }
     }
-    
-    float3 reflectV = reflect(-viewV, normalV);
-    float3 envColour = float3(0.0f, 0.0f, 0.0f);
-    bool foundProbe = false;
-
-    for (int p = 0; p < reflectionProbeCount; ++p)
-    {
-        float3 delta = worldPos - reflectionProbes[p].position;
-        if (dot(delta, delta) <= reflectionProbes[p].radius * reflectionProbes[p].radius)
-        {
-        // Mip 0 = sharp reflection. Drive mip from roughness when material
-        // data includes it — for now all surfaces are equally reflective.
-            envColour = reflectionCubeMap.SampleLevel(
-                linearSampler, float4(reflectV, (float) reflectionProbes[p].slotIndex), 0.0f).rgb;
-            foundProbe = true;
-            break;
-        }
-    }
-
-    if (!foundProbe && hasSkybox)
-        envColour = skybox.SampleLevel(linearSampler, reflectV, 0.0f).rgb;
-
-    // Weight by the material's specular colour so non-specular surfaces don't reflect.
-    // This is a placeholder: a proper PBR implementation would use the Fresnel term
-    // and drive the mip level from roughness. Replace this when you add roughness data.
-    colour += specularColour * envColour;
 
     outputTexture[pixel] = float4(colour, 1.0f);
 }
