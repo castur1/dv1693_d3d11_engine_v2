@@ -127,10 +127,11 @@ void CameraController::Update(const Frame_context &context) {
 
     static int skyboxIndex = 0;
     if (Input::IsKeyPressed('F')) {
-        skyboxIndex = (skyboxIndex + 1) % 8;
+        skyboxIndex = (skyboxIndex + 1) % 9;
 
         Skybox *skybox = this->GetOwner()->GetComponent<Skybox>();
         if (skybox) {
+            skybox->isActive = true;
             switch (skyboxIndex) {
                 case 0:
                     skybox->textureCubeHandle.SetID(AssetID::FromString("220f-2c7f-91c2-0e6e"));
@@ -156,6 +157,8 @@ void CameraController::Update(const Frame_context &context) {
                 case 7:
                     skybox->textureCubeHandle.SetID(AssetID::FromString("f094-dfd7-d324-10c3"));
                     break;
+                case 8:
+                    skybox->isActive = false;
             }
             
         }

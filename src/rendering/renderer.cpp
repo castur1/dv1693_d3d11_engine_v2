@@ -938,7 +938,7 @@ void Renderer::BuildFrameGraph() {
 
                 deviceContext->CSSetShader(nullptr, nullptr, 0);
                 ID3D11ShaderResourceView *nullSRV = nullptr;
-                deviceContext->CSGetShaderResources(0, 1, &nullSRV);
+                deviceContext->CSSetShaderResources(0, 1, &nullSRV);
                 ID3D11UnorderedAccessView *nullUAV = nullptr;
                 deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
             }
@@ -995,7 +995,7 @@ void Renderer::BuildFrameGraph() {
 
                             //this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
 
-                            deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView);
+                            deviceContext->PSSetShaderResources(1, 1, &material->diffuseTexture.Get()->shaderResourceView);
                         }
 
                         const UINT stride = sizeof(Vertex);

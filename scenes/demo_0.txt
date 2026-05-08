@@ -265,6 +265,28 @@ entity 9347-ad23-cf26-eb95
         isActive: true
         modelID: "e679-318b-f448-3109"
 
+entity 0976-ffe5-2348-1209
+    name: "reflection"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-30.0, 8.0, 6.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [3.0, 3.0, 3.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "4429-118e-4188-675f"
+
+    component ReflectionProbe
+        isActive: true
+        nearPlane: 0.1
+        farPlane: 100.0
+        radius: 3.5
+
 entity 9347-ad23-cf26-af32
     name: "apple_3"
     isActive: true
@@ -361,3 +383,4 @@ assets:
     0dbc-caa8-2206-5ca7
     5488-7f75-fd77-3eb3
     e679-318b-f448-3109
+    4429-118e-4188-675f
