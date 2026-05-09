@@ -30,10 +30,8 @@ static_assert(sizeof(Per_object_data) % 16 == 0);
 
 // CBuffer
 struct Per_material_data {
-    XMFLOAT3 materialAmbient;
-    int      isReflective;
     XMFLOAT3 materialDiffuse;
-    float    pad1;
+    float    isReflective;
     XMFLOAT3 materialSpecular;
     float    materialSpecularExponent;
 };

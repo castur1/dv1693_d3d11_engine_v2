@@ -1,8 +1,6 @@
 cbuffer Per_material : register(b2) {
-    float3 materialAmbient;
-    int isReflective;
     float3 materialDiffuse;
-    float pad1;
+    float isReflective;
     float3 materialSpecular;
     float materialSpecularExponent;
 };

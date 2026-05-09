@@ -1,3 +1,6 @@
+SamplerState samplerLinearWrap : register(s0);
+SamplerComparisonState samplerShadow : register(s1);
+
 cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
@@ -62,63 +65,79 @@ TextureCubeArray reflectionCubeMap : register(t8);
 StructuredBuffer<Reflection_probe_data> reflectionProbes : register(t9);
 TextureCube skybox : register(t10);
 
-SamplerState linearSampler : register(s0);
-SamplerComparisonState shadowSampler : register(s1);
-
 RWTexture2D<float4> outputTexture : register(u0);
 
 float3 ReconstructWorldPosition(float2 uv, float depth) {
     float2 ndc = float2(2.0f * uv.x - 1.0f, -2.0f * uv.y + 1.0f);
-    float4 clipPos = float4(ndc, depth, 1.0f);
-    float4 worldPos = mul(clipPos, invViewProjectionMatrix);
-    return worldPos.xyz / worldPos.w;
+    float4 positionClip = float4(ndc, depth, 1.0f);
+    float4 positionWorld = mul(positionClip, invViewProjectionMatrix);
+    return positionWorld.xyz / positionWorld.w;
 }
 
-// TODO: Refactor Blinn-Phong
+float3 SampleReflectionProbe(float3 reflectV, float3 positionWorld, uint2 pixel) {
+    float closestDistanceSq = 999999.0f;
+    int indexOfClosest = -1;
 
-float SampleShadowDirectional(float3 worldPos, int lightIndex)
-{
+    for (int i = 0; i < reflectionProbeCount; ++i) {
+        float3 deltaV = positionWorld - reflectionProbes[i].position;
+            
+        float distanceToCentreSq = dot(deltaV, deltaV);
+        float radiusSq = reflectionProbes[i].radius * reflectionProbes[i].radius;
+            
+        if (distanceToCentreSq <= radiusSq && (distanceToCentreSq < closestDistanceSq || indexOfClosest == -1)) {
+            indexOfClosest = i;
+            closestDistanceSq = distanceToCentreSq;
+        }
+    }
+        
+    if (indexOfClosest != -1)
+        return reflectionCubeMap.SampleLevel(samplerLinearWrap, float4(reflectV, reflectionProbes[indexOfClosest].slotIndex), 0.0f).rgb;
+    else if (hasSkybox)
+        return skybox.SampleLevel(samplerLinearWrap, reflectV, 0.0f).rgb;
+    
+    return outputTexture[pixel].rgb;
+}
+
+float SampleShadowDirectional(float3 positionWorld, int lightIndex) {
     Directional_light_data light = directionalLights[lightIndex];
 
     if (!light.castsShadows || light.shadowSliceIndex < 0)
         return 1.0f;
 
-    float4 lightClip = mul(float4(worldPos, 1.0f), light.viewProjectionMatrix);
+    float4 lightClip = mul(float4(positionWorld, 1.0f), light.viewProjectionMatrix);
     float3 ndc = lightClip.xyz / lightClip.w;
 
     float2 uv = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
     float depth = ndc.z;
 
-    if (any(uv < 0.0f) || any(uv > 1.0f) || depth <= 0.0f || depth >= 1.0f)
-        return 1.0f;
-
     return shadowMapDirectional.SampleCmpLevelZero(
-        shadowSampler, float3(uv, (float) light.shadowSliceIndex), depth);
+        samplerShadow, 
+        float3(uv, light.shadowSliceIndex), 
+        depth
+    );
 }
 
-float SampleShadowSpot(float3 worldPos, int lightIndex)
-{
+float SampleShadowSpot(float3 positionWorld, int lightIndex) {
     Spot_light_data light = spotLights[lightIndex];
 
     if (!light.castsShadows || light.shadowSliceIndex < 0)
         return 1.0f;
 
-    float4 lightClip = mul(float4(worldPos, 1.0f), light.viewProjectionMatrix);
+    float4 lightClip = mul(float4(positionWorld, 1.0f), light.viewProjectionMatrix);
     float3 ndc = lightClip.xyz / lightClip.w;
 
     float2 uv = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
     float depth = ndc.z;
 
-    if (any(uv < 0.0f) || any(uv > 1.0f) || depth <= 0.0f || depth >= 1.0f)
-        return 1.0f;
-
     return shadowMapSpot.SampleCmpLevelZero(
-        shadowSampler, float3(uv, (float) light.shadowSliceIndex), depth);
+        samplerShadow, 
+        float3(uv, light.shadowSliceIndex), 
+        depth
+    );
 }
 
 [numthreads(8, 8, 1)]
-void main(uint3 id : SV_DispatchThreadID)
-{
+void main(uint3 id : SV_DispatchThreadID) {
     uint width, height;
     outputTexture.GetDimensions(width, height);
 
@@ -126,15 +145,16 @@ void main(uint3 id : SV_DispatchThreadID)
         return;
 
     int2 pixel = int2(id.xy);
+    
+    float depth = saturate(depthBuffer[pixel].r);
+    
+    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
+    float3 positionWorld = ReconstructWorldPosition(uv, depth);
+    float3 viewV = normalize(cameraPosition - positionWorld);
 
-    float depth = depthBuffer[pixel].r;
     if (depth >= 1.0f) {
-        if (hasSkybox) {
-            float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
-            float3 worldPosition = ReconstructWorldPosition(uv, 1.0f);
-            float3 direction = normalize(worldPosition - cameraPosition);
-            outputTexture[pixel] = 1.2f * float4(skybox.SampleLevel(linearSampler, direction, 0).rgb, 1.0f);
-        }
+        if (hasSkybox)
+            outputTexture[pixel] = float4(1.2f * skybox.SampleLevel(samplerLinearWrap, -viewV, 0).rgb, 1.0f);
         
         return;
     }
@@ -143,90 +163,85 @@ void main(uint3 id : SV_DispatchThreadID)
     float3 albedoColour = albedoSample.rgb;
     float specularExponent = albedoSample.a * 1000.0f;
 
-    float3 normalV = normalize(gbufferNormal[pixel].rgb * 2.0f - 1.0f);
-    bool isReflective = gbufferNormal[pixel].a > 0.5f;
+    float4 normalSample = gbufferNormal[pixel];
+    float3 normalV = normalize(normalSample.rgb * 2.0f - 1.0f);
+    bool isReflective = normalSample.a > 0.5f;
+    
     float3 specularColour = gbufferSpecular[pixel].rgb;
-
-    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
-    float3 worldPos = ReconstructWorldPosition(uv, depth);
-    float3 viewV = normalize(cameraPosition - worldPos);
     
     if (isReflective) {
         float3 reflectV = reflect(-viewV, normalV);
-        float3 envColour = float3(0.0f, 0.0f, 0.0f);
-        bool foundProbe = false;
-
-        for (int p = 0; p < reflectionProbeCount; ++p) {
-            float3 delta = worldPos - reflectionProbes[p].position;
-            if (dot(delta, delta) <= reflectionProbes[p].radius * reflectionProbes[p].radius) {
-                envColour = reflectionCubeMap.SampleLevel(
-                linearSampler, float4(reflectV, (float) reflectionProbes[p].slotIndex), 0.0f).rgb;
-                foundProbe = true;
-                break;
-            }
-        }
-
-        if (!foundProbe && hasSkybox)
-            envColour = skybox.SampleLevel(linearSampler, reflectV, 0.0f).rgb;
-
-        outputTexture[pixel] = float4(albedoColour * envColour, 1.0f);
+        
+        float3 environmentColour = SampleReflectionProbe(reflectV, positionWorld, pixel);
+        outputTexture[pixel] = float4(albedoColour * environmentColour, 1.0f);
+        
         return;
     }
+    
+    float3 ambient = ambientColour;
+    float3 diffuse = float3(0.0f, 0.0f, 0.0f);
+    float3 specular = float3(0.0f, 0.0f, 0.0f);
 
-    float3 colour = ambientColour * albedoColour;
-
-    for (int d = 0; d < directionalLightCount; ++d) {
-        float3 lightV = normalize(-directionalLights[d].direction);
-        float diffuseFactor = saturate(dot(normalV, lightV));
-
-        float shadow = 1.0f;
-        if (directionalLights[d].castsShadows && diffuseFactor > 0.0f)
-            shadow = SampleShadowDirectional(worldPos, d);
-
-        colour += directionalLights[d].colour * directionalLights[d].intensity
-                  * albedoColour * diffuseFactor * shadow;
-
-        if (diffuseFactor > 0.0f && shadow > 0.0f) {
-            float3 halfV = normalize(lightV + viewV);
-            float specularFactor = saturate(dot(normalV, halfV));
-            colour += directionalLights[d].colour * directionalLights[d].intensity
-                      * specularColour * pow(specularFactor, specularExponent) * shadow;
-        }
-    }
-
-    for (int s = 0; s < spotLightCount; ++s) {
-        float3 toLight = spotLights[s].position - worldPos;
-        float lightDist = length(toLight);
-
-        if (lightDist >= spotLights[s].range)
+    for (int i = 0; i < directionalLightCount; ++i) {
+        float3 lightV = normalize(-directionalLights[i].direction);
+        
+        float diffuseFactor = dot(normalV, lightV);
+        if (diffuseFactor <= 0.0f)
             continue;
 
-        float3 lightV = toLight / lightDist;
-        float cosTheta = dot(spotLights[s].direction, -lightV);
-        float cone = smoothstep(spotLights[s].cosOuterAngle,
-                                     spotLights[s].cosInnerAngle, cosTheta);
-        if (cone <= 0.0f)
+        float shadowFactor = 1.0f;
+        if (directionalLights[i].castsShadows)
+            shadowFactor = SampleShadowDirectional(positionWorld, i);
+        
+        if (shadowFactor <= 0.0f)
             continue;
+        
+        float3 radiance = directionalLights[i].colour * directionalLights[i].intensity * shadowFactor;
 
-        float window = saturate(1.0f - pow(lightDist / spotLights[s].range, 4.0f));
-        float attenuation = (window * window) / (lightDist * lightDist + 1.0f);
-        float factor = spotLights[s].intensity * attenuation * cone;
+        diffuse += radiance * diffuseFactor;
 
-        float diffuseFactor = saturate(dot(normalV, lightV));
-
-        float shadow = 1.0f;
-        if (spotLights[s].castsShadows && diffuseFactor > 0.0f)
-            shadow = SampleShadowSpot(worldPos, s);
-
-        colour += spotLights[s].colour * factor * albedoColour * diffuseFactor * shadow;
-
-        if (diffuseFactor > 0.0f && shadow > 0.0f) {
-            float3 halfV = normalize(lightV + viewV);
-            float specularFactor = saturate(dot(normalV, halfV));
-            colour += spotLights[s].colour * factor
-                      * specularColour * pow(specularFactor, specularExponent) * shadow;
-        }
+        float3 halfV = normalize(lightV + viewV);
+        float specularFactor = saturate(dot(normalV, halfV));
+        specular += radiance * pow(specularFactor, specularExponent);
     }
 
-    outputTexture[pixel] = float4(colour, 1.0f);
+    for (int i = 0; i < spotLightCount; ++i) {
+        float3 lightV = spotLights[i].position - positionWorld;
+        float distance = length(lightV);
+
+        if (distance >= spotLights[i].range)
+            continue;
+        
+        lightV /= distance;
+        
+        float diffuseFactor = dot(normalV, lightV);
+        if (diffuseFactor <= 0.0)
+            continue;
+        
+        float t = dot(spotLights[i].direction, -lightV);
+        float coneFactor = smoothstep(spotLights[i].cosOuterAngle, spotLights[i].cosInnerAngle, t);
+        if (coneFactor <= 0.0f)
+            continue;
+        
+        float shadowFactor = 1.0f;
+        if (spotLights[i].castsShadows)
+            shadowFactor = SampleShadowSpot(positionWorld, i);
+        
+        if (shadowFactor <= 0.0f)
+            continue;
+        
+        float window = saturate(1.0f - pow(distance / spotLights[i].range, 4.0f));
+        float attenuation = (window * window) / (distance * distance + 1.0f);
+        
+        float3 radiance = spotLights[i].colour * spotLights[i].intensity * attenuation * coneFactor;
+        
+        diffuse += radiance * diffuseFactor;
+
+        float3 halfV = normalize(lightV + viewV);
+        float specularFactor = saturate(dot(normalV, halfV));
+        specular += radiance * pow(specularFactor, specularExponent);
+    }
+        
+    float3 finalColour = (ambient + diffuse) * albedoColour + specular * specularColour;
+    outputTexture[pixel] = float4(finalColour, 1.0f);
 }

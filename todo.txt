@@ -3,7 +3,7 @@
     X Deferred rendering
     X Shadow mapping
     * Particle system
-    * Dynamic cube mapping
+    X Dynamic cube mapping
     * Tessellation
     X Hierarchical view frustum culling
     X Normal mapping
@@ -74,6 +74,13 @@
 * Look everything over. Everything. Lots of things could probably be refactored. 
 
     * The way I submit lights and cube maps feels a bit weird. Renderer is also way too big, probably
+
+* ModelRenderer GetWorldBounds() is broken, because the Transform's IsWorldDirty() is order-dependent. Probably we want some sort of callback?
+
+    * Event system?
+
+* Make shadow sampler common, probably
+
 
 
 For skyboxes:

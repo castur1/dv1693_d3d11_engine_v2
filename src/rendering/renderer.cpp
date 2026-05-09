@@ -957,9 +957,8 @@ void Renderer::BuildFrameGraph() {
             deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
 
             deviceContext->PSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->PSSetConstantBuffers(1, 1, &this->perObjectBuffer);
-            deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
-            deviceContext->PSSetConstantBuffers(3, 1, &this->lightingBuffer);
+            deviceContext->PSSetConstantBuffers(1, 1, &this->perMaterialBuffer);
+            deviceContext->PSSetConstantBuffers(2, 1, &this->lightingBuffer);
 
             deviceContext->PSSetShaderResources(0, 1, &this->directionalLightBufferSRV);
             deviceContext->PSSetShaderResources(1, 1, &this->spotLightBufferSRV);
@@ -996,9 +995,8 @@ void Renderer::BuildFrameGraph() {
                         Material *material = command.material.Get();
                         if (material) {
                             Per_material_data perMaterialData{};
-                            perMaterialData.materialAmbient          = material->ambientColour;
-                            perMaterialData.isReflective             = command.isReflective;
                             perMaterialData.materialDiffuse          = material->diffuseColour;
+                            perMaterialData.isReflective             = command.isReflective;
                             perMaterialData.materialSpecular         = material->specularColour;
                             perMaterialData.materialSpecularExponent = material->specularExponent;
 
@@ -1183,9 +1181,8 @@ void Renderer::BuildFrameGraph() {
                 Material *material = command.material.Get();
                 if (material) {
                     Per_material_data perMaterialData{};
-                    perMaterialData.materialAmbient          = material->ambientColour;
-                    perMaterialData.isReflective             = command.isReflective;
                     perMaterialData.materialDiffuse          = material->diffuseColour;
+                    perMaterialData.isReflective             = command.isReflective;
                     perMaterialData.materialSpecular         = material->specularColour;
                     perMaterialData.materialSpecularExponent = material->specularExponent;
 

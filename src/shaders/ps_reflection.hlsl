@@ -1,3 +1,5 @@
+SamplerState samplerLinearWrap : register(s0);
+
 cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
@@ -7,26 +9,19 @@ cbuffer Per_frame : register(b0) {
     float pad0;
 }
 
-cbuffer Per_object : register(b1) {
-    float4x4 worldMatrix;
-    float4x4 worldMatrixInvTransform;
-};
-
-cbuffer Per_material : register(b2) {
-    float3 materialAmbient;
-    int isReflective;
+cbuffer Per_material : register(b1) {
     float3 materialDiffuse;
-    float pad1;
+    float isReflective;
     float3 materialSpecular;
     float materialSpecularExponent;
 }
 
-cbuffer Lighting_data : register(b3) {
+cbuffer Lighting_data : register(b2) {
     float3 ambientColour;
     int directionalLightCount;
     int spotLightCount;
     int probeCount;
-    float2 pad;
+    float2 pad1;
 };
 
 struct Directional_light_data {
@@ -35,7 +30,7 @@ struct Directional_light_data {
     float3 colour;
     int castsShadows;
     int shadowSliceIndex;
-    float3 pad;
+    float3 pad2;
     float4x4 viewProjectionMatrix;
 };
 
@@ -53,36 +48,77 @@ struct Spot_light_data {
     float4x4 viewProjectionMatrix;
 };
 
-StructuredBuffer<Directional_light_data> g_directionalLights : register(t0);
+StructuredBuffer<Directional_light_data> directionalLights : register(t0);
 StructuredBuffer<Spot_light_data> spotLights : register(t1);
 
-Texture2D g_diffuse : register(t2);
-SamplerState g_sampler : register(s0);
+Texture2D diffuseTexture : register(t2);
 
-struct PS_Input
-{
-    float4 posCS : SV_Position;
-    float3 posWS : POSITION;
-    float3 normalWS : NORMAL;
+struct Pixel_shader_input {
+    float4 positionClip : SV_POSITION;
+    float3 positionWorld : POSITION;
+    float3 normalWorld : NORMAL;
     float2 uv : TEXCOORD;
 };
 
-float4 main(PS_Input input) : SV_Target
-{
-    float3 N = normalize(input.normalWS);
-    float3 albedo = g_diffuse.Sample(g_sampler, input.uv).rgb;
+float4 main(Pixel_shader_input input) : SV_TARGET {
+    float3 albedo = diffuseTexture.Sample(samplerLinearWrap, input.uv).rgb;
     
-    // CONTINUE HERE!
+    float3 normalV = normalize(input.normalWorld);
+    float3 viewV = normalize(cameraPosition - input.positionWorld);
+    
+    float3 ambient = ambientColour;
+    float3 diffuse = float3(0.0f, 0.0f, 0.0f);
+    float3 specular = float3(0.0f, 0.0f, 0.0f);
 
-    float3 colour = ambientColour * albedo;
+    for (int i = 0; i < directionalLightCount; ++i) {
+        float3 lightV = -directionalLights[i].direction;
+        
+        float diffuseFactor = dot(normalV, lightV);
+        if (diffuseFactor <= 0.0f)
+            continue;
 
-    for (int i = 0; i < directionalLightCount; ++i)
-    {
-        Directional_light_data light = g_directionalLights[i];
-        float3 L = normalize(-light.direction);
-        float NdotL = saturate(dot(N, L));
-        colour += albedo * light.colour * light.intensity * NdotL;
+        float3 radiance = directionalLights[i].colour * directionalLights[i].intensity;
+
+        diffuse += radiance * diffuseFactor;
+        
+        float3 halfV = normalize(lightV + viewV);
+        float specularFactor = pow(saturate(dot(normalV, halfV)), materialSpecularExponent);
+        specular += radiance * specularFactor;
+    }
+
+    for (int i = 0; i < spotLightCount; ++i) {
+        float3 lightV = spotLights[i].position - input.positionWorld;
+        float distance = length(lightV);
+
+        if (distance >= spotLights[i].range)
+            continue;
+
+        lightV /= distance;
+        
+        float diffuseFactor = dot(normalV, lightV);
+        if (diffuseFactor <= 0.0f)
+            continue;
+        
+        float t = dot(spotLights[i].direction, -lightV);
+        float coneFactor = smoothstep(spotLights[i].cosOuterAngle, spotLights[i].cosInnerAngle, t);
+        if (coneFactor <= 0.0f)
+            continue;
+
+        float window = saturate(1.0f - pow(distance / spotLights[i].range, 4.0f));
+        float attenuation = (window * window) / (distance * distance + 1.0f);
+
+        float3 radiance = spotLights[i].colour * spotLights[i].intensity * attenuation * coneFactor;
+
+        diffuse += radiance * diffuseFactor;
+        
+        float3 halfV = normalize(lightV + viewV);
+        float specularFactor = pow(saturate(dot(normalV, halfV)), materialSpecularExponent);
+        specular += radiance * specularFactor;
     }
     
-    return float4(colour, 1.0f);
+    diffuse *= materialDiffuse;
+    specular *= materialSpecular;
+    
+    float3 finalColour = (ambient + diffuse) * albedo + specular;
+    return float4(finalColour, 1.0f);
 }

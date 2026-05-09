@@ -81,6 +81,8 @@ bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
         return false;
     }
 
+    // TODO: This won't work if it's already been resolved, in which case we never update our world bounds. Callback?
+    this->isWorldBoundsDirty = true; // Temp
     if (transform->IsWorldDirty())
         this->isWorldBoundsDirty = true;
 

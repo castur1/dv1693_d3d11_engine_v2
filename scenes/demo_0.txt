@@ -29,6 +29,11 @@ entity a1b2-c3d4-e5f6-0123
         isActive: true
         textureID: "220f-2c7f-91c2-0e6e"
 
+    component ModelRenderer
+        isActive: true
+        modelID: "4429-118e-4188-675f"
+        isReflective: false
+
 entity 123a-ffff-3242-0011
     name: "monkey_1"
     isActive: true
