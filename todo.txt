@@ -63,6 +63,8 @@
 
     * Something about offsetting bias by the surface normal? Shadows are currently "spiky"
 
+    * Larger PCF kernel
+
 * Better error handling
 
 * Look everything over. Everything. Lots of things could probably be refactored. 
@@ -73,8 +75,7 @@
 
 * AppendStructuredBuffer?
 
-* Alpha textures
-
+Anti-aliasing (FXAA?)
 
 For skyboxes:
 bk -> pz
