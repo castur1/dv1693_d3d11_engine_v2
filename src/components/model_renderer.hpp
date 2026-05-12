@@ -10,12 +10,8 @@
 
 class ModelRenderer : public Component {
     AssetHandle<Model> modelHandle;
-    bool isReflective = false; // TODO: Hack to get dynamic cube maps to work. Should probably be part of the material instead.
+    bool isReflective = false; // TODO: "Hack" to get dynamic cube maps to work. Should probably be part of the material instead.
 
-    mutable BoundingBox cachedWorldBounds{};
-    mutable bool isWorldBoundsDirty = true;
-
-    void UpdateWorldBounds() const;
 
 public:
     ModelRenderer(Entity *owner, bool isActive) : Component(owner, isActive) {}

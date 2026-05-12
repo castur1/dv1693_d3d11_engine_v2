@@ -33,6 +33,7 @@ Renderer::~Renderer() {
     SafeRelease(this->reflectionProbeBuffer);
 
     SafeRelease(this->shadowVS);
+    SafeRelease(this->shadowPS);
     SafeRelease(this->shadowLayout);
     SafeRelease(this->shadowRS);
     SafeRelease(this->shadowSampler);
@@ -489,12 +490,22 @@ bool Renderer::CreateShadowResources() {
     }
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 }
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    result = this->device->CreateInputLayout(layoutDesc, 1, bytecode.data(), bytecode.size(), &this->shadowLayout);
+    result = this->device->CreateInputLayout(layoutDesc, 2, bytecode.data(), bytecode.size(), &this->shadowLayout);
     if (FAILED(result)) {
         LogError("Failed to create input layout");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ps_shadow.cso", bytecode))
+        return false;
+
+    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->shadowPS);
+    if (FAILED(result)) {
+        LogError("Failed to create pixel shader");
         return false;
     }
 
@@ -1043,7 +1054,7 @@ void Renderer::BuildFrameGraph() {
             deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             deviceContext->VSSetShader(this->shadowVS, nullptr, 0);
-            deviceContext->PSSetShader(nullptr, nullptr, 0);
+            deviceContext->PSSetShader(this->shadowPS, nullptr, 0);
 
             D3D11_VIEWPORT viewport{};
             viewport.Width = viewport.Height = SHADOW_MAP_DIRECTIONAL_RESOLUTION;
@@ -1068,6 +1079,10 @@ void Renderer::BuildFrameGraph() {
                     Per_object_data perObjectData{};
                     perObjectData.worldMatrix = command.worldMatrix;
                     this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+
+                    Material *material = command.material.Get();
+                    if (material)
+                        deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView); // Required for alpha testing
 
                     const UINT stride = sizeof(Vertex);
                     const UINT offset = 0;
@@ -1096,6 +1111,10 @@ void Renderer::BuildFrameGraph() {
                     Per_object_data perObjectData{};
                     perObjectData.worldMatrix = command.worldMatrix;
                     this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+
+                    Material *material = command.material.Get();
+                    if (material)
+                        deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView); // Required for alpha testing
 
                     const UINT stride = sizeof(Vertex);
                     const UINT offset = 0;

@@ -109,6 +109,9 @@ float SampleShadowDirectional(float3 positionWorld, int lightIndex) {
 
     float2 uv = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
     float depth = ndc.z;
+    
+    if (any(uv < 0.0f) || any(uv > 1.0f) || depth < 0.0f || depth > 1.0f)
+        return 1.0f;
 
     return shadowMapDirectional.SampleCmpLevelZero(
         samplerShadow, 
@@ -128,6 +131,9 @@ float SampleShadowSpot(float3 positionWorld, int lightIndex) {
 
     float2 uv = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
     float depth = ndc.z;
+    
+    if (any(uv < 0.0f) || any(uv > 1.0f) || depth < 0.0f || depth > 1.0f)
+        return 1.0f;
 
     return shadowMapSpot.SampleCmpLevelZero(
         samplerShadow, 
@@ -146,7 +152,7 @@ void main(uint3 id : SV_DispatchThreadID) {
 
     int2 pixel = int2(id.xy);
     
-    float depth = saturate(depthBuffer[pixel].r);
+    float depth = depthBuffer[pixel].r;
     
     float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
     float3 positionWorld = ReconstructWorldPosition(uv, depth);

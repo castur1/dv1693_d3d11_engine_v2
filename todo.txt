@@ -2,13 +2,11 @@
 
     X Deferred rendering
     X Shadow mapping
-    * Particle system
+    * Particle system <--
     X Dynamic cube mapping
     * Tessellation
     X Hierarchical view frustum culling
     X Normal mapping
-
-* Refactor the Blinn-Phong implementation
 
 * Bind enums
 
@@ -24,9 +22,7 @@
 
     * Pause and frame-by-frame
 
-    * Display camera position (and rotation)
-
-    * isStatic
+    * isStatic toggle
 
     * Editor currently crashes if you change scene while an entity is selected
 
@@ -63,8 +59,6 @@
 
     * Oriented Bounding Box for orthographic view culling (directional light)
 
-    * Toggle shadow on/off as a setting
-
     * Static lights, so that we don't have to recompute all the matrices and stuff each frame?
 
     * Something about offsetting bias by the surface normal? Shadows are currently "spiky"
@@ -75,12 +69,11 @@
 
     * The way I submit lights and cube maps feels a bit weird. Renderer is also way too big, probably
 
-* ModelRenderer GetWorldBounds() is broken, because the Transform's IsWorldDirty() is order-dependent. Probably we want some sort of callback?
-
-    * Event system?
-
 * Make shadow sampler common, probably
 
+* AppendStructuredBuffer?
+
+* Alpha textures
 
 
 For skyboxes:

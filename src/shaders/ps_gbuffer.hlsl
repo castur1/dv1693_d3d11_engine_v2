@@ -27,7 +27,11 @@ struct Pixel_shader_output {
 Pixel_shader_output main(Pixel_shader_input input) {
     Pixel_shader_output output;
 
-    float3 albedo = materialDiffuse * diffuseTexture.Sample(linearSampler, input.uv).rgb;
+    float4 albedoSample = diffuseTexture.Sample(linearSampler, input.uv);
+    if (albedoSample.a < 0.5f)
+        discard;
+    
+    float3 albedo = materialDiffuse * albedoSample.rgb;
     output.albedo = float4(albedo, materialSpecularExponent / 1000.0f);
 
     float3 normal = normalTexture.Sample(linearSampler, input.uv).rgb * 2.0f - 1.0f;

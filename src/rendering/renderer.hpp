@@ -143,6 +143,7 @@ class Renderer {
     static constexpr int MAX_SPOT_SHADOW_MAPS = 8;
 
     ID3D11VertexShader *shadowVS = nullptr;
+    ID3D11PixelShader *shadowPS = nullptr;
     ID3D11InputLayout *shadowLayout = nullptr;
     ID3D11RasterizerState *shadowRS = nullptr;
     ID3D11SamplerState *shadowSampler = nullptr;

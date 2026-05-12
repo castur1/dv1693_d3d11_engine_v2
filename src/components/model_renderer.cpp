@@ -6,26 +6,8 @@
 #include "rendering/render_queue.hpp"
 #include "rendering/renderer.hpp"
 
-void ModelRenderer::UpdateWorldBounds() const {
-    Model *model = this->modelHandle.Get();
-    if (!model) {
-        LogWarn("Model was nullptr\n");
-        return;
-    }
-
-    Transform *transform = this->GetOwner()->GetComponent<Transform>();
-    if (!transform) {
-        LogWarn("Transform was nullptr\n");
-        return;
-    }
-
-    model->localBounds.Transform(this->cachedWorldBounds, transform->GetWorldMatrix());
-    this->isWorldBoundsDirty = false;
-}
-
 void ModelRenderer::OnStart(const Engine_context &context) {
     this->modelHandle = context.assetManager->GetHandle<Model>(this->modelHandle.GetID());
-    this->isWorldBoundsDirty = true;
 }
 
 void ModelRenderer::Update(const Frame_context &context) {}
@@ -81,14 +63,6 @@ bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
         return false;
     }
 
-    // TODO: This won't work if it's already been resolved, in which case we never update our world bounds. Callback?
-    this->isWorldBoundsDirty = true; // Temp
-    if (transform->IsWorldDirty())
-        this->isWorldBoundsDirty = true;
-
-    if (this->isWorldBoundsDirty)
-        this->UpdateWorldBounds();
-
-    outBounds = this->cachedWorldBounds;
+    model->localBounds.Transform(outBounds, transform->GetWorldMatrix());
     return true;
 }

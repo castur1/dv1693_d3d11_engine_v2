@@ -292,14 +292,13 @@ void Transform::SetWorldMatrix(const XMMATRIX &worldMatrix) {
     XMMATRIX localMatrix = worldMatrix;
 
     Entity *owner = this->GetOwner();
-    if (owner) {
-        Entity *parent = owner->GetParent();
-        if (parent) {
-            Transform *parentTransform = parent->GetComponent<Transform>();
-            if (parentTransform) {
-                XMMATRIX invParentWorldMatrix = XMMatrixInverse(nullptr, parentTransform->GetWorldMatrix());
-                localMatrix = worldMatrix * invParentWorldMatrix;
-            }
+    Entity *parent = owner ? owner->GetParent() : nullptr;
+
+    if (parent) {
+        Transform *parentTransform = parent->GetComponent<Transform>();
+        if (parentTransform) {
+            XMMATRIX invParentWorldMatrix = XMMatrixInverse(nullptr, parentTransform->GetWorldMatrix());
+            localMatrix = worldMatrix * invParentWorldMatrix;
         }
     }
 
@@ -315,24 +314,23 @@ void Transform::SetWorldMatrix(const XMMATRIX &worldMatrix) {
 }
 
 XMMATRIX Transform::GetWorldMatrix() const {
-    if (this->isWorldDirty) {
-        XMMATRIX local = this->GetLocalMatrix();
+    if (!this->isWorldDirty)
+        return XMLoadFloat4x4(&this->cachedWorld);
 
-        XMMATRIX world = local;
+    XMMATRIX localMatrix = this->GetLocalMatrix();
+    XMMATRIX worldMatrix = localMatrix;
 
-        Entity *owner = this->GetOwner();
-        if (owner) {
-            Entity *parent = owner->GetParent();
-            if (parent) {
-                Transform *parentTransform = parent->GetComponent<Transform>();
-                if (parentTransform)
-                    world = local * parentTransform->GetWorldMatrix();
-            }
-        }
+    Entity *owner = this->GetOwner();
+    Entity *parent = owner ? owner->GetParent() : nullptr;
 
-        XMStoreFloat4x4(&this->cachedWorld, world);
-        this->isWorldDirty = false;
+    if (parent) {
+        Transform *parentTransform = parent->GetComponent<Transform>();
+        if (parentTransform)
+            worldMatrix = localMatrix * parentTransform->GetWorldMatrix();
     }
+
+    XMStoreFloat4x4(&this->cachedWorld, worldMatrix);
+    this->isWorldDirty = false;
 
     return XMLoadFloat4x4(&this->cachedWorld);
 }

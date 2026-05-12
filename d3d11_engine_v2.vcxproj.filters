@@ -307,5 +307,6 @@
     <FxCompile Include="src\shaders\cs_skybox.hlsl" />
     <FxCompile Include="src\shaders\ps_reflection.hlsl" />
     <FxCompile Include="src\shaders\vs_reflection.hlsl" />
+    <FxCompile Include="src\shaders\ps_shadow.hlsl" />
   </ItemGroup>
 </Project>
