@@ -1470,8 +1470,6 @@ void Renderer::BuildFrameGraph() {
             deviceContext->GSSetShader(this->particleGS, nullptr, 0);
             deviceContext->PSSetShader(this->particlePS, nullptr, 0);
 
-            // CONTINUE HERE! Why am I not seeing any particles?
-
             deviceContext->GSSetConstantBuffers(0, 1, &this->perFrameBuffer);
             deviceContext->GSSetConstantBuffers(1, 1, &this->particleVisualBuffer);
 

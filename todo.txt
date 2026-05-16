@@ -73,7 +73,13 @@
 
 * FixedUpdate()
 
-* Animated particles?
+* Improve particles
+
+    * Animated particles?
+
+    * Random spawn position offset
+
+    * Rewrite all the shaders
 
 
 For skyboxes:

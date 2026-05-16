@@ -408,8 +408,8 @@ entity 687f-facc-2365-009a
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
-        rotation: [90.0, 0.0, 0.0]
+        position: [22.0, 15.0, 0.0]
+        rotation: [90.0, -110.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     component ParticleEmitter
@@ -417,19 +417,19 @@ entity 687f-facc-2365-009a
         maxParticleCount: 1000
         spawnRate: 50.0
         minLifetime: 1.0
-        maxLifetime: 2.0
+        maxLifetime: 3.0
         acceleration: [0.0, 0.0, 0.0]
         minVelocity: [-1.0, 3.0, -1.0]
         maxVelocity: [1.0, 5.0, 1.0]
-        startColour: [1.0, 1.0, 1.0, 1.0]
-        endColour: [1.0, 1.0, 1.0, 0.0]
-        startSize: 0.5
-        endSize: 0.0
-        textureID: 3103-1b37-cb19-b313
+        startColour: [1.0, 0.7, 0.0, 3.0]
+        endColour: [2.0, 0.0, 0.0, 1.25]
+        startSize: 3.0
+        endSize: 0.8
+        textureID: 67cf-ef4c-9b8a-20ec
 
 assets:
     0dbc-caa8-2206-5ca7
     5488-7f75-fd77-3eb3
     e679-318b-f448-3109
     4429-118e-4188-675f
-    3103-1b37-cb19-b313
+    67cf-ef4c-9b8a-20ec

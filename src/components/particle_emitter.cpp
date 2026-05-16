@@ -105,16 +105,14 @@ void ParticleEmitter::Update(const Frame_context &context) {
     if (this->maxParticleCount < this->spawnRate * this->maxLifetime)
         LogWarn("Particle buffer is too small; live particles might get overwritten");
 
-    XMFLOAT3 origin = {0.0f, 0.0f, 0.0f};
-    if (Transform *transform = this->GetOwner()->GetComponent<Transform>())
-        origin = transform->GetWorldPosition();
+    Transform *transform = this->GetOwner()->GetComponent<Transform>();
 
     this->spawnAccumulator += this->spawnRate * context.deltaTime;
     while (this->spawnAccumulator >= 1.0f) {
         this->spawnAccumulator -= 1.0f;
 
         Particle particle{};
-        particle.position = origin; // TODO: offset
+        particle.position = {0.0f, 0.0f, 0.0f}; // TODO: offset
         particle.maxLifetime = this->RandomFloat(this->minLifetime, this->maxLifetime);
         particle.velocity = {
             this->RandomFloat(this->minVelocity.x, this->maxVelocity.x),
@@ -122,6 +120,11 @@ void ParticleEmitter::Update(const Frame_context &context) {
             this->RandomFloat(this->minVelocity.z, this->maxVelocity.z)
         };
         particle.lifetime = particle.maxLifetime;
+
+        if (transform) {
+            particle.position = transform->TransformPoint(particle.position);
+            particle.velocity = transform->TransformDirection(particle.velocity);
+        }
 
         const UINT byteOffset = this->nextSpawnIndex * sizeof(Particle);
 

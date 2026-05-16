@@ -203,7 +203,7 @@ void main(uint3 id : SV_DispatchThreadID) {
 
     if (depth >= 1.0f) {
         if (hasSkybox)
-            outputTexture[pixel] = float4(1.2f * skybox.SampleLevel(samplerLinearWrap, -viewV, 0).rgb, 1.0f);
+            outputTexture[pixel] = float4(pow(skybox.SampleLevel(samplerLinearWrap, -viewV, 0).rgb, 2), 1.0f); // ?
         
         return;
     }
