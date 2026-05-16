@@ -14,6 +14,15 @@ static const std::string shaderDir = "assets/shaders/";
 Renderer::~Renderer() {
     this->frameGraph.Clear();
 
+    SafeRelease(this->particlePS);
+    SafeRelease(this->particleGS);
+    SafeRelease(this->particleVS);
+    SafeRelease(this->particleCS);
+    SafeRelease(this->additiveBlendState);
+    SafeRelease(this->particleRS);
+    SafeRelease(this->particleComputeBuffer);
+    SafeRelease(this->particleVisualBuffer);
+
     SafeRelease(this->skyboxCS);
 
     SafeRelease(this->reflectionVS);
@@ -697,6 +706,100 @@ bool Renderer::CreateReflectionProbeResources() {
     return true;
 }
 
+bool Renderer::CreateParticleResources() {
+    std::vector<uint8_t> bytecode;
+
+    if (!LoadShaderBytecode(shaderDir + "cs_particle.cso", bytecode))
+        return false;
+
+    HRESULT result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->particleCS);
+    if (FAILED(result)) {
+        LogError("Failed to create particle compute shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "vs_particle.cso", bytecode))
+        return false;
+
+    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->particleVS);
+    if (FAILED(result)) {
+        LogError("Failed to create particle vertex shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "gs_particle.cso", bytecode))
+        return false;
+
+    result = this->device->CreateGeometryShader(bytecode.data(), bytecode.size(), nullptr, &this->particleGS);
+    if (FAILED(result)) {
+        LogError("Failed to create particle geometry shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ps_particle.cso", bytecode))
+        return false;
+
+    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->particlePS);
+    if (FAILED(result)) {
+        LogError("Failed to create particle pixel shader");
+        return false;
+    }
+
+    D3D11_BLEND_DESC blendDesc{};
+    auto &rt0 = blendDesc.RenderTarget[0];
+    rt0.BlendEnable = TRUE;
+
+    rt0.SrcBlend  = D3D11_BLEND_SRC_ALPHA;
+    rt0.DestBlend = D3D11_BLEND_ONE;
+    rt0.BlendOp   = D3D11_BLEND_OP_ADD;
+
+    rt0.SrcBlendAlpha  = D3D11_BLEND_ZERO;
+    rt0.DestBlendAlpha = D3D11_BLEND_ONE;
+    rt0.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+
+    rt0.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    result = this->device->CreateBlendState(&blendDesc, &this->additiveBlendState);
+    if (FAILED(result)) {
+        LogError("Failed to create additive blend state");
+        return false;
+    }
+
+    D3D11_RASTERIZER_DESC rsDesc{};
+    rsDesc.FillMode = D3D11_FILL_SOLID;
+    rsDesc.CullMode = D3D11_CULL_NONE;
+    rsDesc.DepthClipEnable = TRUE;
+
+    result = this->device->CreateRasterizerState(&rsDesc, &this->particleRS);
+    if (FAILED(result)) {
+        LogError("Failed to create particle rasterizer state");
+        return false;
+    }
+
+    D3D11_BUFFER_DESC bufferDesc{};
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    bufferDesc.ByteWidth = sizeof(Particle_compute_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->particleComputeBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create particle compute buffer");
+        return false;
+    }
+
+    bufferDesc.ByteWidth = sizeof(Particle_visual_data);
+    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->particleVisualBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create particle visual buffer");
+        return false;
+    }
+
+    LogInfo("Particle resources created\n");
+
+    return true;
+}
+
 void Renderer::SetViewport(int width, int height) {
     this->viewport.TopLeftX = 0.0f;
     this->viewport.TopLeftY = 0.0f;
@@ -877,8 +980,7 @@ void Renderer::BuildFrameGraph() {
 
     FrameGraph::Texture_desc desc{};
     desc.sizeMode = FrameGraph::Texture_desc::Size_mode::relative;
-    desc.width = 1.0f;
-    desc.height = 1.0f;
+    desc.width = desc.height = 1.0f;
     desc.mipLevels = 1;
     desc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
@@ -895,9 +997,16 @@ void Renderer::BuildFrameGraph() {
     desc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     auto depthHandle = this->frameGraph.CreateTexture("Depth_stencil", desc);
 
-    desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
     auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
+
+    // TODO: There must be a better way to reuse the same texture between multiple passes
+    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::absolute;
+    desc.width = desc.height = 1.0f;
+    desc.bindFlags = 0;
+    desc.format = DXGI_FORMAT_R8_UNORM;
+    auto lightingDummyHandle = this->frameGraph.CreateTexture("Lighting_dummy", desc); // Used to ensure correct ordering of the particle pass
 
     struct Reflection_pass_data {
         FrameGraph::TextureHandle reflectionProbes;
@@ -1242,6 +1351,8 @@ void Renderer::BuildFrameGraph() {
         FrameGraph::TextureHandle reflectionProbes;
 
         FrameGraph::TextureHandle output;
+
+        FrameGraph::TextureHandle dummy;
     };
 
     this->frameGraph.AddRenderPass<Lighting_pass_data>(
@@ -1258,6 +1369,8 @@ void Renderer::BuildFrameGraph() {
             data.reflectionProbes = builder.Read(reflectionProbeHandle);
 
             data.output = builder.Write(lightingOutputHandle);
+
+            data.dummy = builder.Write(lightingDummyHandle); // Needed to ensure that this pass executes before the particle pass
         },
         [this](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
@@ -1312,6 +1425,106 @@ void Renderer::BuildFrameGraph() {
             deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUav, nullptr);
 
             deviceContext->CSSetShader(nullptr, nullptr, 0);
+        }
+    );
+
+    struct Particle_pass_data {
+        FrameGraph::TextureHandle depth;
+        FrameGraph::TextureHandle lightingOutput;
+
+        FrameGraph::TextureHandle dummy;
+    };
+
+    // NOTE: This pass also reads from the lightingOutput, but declaring that would likely
+    // lead to a cyclic dependency since we also declare a write on it. Instead we rely
+    // on a dummy handle to ensure the correct pass ordering.
+    this->frameGraph.AddRenderPass<Particle_pass_data>(
+        "Particle pass",
+        [&](Particle_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
+            data.depth = builder.Read(depthHandle);
+
+            data.lightingOutput = builder.Write(lightingOutputHandle);
+
+            data.dummy = builder.Read(lightingDummyHandle); // Needed to ensure that this pass executes after the lighting pass
+        },
+        [this](const Particle_pass_data &data, FrameGraph::ExecutionContext &context) {
+            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
+
+            Render_view *view = context.GetView(View_type::primary);
+            if (!view || view->queue.particleEmitterCommands.empty())
+                return;
+
+            ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.lightingOutput);
+            ID3D11ShaderResourceView *depthSRV = context.GetShaderResourceView(data.depth);
+
+            deviceContext->RSSetViewports(1, &this->viewport);
+            deviceContext->RSSetState(this->particleRS);
+
+            deviceContext->OMSetRenderTargets(1, &rtv, nullptr);
+            deviceContext->OMSetBlendState(this->additiveBlendState, nullptr, 0xFFFFFFFF);
+
+            deviceContext->IASetInputLayout(nullptr);
+            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+            deviceContext->VSSetShader(this->particleVS, nullptr, 0);
+            deviceContext->GSSetShader(this->particleGS, nullptr, 0);
+            deviceContext->PSSetShader(this->particlePS, nullptr, 0);
+
+            // CONTINUE HERE! Why am I not seeing any particles?
+
+            deviceContext->GSSetConstantBuffers(0, 1, &this->perFrameBuffer);
+            deviceContext->GSSetConstantBuffers(1, 1, &this->particleVisualBuffer);
+
+            deviceContext->PSSetConstantBuffers(0, 1, &this->particleVisualBuffer);
+            deviceContext->PSSetShaderResources(1, 1, &depthSRV);
+
+            deviceContext->CSSetShader(this->particleCS, nullptr, 0);
+            deviceContext->CSSetConstantBuffers(0, 1, &this->particleComputeBuffer);
+
+            for (const Particle_emitter_command &command : view->queue.particleEmitterCommands) {
+                Particle_compute_data computeData{};
+                computeData.acceleration     = command.acceleration;
+                computeData.deltaTime        = command.deltaTime;
+                computeData.maxParticleCount = command.maxParticleCount;
+
+                this->UploadConstantBuffer(this->particleComputeBuffer, computeData);
+
+                deviceContext->CSSetUnorderedAccessViews(0, 1, &command.unorderedAccessView, nullptr);
+                
+                const UINT groups = (command.maxParticleCount + 63) / 64;
+                deviceContext->Dispatch(groups, 1, 1);
+
+                ID3D11UnorderedAccessView *nullUAV = nullptr;
+                deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+
+                Particle_visual_data visualData{};
+                visualData.startColour = command.startColour;
+                visualData.endColour   = command.endColour;
+                visualData.startSize   = command.startSize;
+                visualData.endSize     = command.endSize;
+                visualData.nearPlane   = view->nearPlane;
+                visualData.farPlane    = view->farPlane;
+
+                this->UploadConstantBuffer(this->particleVisualBuffer, visualData);
+
+                deviceContext->VSSetShaderResources(0, 1, &command.shaderResourceView);
+
+                ID3D11ShaderResourceView *srv = command.textureHandle.Get()->shaderResourceView;
+                deviceContext->PSSetShaderResources(0, 1, &srv);
+
+                deviceContext->Draw(command.maxParticleCount, 0);
+            }
+
+            deviceContext->GSSetShader(nullptr, nullptr, 0);
+            deviceContext->RSSetState(nullptr);
+            deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+
+            ID3D11RenderTargetView *nullRTV = nullptr;
+            deviceContext->OMSetRenderTargets(1, &nullRTV, nullptr);
+
+            ID3D11ShaderResourceView *nullSRVs[2] = {};
+            deviceContext->VSSetShaderResources(0, 1, nullSRVs);
+            deviceContext->PSSetShaderResources(0, 2, nullSRVs);
         }
     );
 
@@ -1646,6 +1859,9 @@ bool Renderer::Initialize(HWND hWnd) {
         return false;
 
     if (!this->CreateReflectionProbeResources())
+        return false;
+
+    if (!this->CreateParticleResources())
         return false;
 
     this->SetViewport(this->width, this->height);

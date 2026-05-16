@@ -16,6 +16,7 @@ class Component;
 
 class ComponentRegistry {
 public:
+    // TODO: Should these return bools instead to indicate whether or not the value changed?
     struct Inspector {
         virtual void Field(const std::string &name, int          &val) = 0;
         virtual void Field(const std::string &name, unsigned int &val) = 0;

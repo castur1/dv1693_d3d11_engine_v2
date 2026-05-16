@@ -67,6 +67,8 @@ float4 main(float4 position : SV_POSITION, float2 uv : TEXCOORD0) : SV_TARGET {
     // ^^^ Debug stuff ^^^
     
     float3 hdr = hdrBuffer.Sample(linearSampler, uv).rgb;
+    
+    hdr = max(hdr, 0.0f);
 
     // https://64.github.io/tonemapping/
     // Reinhard-Jodie

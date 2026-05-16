@@ -58,4 +58,22 @@ struct Reflection_probe_command {
     bool     needsUpdate = true;
 };
 
+struct Particle_emitter_command {
+    ID3D11Buffer *buffer = nullptr;
+    ID3D11UnorderedAccessView *unorderedAccessView = nullptr;
+    ID3D11ShaderResourceView *shaderResourceView = nullptr;
+
+    UINT maxParticleCount = 0;
+
+    XMFLOAT3 acceleration = {0.0f, 0.0f, 0.0f};
+    float deltaTime = 0.0f;
+
+    XMFLOAT4 startColour = {1.0f, 1.0f, 1.0f, 1.0f};
+    XMFLOAT4 endColour = {1.0f, 1.0f, 1.0f, 0.0f};
+    float startSize = 0.5f;
+    float endSize = 0.0f;
+
+    AssetHandle<Texture2D> textureHandle{};
+};
+
 #endif

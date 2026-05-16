@@ -66,7 +66,7 @@ entity faff-6543-8755-014a
     component DirectionalLight
         isActive: true
         colour: [1.0, 0.95, 0.8]
-        intensity: 3.0
+        intensity: 6.0
         ambient: [0.05, 0.08, 0.12]
         castsShadows: true
 

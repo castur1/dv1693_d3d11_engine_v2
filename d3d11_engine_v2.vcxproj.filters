@@ -132,6 +132,9 @@
     <ClCompile Include="src\components\skybox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\components\particle_emitter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\application.hpp">
@@ -287,6 +290,9 @@
     <ClInclude Include="src\components\skybox.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\components\particle_emitter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="scenes\demo_0.txt" />
@@ -308,5 +314,9 @@
     <FxCompile Include="src\shaders\ps_reflection.hlsl" />
     <FxCompile Include="src\shaders\vs_reflection.hlsl" />
     <FxCompile Include="src\shaders\ps_shadow.hlsl" />
+    <FxCompile Include="src\shaders\cs_particle.hlsl" />
+    <FxCompile Include="src\shaders\vs_particle.hlsl" />
+    <FxCompile Include="src\shaders\gs_particle.hlsl" />
+    <FxCompile Include="src\shaders\ps_particle.hlsl" />
   </ItemGroup>
 </Project>

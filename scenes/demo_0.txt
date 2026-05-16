@@ -354,7 +354,7 @@ entity faff-6543-8755-014a
     component DirectionalLight
         isActive: true
         colour: [1.0, 0.95, 0.8]
-        intensity: 1.5
+        intensity: 3.0
         ambient: [0.05, 0.08, 0.12]
         castsShadows: true
 
@@ -400,8 +400,36 @@ entity deef-ac43-8744-0ae2
         shouldPingPong: true
         easingFunctionType: 3
 
+entity 687f-facc-2365-009a
+    name: "particle_emitter"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [90.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
+    component ParticleEmitter
+        isActive: true
+        maxParticleCount: 1000
+        spawnRate: 50.0
+        minLifetime: 1.0
+        maxLifetime: 2.0
+        acceleration: [0.0, 0.0, 0.0]
+        minVelocity: [-1.0, 3.0, -1.0]
+        maxVelocity: [1.0, 5.0, 1.0]
+        startColour: [1.0, 1.0, 1.0, 1.0]
+        endColour: [1.0, 1.0, 1.0, 0.0]
+        startSize: 0.5
+        endSize: 0.0
+        textureID: 3103-1b37-cb19-b313
+
 assets:
     0dbc-caa8-2206-5ca7
     5488-7f75-fd77-3eb3
     e679-318b-f448-3109
     4429-118e-4188-675f
+    3103-1b37-cb19-b313

@@ -13,6 +13,7 @@ public:
     std::vector<Directional_light_command> directionalLightCommands;
     std::optional<Skybox_command> skyboxCommand;
     std::vector<Reflection_probe_command> reflectionProbeCommands;
+    std::vector<Particle_emitter_command> particleEmitterCommands;
 
     void Clear() {
         this->geometryCommands.clear();
@@ -20,6 +21,7 @@ public:
         this->directionalLightCommands.clear();
         this->skyboxCommand.reset();
         this->reflectionProbeCommands.clear();
+        this->particleEmitterCommands.clear();
     }
 
     void Submit(const Geometry_command &command) {
@@ -40,6 +42,10 @@ public:
 
     void Submit(const Reflection_probe_command &command) {
         this->reflectionProbeCommands.push_back(command);
+    }
+
+    void Submit(const Particle_emitter_command &command) {
+        this->particleEmitterCommands.push_back(command);
     }
 };
 

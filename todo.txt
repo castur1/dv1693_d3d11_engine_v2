@@ -14,6 +14,8 @@
 
     * Some way of setting a list of items would be useful as well, like for keyframes and animations
 
+    * Also setting colours, displaying textures...
+
 * Ambient Occlusion and other post-processing effects? Bloom?
 
 * Continue working on the debug overlay / editor
@@ -61,10 +63,6 @@
 
     * Static lights, so that we don't have to recompute all the matrices and stuff each frame?
 
-    * Something about offsetting bias by the surface normal? Shadows are currently "spiky"
-
-    * Larger PCF kernel
-
 * Better error handling
 
 * Look everything over. Everything. Lots of things could probably be refactored. 
@@ -73,9 +71,10 @@
 
 * Make shadow sampler common, probably
 
-* AppendStructuredBuffer?
+* FixedUpdate()
 
-Anti-aliasing (FXAA?)
+* Animated particles?
+
 
 For skyboxes:
 bk -> pz

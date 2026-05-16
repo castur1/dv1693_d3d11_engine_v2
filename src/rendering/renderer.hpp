@@ -49,6 +49,26 @@ struct Lighting_data {
 static_assert(sizeof(Lighting_data) % 16 == 0);
 
 // CBuffer
+struct Particle_compute_data {
+    XMFLOAT3 acceleration;
+    float    deltaTime;
+    UINT     maxParticleCount;
+    float    pad0[3]; // TODO: Maybe add maxVelocity or something like that?
+};
+static_assert(sizeof(Particle_compute_data) % 16 == 0);
+
+// CBuffer
+struct Particle_visual_data {
+    XMFLOAT4 startColour;
+    XMFLOAT4 endColour;
+    float    startSize;
+    float    endSize;
+    float    nearPlane;
+    float    farPlane;
+};
+static_assert(sizeof(Particle_visual_data) % 16 == 0);
+
+// CBuffer
 struct Debug_resolve_data {
     int   debugMode;
     float nearPlane;
@@ -202,6 +222,16 @@ class Renderer {
         } entries[MAX_REFLECTION_PROBES];
     } perFrameReflectionProbeData;
 
+    ID3D11ComputeShader *particleCS = nullptr;
+    ID3D11VertexShader *particleVS = nullptr;
+    ID3D11GeometryShader *particleGS = nullptr;
+    ID3D11PixelShader *particlePS = nullptr;
+    ID3D11BlendState *additiveBlendState = nullptr;
+    ID3D11RasterizerState *particleRS = nullptr;
+
+    ID3D11Buffer *particleComputeBuffer = nullptr;
+    ID3D11Buffer *particleVisualBuffer = nullptr;
+
     Per_frame_data currentFrameData{};
     Debug_resolve_data currentDebugData{}; // Debug
 
@@ -212,6 +242,7 @@ class Renderer {
     bool LoadDeferredShaders();
     bool CreateShadowResources();
     bool CreateReflectionProbeResources();
+    bool CreateParticleResources();
     void SetViewport(int width, int height);
 
     void BindCommonSamplerStates();
