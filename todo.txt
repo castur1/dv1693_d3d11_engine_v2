@@ -81,6 +81,8 @@
 
     * Rewrite all the shaders
 
+* I feel like I might be doing gamma correction and/or tone mapping wrong
+
 
 For skyboxes:
 bk -> pz

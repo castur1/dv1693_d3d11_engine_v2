@@ -5,35 +5,34 @@ struct Particle {
     float lifetime;
 };
 
-cbuffer Particle_compute_data : register(b0) {
+cbuffer Particle_compute : register(b0) {
     float3 acceleration;
     float deltaTime;
     uint maxParticles;
-    float3 cbPad;
+    float3 pad0;
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
 
-
 [numthreads(64, 1, 1)]
-void main(uint3 DTid : SV_DispatchThreadID) {
-    const uint index = DTid.x;
+void main(uint3 id : SV_DispatchThreadID) {
+    const uint index = id.x;
     if (index >= maxParticles)
         return;
 
-    Particle p = particles[index];
+    Particle particle = particles[index];
 
-    if (p.lifetime <= 0.0f)
-        return;
-
-    p.lifetime -= deltaTime;
-    if (p.lifetime <= 0.0f) {
-        p.lifetime = 0.0f;
-        particles[index] = p;
+    particle.lifetime -= deltaTime;
+    if (particle.lifetime <= 0.0f) {
+        particle.lifetime = 0.0f;
+        
+        particles[index] = particle;
+        
         return;
     }
-    p.velocity += acceleration * deltaTime;
-    p.position += p.velocity * deltaTime;
+    
+    particle.velocity += acceleration * deltaTime;
+    particle.position += particle.velocity * deltaTime;
 
-    particles[index] = p;
+    particles[index] = particle;
 }

@@ -7,23 +7,20 @@ struct Particle {
 
 StructuredBuffer<Particle> particles : register(t0);
 
-
-struct VS_Output
-{
-    float3 worldPosition : WORLD_POSITION;
+struct Vertex_shader_output {
+    float3 positionWorld : POSITION;
     float age : AGE;
-    uint isAlive : IS_ALIVE;
+    uint isAlive : ALIVE;
 };
 
-VS_Output main(uint vertexID : SV_VertexID)
-{
-    VS_Output output;
+Vertex_shader_output main(uint vertexID : SV_VertexID) {
+    Vertex_shader_output output;
 
-    Particle p = particles[vertexID];
+    Particle particle = particles[vertexID];
 
-    output.worldPosition = p.position;
-    output.isAlive = p.lifetime > 0.0f;
-    output.age = saturate(1.0f - p.lifetime / p.maxLifetime);
+    output.positionWorld = particle.position;
+    output.isAlive = particle.lifetime > 0.0f;
+    output.age = saturate(1.0f - particle.lifetime / particle.maxLifetime);
 
     return output;
 }
