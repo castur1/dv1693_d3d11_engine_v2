@@ -117,7 +117,7 @@ bool Renderer::CreateInterface(HWND hWnd) {
     swapChainDesc.BufferDesc.Height = 0;
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // _SRGB
     swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
@@ -1274,7 +1274,7 @@ void Renderer::BuildFrameGraph() {
             ID3D11DepthStencilView *dsv = context.GetDepthStencilView(data.depth);
 
             const float clearAlbedo[4]   = {0.0f, 0.0f, 0.0f, 0.0f};
-            const float clearNormal[4]   = {0.5f, 0.5f, 0.1f, 0.0f};
+            const float clearNormal[4]   = {0.5f, 0.5f, 1.0f, 0.0f};
             const float clearSpecular[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
             deviceContext->ClearRenderTargetView(rtvs[0], clearAlbedo);

@@ -2,7 +2,7 @@
 #include "core/logging.hpp"
 #include "resources/asset_manager.hpp"
 
-Pipeline_state *PipelineStateLoader::Load(const std::string &path) {
+Pipeline_state *PipelineStateLoader::Load(AssetID uuid) {
     return nullptr;
 }
 

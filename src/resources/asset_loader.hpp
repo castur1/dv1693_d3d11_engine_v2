@@ -1,6 +1,8 @@
 #ifndef ASSET_LOADER_HPP
 #define ASSET_LOADER_HPP
 
+#include "core/uuid.hpp"
+
 #include <string>
 #include <d3d11.h>
 
@@ -21,7 +23,13 @@ protected:
 public:
     AssetLoader<T>(AssetManager *assetManager) : assetManager(assetManager) {}
 
-    virtual T *Load(const std::string &path) = 0;
+    virtual T *Load(AssetID uuid) = 0;
+
+    T *Load(const std::string &path) {
+        AssetID uuid = this->assetManager->PathToUUID(path);
+        return this->Load(uuid);
+    }
+
     virtual T *CreateDefault() = 0;
 
     void SetDevice(ID3D11Device *device) { this->device = device; }

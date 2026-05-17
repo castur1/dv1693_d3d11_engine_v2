@@ -10,6 +10,8 @@ class AssetRegistry {
     std::unordered_map<AssetID, std::string> uuidToPath;
     std::unordered_map<std::string, AssetID> pathToUUID;
 
+    std::unordered_map<AssetID, std::unordered_map<std::string, std::string>> metadata;
+
     std::string assetDir;
 
 public:
@@ -19,8 +21,11 @@ public:
     void RegisterAssets();
     void Clear();
 
-    std::string GetPath(AssetID uuid);
-    AssetID GetUUID(const std::string &path);
+    std::string GetPath(AssetID uuid) const;
+    AssetID GetUUID(const std::string &path) const;
+
+    std::string GetMetadata(AssetID uuid, const std::string &key, const std::string &defaultValue = "") const;
+    void SetMetadata(AssetID uuid, const std::string &key, const std::string &value);
 
     void SetAssetDirectory(const std::string &path);
 };

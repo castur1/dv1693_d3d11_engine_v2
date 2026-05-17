@@ -8,7 +8,7 @@ class MaterialLoader : public AssetLoader<Material> {
 public:
     MaterialLoader(AssetManager *assetManager) : AssetLoader<Material>(assetManager) {}
 
-    Material *Load(const std::string &path) override;
+    Material *Load(AssetID uuid) override;
     Material *CreateDefault() override;
 };
 

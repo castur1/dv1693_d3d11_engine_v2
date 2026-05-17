@@ -112,15 +112,9 @@ public:
         if (!loader)
             return cache->GetDefault();
 
-        std::string path = this->registry.GetPath(uuid);
-        if (path.empty())
+        T *asset = loader->Load(uuid);
+        if (!asset)
             return cache->GetDefault();
-
-        T *asset = loader->Load(this->assetDir + path);
-        if (!asset) {
-            delete asset;
-            return cache->GetDefault();
-        }
 
         return cache->Add(uuid, asset);
     }
@@ -176,8 +170,19 @@ public:
 
     bool LoadFileContents(const std::string &path, void **buffer, size_t *size);
 
+    // Relative to assetDir
     std::string UUIDToPath(AssetID uuid);
+    // Full path including assetDir
+    std::string UUIDToFullPath(AssetID uuid);
     AssetID PathToUUID(const std::string &path);
+
+    std::string GetMetadata(AssetID uuid, const std::string &key, const std::string &defaultValue = "") const {
+        return this->registry.GetMetadata(uuid, key, defaultValue);
+    }
+
+    void SetMetadata(AssetID uuid, const std::string &key, const std::string &value) {
+        this->registry.SetMetadata(uuid, key, value);
+    }
 
     void SetAssetDirectory(const std::string &path);
     const std::string &GetAssetDirectory() const;

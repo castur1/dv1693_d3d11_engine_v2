@@ -59,6 +59,10 @@ std::string AssetManager::UUIDToPath(AssetID uuid) {
     return this->registry.GetPath(uuid);
 }
 
+std::string AssetManager::UUIDToFullPath(AssetID uuid) {
+    return this->assetDir + this->UUIDToPath(uuid);
+}
+
 AssetID AssetManager::PathToUUID(const std::string &path) {
     return this->registry.GetUUID(path);
 }

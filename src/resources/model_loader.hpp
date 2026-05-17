@@ -12,7 +12,7 @@ class ModelLoader : public AssetLoader<Model> {
 public:
     ModelLoader(AssetManager *assetManager) : AssetLoader<Model>(assetManager) {}
 
-    Model *Load(const std::string &path) override;
+    Model *Load(AssetID uuid) override;
     Model *CreateDefault() override;
 };
 

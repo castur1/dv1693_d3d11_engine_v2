@@ -8,10 +8,10 @@ class Texture2DLoader : public AssetLoader<Texture2D> {
 public:
     Texture2DLoader(AssetManager *assetManager) : AssetLoader<Texture2D>(assetManager) {}
 
-    Texture2D *Load(const std::string &path) override;
+    Texture2D *Load(AssetID uuid) override;
     Texture2D *CreateDefault() override;
 
-    Texture2D *CreateFromBitmap(UINT32 *pixels, UINT width, UINT height, bool generateMips = true);
+    Texture2D *CreateFromBitmap(UINT32 *pixels, UINT width, UINT height, DXGI_FORMAT format, bool generateMips = true);
 };
 
 #endif

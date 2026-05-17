@@ -5,12 +5,12 @@
 #include "stb_image/stb_image.h"
 
 // TODO: Description as argument?
-Texture2D *Texture2DLoader::CreateFromBitmap(UINT32 *pixels, UINT width, UINT height, bool generateMips) {
+Texture2D *Texture2DLoader::CreateFromBitmap(UINT32 *pixels, UINT width, UINT height, DXGI_FORMAT format, bool generateMips) {
     D3D11_TEXTURE2D_DESC desc{};
     desc.Width = width;
     desc.Height = height;
     desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = format;
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.Usage = D3D11_USAGE_DEFAULT;
@@ -62,7 +62,9 @@ Texture2D *Texture2DLoader::CreateFromBitmap(UINT32 *pixels, UINT width, UINT he
     return texture2D;
 }
 
-Texture2D *Texture2DLoader::Load(const std::string &path) {
+Texture2D *Texture2DLoader::Load(AssetID uuid) {
+    std::string path = this->assetManager->UUIDToFullPath(uuid);
+
     int width, height, components;
     unsigned char *data = stbi_load(path.c_str(), &width, &height, &components, 4);
 
@@ -71,7 +73,13 @@ Texture2D *Texture2DLoader::Load(const std::string &path) {
         return nullptr;
     }
 
-    Texture2D *texture2D = this->CreateFromBitmap((UINT32 *)data, width, height);
+    bool isSRGB = this->assetManager->GetMetadata(uuid, "colour_space") == "sRGB";
+
+    DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    if (isSRGB)
+        format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+    Texture2D *texture2D = this->CreateFromBitmap((UINT32 *)data, width, height, format);
 
     stbi_image_free(data);
 
@@ -87,7 +95,7 @@ Texture2D *Texture2DLoader::CreateDefault() {
         0xFFFFFFFF
     };
 
-    Texture2D *texture2D = this->CreateFromBitmap(pixels, width, height);
+    Texture2D *texture2D = this->CreateFromBitmap(pixels, width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
     LogInfo("Default Texture2D asset created\n");
 

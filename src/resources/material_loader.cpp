@@ -2,7 +2,7 @@
 #include "resources/asset_manager.hpp"
 #include "resources/texture2d_loader.hpp"
 
-Material *MaterialLoader::Load(const std::string &path) {
+Material *MaterialLoader::Load(AssetID uuid) {
     return nullptr;
 }
 
@@ -26,7 +26,7 @@ Material *MaterialLoader::CreateDefault() {
         0xFFFF8080
     };
 
-    Texture2D *normalTexture = loader.CreateFromBitmap(pixels, width, height, false);
+    Texture2D *normalTexture = loader.CreateFromBitmap(pixels, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, false);
 
     material->normalTexture = this->assetManager->AddAsset<Texture2D>(normalTexture, true);
 

@@ -16,7 +16,7 @@ class PipelineStateLoader : public AssetLoader<Pipeline_state> {
 public:
     PipelineStateLoader(AssetManager *assetManager) : AssetLoader<Pipeline_state>(assetManager) {}
 
-    Pipeline_state *Load(const std::string &path) override;
+    Pipeline_state *Load(AssetID uuid) override;
     Pipeline_state *CreateDefault() override;
 };
 

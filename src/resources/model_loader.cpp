@@ -93,7 +93,9 @@ void ModelLoader::ComputeTangents(std::vector<Vertex> &vertices, const std::vect
     }
 }
 
-Model *ModelLoader::Load(const std::string &path) {
+Model *ModelLoader::Load(AssetID uuid) {
+    std::string path = this->assetManager->UUIDToFullPath(uuid);
+
     size_t lastSlash = path.find_last_of("/\\");
     std::string baseDir = lastSlash != std::string::npos ? path.substr(0, lastSlash + 1) : "";
 

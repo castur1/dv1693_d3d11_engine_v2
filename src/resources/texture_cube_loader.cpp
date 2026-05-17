@@ -26,7 +26,9 @@ static bool GetPathBase(const std::string &path, std::string &outBase, std::stri
     return true;
 }
 
-Texture_cube *TextureCubeLoader::Load(const std::string &path) {
+Texture_cube *TextureCubeLoader::Load(AssetID uuid) {
+    std::string path = this->assetManager->UUIDToFullPath(uuid);
+
     std::string base, extension;
     if (!GetPathBase(path, base, extension))
         return nullptr;
@@ -93,7 +95,7 @@ Texture_cube *TextureCubeLoader::CreateFromBitmaps(UINT32 *pixels[6], UINT resol
     desc.Height = resolution;
     desc.MipLevels = 0;
     desc.ArraySize = 6;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.Usage = D3D11_USAGE_DEFAULT;

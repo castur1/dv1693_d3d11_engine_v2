@@ -12,7 +12,7 @@ public:
     // Expects path ending in "_px.<ext>" (e.g. "skybox_px.png")
     // Automatically loads the remaining 5 faces using the same naming convention:
     // _px, _nx, _py, _ny, _pz, _nz
-    Texture_cube *Load(const std::string &path) override;
+    Texture_cube *Load(AssetID uuid) override;
 
     Texture_cube *CreateDefault() override;
 
