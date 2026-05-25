@@ -29,10 +29,31 @@ entity a1b2-c3d4-e5f6-0123
         isActive: true
         textureID: "220f-2c7f-91c2-0e6e"
 
+entity 9865-ad23-fb56-0964
+    name: "player_capsule"
+    isActive: true
+    isStatic: false
+    parent: "a1b2-c3d4-e5f6-0123"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+
     component ModelRenderer
         isActive: true
-        modelID: "4429-118e-4188-675f"
+        modelID: "3d31-8c5b-00de-2879"
         isReflective: false
+
+    component TransformOverride
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
 
 entity 123a-ffff-3242-0011
     name: "monkey_1"
@@ -433,3 +454,4 @@ assets:
     e679-318b-f448-3109
     4429-118e-4188-675f
     67cf-ef4c-9b8a-20ec
+    3d31-8c5b-00de-2879

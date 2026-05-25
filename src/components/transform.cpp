@@ -25,7 +25,7 @@ void Transform::MarkWorldDirty() {
     }
 }
 
-XMFLOAT3 Transform::ExtractScale(const XMMATRIX &matrix) const {
+XMFLOAT3 Transform::ExtractScale(const XMMATRIX &matrix) {
     XMVECTOR scale, rotation, translation;
     XMMatrixDecompose(&scale, &rotation, &translation, matrix);
 
@@ -34,7 +34,7 @@ XMFLOAT3 Transform::ExtractScale(const XMMATRIX &matrix) const {
     return output;
 }
 
-XMFLOAT4 Transform::ExtractRotation(const XMMATRIX &matrix) const {
+XMFLOAT4 Transform::ExtractRotation(const XMMATRIX &matrix) {
     XMVECTOR scale, rotation, translation;
     XMMatrixDecompose(&scale, &rotation, &translation, matrix);
 
@@ -43,7 +43,7 @@ XMFLOAT4 Transform::ExtractRotation(const XMMATRIX &matrix) const {
     return output;
 }
 
-XMFLOAT3 Transform::ExtractTranslation(const XMMATRIX &matrix) const {
+XMFLOAT3 Transform::ExtractTranslation(const XMMATRIX &matrix) {
     XMFLOAT4X4 m;
     XMStoreFloat4x4(&m, matrix);
     return {m._41, m._42, m._43};
@@ -55,7 +55,7 @@ XMFLOAT3 Transform::ExtractTranslation(const XMMATRIX &matrix) const {
 // [ cz * sx * sy - sz * cy,  cz * cx,  sz * sy + cz * sx * cy ]
 // [         cx * sy,          -sx,             cx * cy        ]
 // where z = roll, x = pitch, y = yaw and s = sin, c = cos
-XMFLOAT3 Transform::QuaternionToEulerAngles(const XMFLOAT4 &quaternion) const {
+XMFLOAT3 Transform::QuaternionToEulerAngles(const XMFLOAT4 &quaternion) {
     XMMATRIX rotationMatrix = XMMatrixRotationQuaternion(XMLoadFloat4(&quaternion));
     XMFLOAT4X4 m;
     XMStoreFloat4x4(&m, rotationMatrix);
@@ -88,15 +88,29 @@ XMFLOAT3 Transform::QuaternionToEulerAngles(const XMFLOAT4 &quaternion) const {
     return euler;
 }
 
+XMFLOAT4 Transform::EulerAnglesToQuaternion(const XMFLOAT3 &euler) {
+    XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(
+        XMConvertToRadians(euler.x),
+        XMConvertToRadians(euler.y),
+        XMConvertToRadians(euler.z)
+    );
+
+    XMFLOAT4 output;
+    XMStoreFloat4(&output, quaternion);
+
+    return output;
+}
+
 // TODO: This doesn't mark dirty correctly. Also, should only set value if value actually changes. Bool on inspector->Field()?
 void Transform::Reflect(ComponentRegistry::Inspector *inspector) {
     inspector->Field("position", this->localPosition);
 
-    XMFLOAT3 euler = this->QuaternionToEulerAngles(this->localRotation);
-    inspector->Field("rotation", euler);
-    this->SetLocalRotation(euler);
+    inspector->Field("rotation", this->localEuler);
+    this->localRotation = this->EulerAnglesToQuaternion(this->localEuler);
 
     inspector->Field("scale", this->localScale);
+
+    this->MarkLocalDirty(); // TODO: This shouldn't be unconditional
 }
 
 void Transform::SetLocalPosition(const XMFLOAT3 &position) {
@@ -113,12 +127,9 @@ XMFLOAT3 Transform::GetLocalPosition() const {
 }
 
 void Transform::SetLocalRotation(const XMFLOAT3 &rotation) {
-    XMVECTOR quaternion = XMQuaternionRotationRollPitchYaw(
-        XMConvertToRadians(rotation.x),
-        XMConvertToRadians(rotation.y),
-        XMConvertToRadians(rotation.z)
-    );
-    XMStoreFloat4(&this->localRotation, quaternion);
+    this->localRotation = this->EulerAnglesToQuaternion(rotation);
+    this->localEuler = rotation;
+
     this->MarkLocalDirty();
 }
 
@@ -127,11 +138,12 @@ void Transform::SetLocalRotation(float x, float y, float z) {
 }
 
 XMFLOAT3 Transform::GetLocalRotation() const {
-    return this->QuaternionToEulerAngles(this->localRotation);
+    return this->localEuler;
 }
 
 void Transform::SetLocalRotationQuaternion(const XMFLOAT4 &quaternion) {
-    this->localRotation = quaternion;
+    XMStoreFloat4(&this->localRotation, XMQuaternionNormalize(XMLoadFloat4(&quaternion)));
+    this->localEuler = this->QuaternionToEulerAngles(this->localRotation);
     this->MarkLocalDirty();
 }
 
@@ -307,7 +319,10 @@ void Transform::SetWorldMatrix(const XMMATRIX &worldMatrix) {
         return;
 
     XMStoreFloat3(&this->localScale, scale);
+
     XMStoreFloat4(&this->localRotation, rotation);
+    this->localEuler = this->QuaternionToEulerAngles(this->localRotation);
+
     XMStoreFloat3(&this->localPosition, translation);
 
     this->MarkLocalDirty();

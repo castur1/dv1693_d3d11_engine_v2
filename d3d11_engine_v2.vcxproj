@@ -156,6 +156,7 @@
     <ClCompile Include="src\components\skybox.cpp" />
     <ClCompile Include="src\components\spot_light.cpp" />
     <ClCompile Include="src\components\transform.cpp" />
+    <ClCompile Include="src\components\transform_override.cpp" />
     <ClCompile Include="src\core\application.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\logging.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="src\components\skybox.hpp" />
     <ClInclude Include="src\components\spot_light.hpp" />
     <ClInclude Include="src\components\transform.hpp" />
+    <ClInclude Include="src\components\transform_override.hpp" />
     <ClInclude Include="src\core\application.hpp" />
     <ClInclude Include="src\core\frame_context.hpp" />
     <ClInclude Include="src\core\input.hpp" />

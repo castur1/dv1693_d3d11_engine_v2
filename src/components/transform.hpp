@@ -14,6 +14,8 @@ class Transform : public Component {
     XMFLOAT4 localRotation = {0.0f, 0.0f, 0.0f, 1.0f}; // Quaternion
     XMFLOAT3 localScale = {1.0f, 1.0f, 1.0f};
 
+    XMFLOAT3 localEuler = {0.0f, 0.0f, 0.0f};
+
     mutable XMFLOAT4X4 cachedLocal{};
     mutable bool isLocalDirty = true;
 
@@ -23,13 +25,14 @@ class Transform : public Component {
     void MarkLocalDirty();
     void MarkWorldDirty();
 
-    XMFLOAT3 ExtractScale(const XMMATRIX &matrix) const;
-    XMFLOAT4 ExtractRotation(const XMMATRIX &matrix) const;
-    XMFLOAT3 ExtractTranslation(const XMMATRIX &matrix) const;
-
-    XMFLOAT3 QuaternionToEulerAngles(const XMFLOAT4 &quaternion) const;
-
 public:
+    static XMFLOAT3 ExtractScale(const XMMATRIX &matrix);
+    static XMFLOAT4 ExtractRotation(const XMMATRIX &matrix);
+    static XMFLOAT3 ExtractTranslation(const XMMATRIX &matrix);
+
+    static XMFLOAT3 QuaternionToEulerAngles(const XMFLOAT4 &quaternion);
+    static XMFLOAT4 EulerAnglesToQuaternion(const XMFLOAT3 &euler);
+
     Transform(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~Transform() = default;
 
@@ -38,7 +41,6 @@ public:
     void Render(const Render_view &view, RenderQueue &queue) override {}
     void OnDestroy(const Engine_context &context) override {}
 
-    // NOTE: This doesn't use BIND to provide a cleaner interface
     void Reflect(ComponentRegistry::Inspector *inspector) override;
 
     // TODO: Add XMVECTOR versions
