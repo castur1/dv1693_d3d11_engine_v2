@@ -107,12 +107,13 @@ void CameraController::Update(const Frame_context &context) {
     view.type  = View_type::primary;
     view.index = 0;
 
+    view.cameraPosition = transform->GetWorldPosition();
     view.nearPlane = this->nearPlane;
     view.farPlane  = this->farPlane;
 
     view.shadowDistance = this->shadowDistance;
 
-    context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix, transform->GetWorldPosition());
+    context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix);
 
     if (Input::IsKeyPressed('1'))
         context.engineContext.sceneManager->RequestSceneChange("demo_0");

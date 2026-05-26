@@ -2,7 +2,9 @@ SamplerState samplerLinearWrap : register(s0);
 
 cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
+    float4x4 invViewMatrix;
     float4x4 projectionMatrix;
+    float4x4 invProjectionMatrix;
     float4x4 viewProjectionMatrix;
     float4x4 invViewProjectionMatrix;
     float3 cameraPosition;

@@ -21,8 +21,6 @@ struct Render_view {
 
     XMFLOAT4X4 viewMatrix{};
     XMFLOAT4X4 projectionMatrix{};
-    XMFLOAT4X4 viewProjectionMatrix{};
-    XMFLOAT4X4 invViewProjectionMatrix{};
 
     XMFLOAT3 cameraPosition{};
     float nearPlane = 0.1f;

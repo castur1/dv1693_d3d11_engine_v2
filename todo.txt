@@ -2,7 +2,7 @@
 
     X Deferred rendering
     X Shadow mapping
-    * Particle system <--
+    X Particle system
     X Dynamic cube mapping
     * Tessellation
     X Hierarchical view frustum culling
@@ -30,7 +30,7 @@
 
 * XMVECTOR versions of Get/Set in Transform
 
-* Make renderer debugMode a setting instead, maybe?
+* Make renderer debugMode a setting instead, maybe? Would require non-bool settings
 
 * Assets that are loaded by other assets (e.g. textures loaded by models) are not present in the asset section and 
   will thus be unloaded. Since the owning asset is still loaded, those child asset will never get reloaded.
@@ -79,8 +79,6 @@
 
     * Random spawn position offset
 
-    * Rewrite all the shaders
-
 * I feel like I might be doing gamma correction and/or tone mapping wrong
 
 * Skybox breaks at 10k+ units away.
@@ -111,6 +109,8 @@
 * Reflection on transform always marks everything as dirty.
 
 * Transform pivot/offset? Needed to get e.g. eye position of capsule to work correctly.
+
+* Maybe some sort of billboarded gizmos to represent light positions, entity pivot/origin, that sort of stuff.
 
 
 For skyboxes:

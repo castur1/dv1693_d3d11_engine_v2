@@ -11,9 +11,11 @@
 using namespace DirectX;
 
 // CBuffer
-struct Per_frame_data { // TODO: Rename to "Per_view_data"?
+struct Per_frame_data {
     XMFLOAT4X4 viewMatrix;
+    XMFLOAT4X4 invViewMatrix;
     XMFLOAT4X4 projectionMatrix;
+    XMFLOAT4X4 invProjectionMatrix;
     XMFLOAT4X4 viewProjectionMatrix;
     XMFLOAT4X4 invViewProjectionMatrix;
     XMFLOAT3   cameraPosition;
@@ -294,7 +296,7 @@ public:
     void Present();
 
     void AddView(const Render_view &view);
-    void AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position);
+    void AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix);
 
     // TODO: This is kinda redundant now, at least nearPlane/farPlane since we're getting those from the Render_view
     void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug.

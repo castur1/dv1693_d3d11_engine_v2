@@ -2,7 +2,9 @@ SamplerState samplerLinearWrap : register(s0);
 
 cbuffer Per_frame_data : register(b0) {
     float4x4 viewMatrix;
+    float4x4 invViewMatrix;
     float4x4 projectionMatrix;
+    float4x4 invProjectionMatrix;
     float4x4 viewProjectionMatrix;
     float4x4 invViewProjectionMatrix;
     float3 cameraPosition;
@@ -22,11 +24,13 @@ void main(uint3 id : SV_DispatchThreadID) {
         return;
 
     float2 uv = (float2(id.xy) + 0.5f) / float2(width, height);
-    float4 ndc = float4(2.0f * uv.x - 1.0f, -2.0f * uv.y + 1.0f, 1.0f, 1.0f);
-    float4 positionWorld = mul(ndc, invViewProjectionMatrix);
-    positionWorld.xyz /= positionWorld.w;
-
-    float3 direction = normalize(positionWorld.xyz - cameraPosition);
+    float2 ndc = float2(2.0f * uv.x - 1.0f, -2.0f * uv.y + 1.0f);
+    
+    float4 viewV = mul(float4(ndc, 1.0f, 0.0f), invProjectionMatrix);
+    viewV.z = 1.0f;
+    viewV.w = 0.0f;
+            
+    float3 direction = normalize(mul(viewV, invViewMatrix).xyz);
 
     output[uint3(id.xy, 0)] = float4(skyboxTexture.SampleLevel(samplerLinearWrap, direction, 0).rgb, 1.0f);
 }

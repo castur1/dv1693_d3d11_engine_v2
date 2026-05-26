@@ -20,7 +20,9 @@ static const float SPOT_TEXEL_SIZE = 1.0f / 1024.0f;
 
 cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
+    float4x4 invViewMatrix;
     float4x4 projectionMatrix;
+    float4x4 invProjectionMatrix;
     float4x4 viewProjectionMatrix;
     float4x4 invViewProjectionMatrix;
     float3 cameraPosition;
@@ -194,16 +196,22 @@ void main(uint3 id : SV_DispatchThreadID) {
         return;
 
     int2 pixel = int2(id.xy);
+    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
     
     float depth = depthBuffer[pixel].r;
-    
-    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
-    float3 positionWorld = ReconstructWorldPosition(uv, depth);
-    float3 viewV = normalize(cameraPosition - positionWorld);
 
     if (depth >= 1.0f) {
-        if (hasSkybox)
-            outputTexture[pixel] = float4(skybox.SampleLevel(samplerLinearWrap, -viewV, 0).rgb, 1.0f);
+        if (hasSkybox) {
+            float2 ndc = float2(2.0f * uv.x - 1.0f, -2.0f * uv.y + 1.0f); 
+            
+            float4 viewV = mul(float4(ndc, 1.0f, 0.0f), invProjectionMatrix);
+            viewV.z = 1.0f;
+            viewV.w = 0.0f;
+            
+            float3 direction = normalize(mul(viewV, invViewMatrix).xyz);
+            
+            outputTexture[pixel] = float4(skybox.SampleLevel(samplerLinearWrap, direction, 0).rgb, 1.0f);
+        }
         
         return;
     }
@@ -217,6 +225,9 @@ void main(uint3 id : SV_DispatchThreadID) {
     bool isReflective = normalSample.a > 0.5f;
     
     float3 specularColour = gbufferSpecular[pixel].rgb;
+    
+    float3 positionWorld = ReconstructWorldPosition(uv, depth);
+    float3 viewV = normalize(cameraPosition - positionWorld);
     
     if (isReflective) {
         float3 reflectV = reflect(-viewV, normalV);

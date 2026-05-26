@@ -815,12 +815,18 @@ void Renderer::BindCommonSamplerStates() {
 }
 
 void Renderer::UploadPerFrameData(const Render_view &view) {
+    XMMATRIX viewMatrix = XMLoadFloat4x4(&view.viewMatrix);
+    XMMATRIX projectionMatrix = XMLoadFloat4x4(&view.projectionMatrix);
+    XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+
     Per_frame_data data{};
-    data.viewMatrix              = view.viewMatrix;
-    data.projectionMatrix        = view.projectionMatrix;
-    data.viewProjectionMatrix    = view.viewProjectionMatrix;
-    data.invViewProjectionMatrix = view.invViewProjectionMatrix;
-    data.cameraPosition          = view.cameraPosition;
+    XMStoreFloat4x4(&data.viewMatrix, XMMatrixTranspose(viewMatrix));
+    XMStoreFloat4x4(&data.invViewMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, viewMatrix)));
+    XMStoreFloat4x4(&data.projectionMatrix, XMMatrixTranspose(projectionMatrix));
+    XMStoreFloat4x4(&data.invProjectionMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, projectionMatrix)));
+    XMStoreFloat4x4(&data.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
+    XMStoreFloat4x4(&data.invViewProjectionMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, viewProjectionMatrix)));
+    data.cameraPosition = view.cameraPosition;
 
     this->UploadConstantBuffer(this->perFrameBuffer, data);
 }
@@ -1182,7 +1188,11 @@ void Renderer::BuildFrameGraph() {
                 
                 deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapDirectionalDSVs[i]);
 
-                this->UploadConstantBuffer(this->shadowBuffer, view->viewProjectionMatrix);
+                XMMATRIX viewMatrix = XMLoadFloat4x4(&view->viewMatrix);
+                XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
+                XMFLOAT4X4 viewProjectionMatrix;
+                XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
+                this->UploadConstantBuffer(this->shadowBuffer, viewProjectionMatrix);
 
                 for (const Geometry_command &command : view->queue.geometryCommands) {
                     Per_object_data perObjectData{};
@@ -1214,7 +1224,11 @@ void Renderer::BuildFrameGraph() {
                 
                 deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapSpotDSVs[i]);
 
-                this->UploadConstantBuffer(this->shadowBuffer, view->viewProjectionMatrix);
+                XMMATRIX viewMatrix = XMLoadFloat4x4(&view->viewMatrix);
+                XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
+                XMFLOAT4X4 viewProjectionMatrix;
+                XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
+                this->UploadConstantBuffer(this->shadowBuffer, viewProjectionMatrix);
 
                 for (const Geometry_command &command : view->queue.geometryCommands) {
                     Per_object_data perObjectData{};
@@ -1700,16 +1714,16 @@ void Renderer::SetupShadowViews(Scene *scene) {
         XMMATRIX viewMatrix;
         XMMATRIX projectionMatrix;
         this->ComputeDirectionalLightMatrices(viewMatrix, projectionMatrix, command, *primaryView);
-        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
 
         Render_view view{};
         view.type = View_type::shadowMapDirectional;
         view.index = slot;
         view.skipFrustumCulling = true;
-        XMStoreFloat4x4(&view.viewProjectionMatrix, viewProjectionMatrix);
-
+        XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
+        XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
         shadowViews.push_back(view);
 
+        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
         XMStoreFloat4x4(
             &this->perFrameShadowData.directionalViewProjectionMatrices[slot], 
             viewProjectionMatrix
@@ -1730,18 +1744,19 @@ void Renderer::SetupShadowViews(Scene *scene) {
         XMMATRIX viewMatrix;
         XMMATRIX projectionMatrix;
         this->ComputeSpotLightMatrices(viewMatrix, projectionMatrix, command);
-        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
 
         Render_view view{};
         view.type = View_type::shadowMapSpot;
         view.index = slot;
-        XMStoreFloat4x4(&view.viewProjectionMatrix, viewProjectionMatrix);
+        XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
+        XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
 
         BoundingFrustum::CreateFromMatrix(view.frustum, projectionMatrix);
         view.frustum.Transform(view.frustum, XMMatrixInverse(nullptr, viewMatrix));
 
         shadowViews.push_back(view);
 
+        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
         XMStoreFloat4x4(
             &this->perFrameShadowData.spotViewProjectionMatrices[slot], 
             viewProjectionMatrix
@@ -1798,17 +1813,13 @@ void Renderer::SetupReflectionProbeViews(Scene *scene) {
             XMVECTOR up = XMLoadFloat3(&faces[face].up);
 
             XMMATRIX viewMatrix = XMMatrixLookToLH(position, forward, up);
-            XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-            XMMATRIX invViewProjectionMatrix = XMMatrixInverse(nullptr, viewProjectionMatrix);
 
             Render_view view{};
             view.type = View_type::cubeFace;
             view.index = slot * 6 + face;
 
-            XMStoreFloat4x4(&view.viewMatrix, XMMatrixTranspose(viewMatrix));
-            XMStoreFloat4x4(&view.projectionMatrix, XMMatrixTranspose(projectionMatrix));
-            XMStoreFloat4x4(&view.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
-            XMStoreFloat4x4(&view.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
+            XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
+            XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
 
             view.cameraPosition = command.position;
             view.nearPlane = command.nearPlane;
@@ -1933,8 +1944,13 @@ void Renderer::Render(Scene *scene) {
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 
     const Render_view *primary = this->GetView(View_type::primary);
-    if (primary)
-        DebugDraw::Render(this->deviceContext, primary->viewProjectionMatrix);
+    if (primary) {
+        XMMATRIX viewMatrix = XMLoadFloat4x4(&primary->viewMatrix);
+        XMMATRIX projectionMatrix = XMLoadFloat4x4(&primary->projectionMatrix);
+        XMFLOAT4X4 viewProjectionMatrix;
+        XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
+        DebugDraw::Render(this->deviceContext, viewProjectionMatrix);
+    }
 }
 
 void Renderer::Present() {
@@ -1954,23 +1970,15 @@ void Renderer::AddView(const Render_view &view) {
     this->views.push_back(view);
 }
 
-void Renderer::AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix, const XMFLOAT3 &position) {
+void Renderer::AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix) {
     Render_view v = view;
 
-    XMMATRIX worldMatrix = XMMatrixInverse(nullptr, viewMatrix);
+    XMStoreFloat4x4(&v.viewMatrix, viewMatrix);
+    XMStoreFloat4x4(&v.projectionMatrix, projectionMatrix);
 
-    XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-    XMMATRIX invViewProjectionMatrix = XMMatrixInverse(nullptr, viewProjectionMatrix);
-
-    XMStoreFloat4x4(&v.viewMatrix, XMMatrixTranspose(viewMatrix));
-    XMStoreFloat4x4(&v.projectionMatrix, XMMatrixTranspose(projectionMatrix));
-    XMStoreFloat4x4(&v.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
-    XMStoreFloat4x4(&v.invViewProjectionMatrix, XMMatrixTranspose(invViewProjectionMatrix));
-
-    v.cameraPosition = position;
-
+    XMMATRIX invViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
     BoundingFrustum::CreateFromMatrix(v.frustum, projectionMatrix);
-    v.frustum.Transform(v.frustum, worldMatrix);
+    v.frustum.Transform(v.frustum, invViewMatrix);
 
     this->AddView(v);
 }
