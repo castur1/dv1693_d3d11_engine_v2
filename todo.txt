@@ -28,6 +28,10 @@
 
     * Editor currently crashes if you change scene while an entity is selected
 
+    * Scene selection
+
+    * Saving the scene
+
 * XMVECTOR versions of Get/Set in Transform
 
 * Make renderer debugMode a setting instead, maybe? Would require non-bool settings

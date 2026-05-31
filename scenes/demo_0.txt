@@ -12,6 +12,7 @@ entity a1b2-c3d4-e5f6-0123
         position: [0.0, 1.0, 0.0]
         rotation: [-10.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component CameraController
         isActive: true
@@ -40,6 +41,7 @@ entity 9865-ad23-fb56-0964
         position: [0.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.8, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -66,6 +68,7 @@ entity 123a-ffff-3242-0011
         position: [0.0, -10.0, 50.0]
         rotation: [0.0, 270.0, 0.0]
         scale: [20.0, 20.0, 20.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -83,6 +86,7 @@ entity 8654-adce-1006-0012
         position: [2.0, 0.0, 5.0]
         rotation: [0.0, 315.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -100,6 +104,7 @@ entity 0142-de23-fa87-1237
         position: [-8.0, -3.0, 20.0]
         rotation: [0.0, 225.0, 0.0]
         scale: [5.0, 5.0, 5.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -117,6 +122,7 @@ entity 0142-de23-fa87-ab43
         position: [-20.0, -3.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -134,6 +140,7 @@ entity 0142-de23-fa87-0145
         position: [-18.0, 3.0, 3.0]
         rotation: [0.0, 45.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -151,6 +158,7 @@ entity 0142-de23-fa87-fed3
         position: [-21.0, -6.0, -2.0]
         rotation: [0.0, 90.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -168,6 +176,7 @@ entity 0142-de23-fa87-0513
         position: [-12.0, -6.0, -2.0]
         rotation: [0.0, -45.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -185,6 +194,7 @@ entity 0142-de23-fa87-1225
         position: [-16.0, -6.0, 5.0]
         rotation: [0.0, 180.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -202,6 +212,7 @@ entity 0142-de23-fa87-1337
         position: [-18.0, -4.0, 9.0]
         rotation: [0.0, 270.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -219,6 +230,7 @@ entity 0123-4567-89ab-cdef
         position: [0.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
 entity 7632-12ac-76de-fe23
     name: "dragon"
@@ -231,6 +243,7 @@ entity 7632-12ac-76de-fe23
         position: [30.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [0.2, 0.2, 0.2]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -248,6 +261,7 @@ entity 7432-fe32-48ac-cd73
         position: [-40.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [2.0, 2.0, 2.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -297,6 +311,7 @@ entity 9347-ad23-cf26-eb95
         position: [2.0, 0.2, 0.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [0.5, 0.5, 0.5]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -314,6 +329,7 @@ entity 0976-ffe5-2348-1209
         position: [-30.0, 8.0, 6.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [3.0, 3.0, 3.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -337,6 +353,7 @@ entity 9347-ad23-cf26-af32
         position: [-7.0, 33.0, 44.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [2.0, 2.0, 2.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -354,6 +371,7 @@ entity 9347-ad23-cf26-fee3
         position: [0.0, 13.0, 68.0]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
@@ -371,6 +389,7 @@ entity faff-6543-8755-014a
         position: [0.0, 0.0, 0.0]
         rotation: [45.0, 45.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component DirectionalLight
         isActive: true
@@ -390,6 +409,7 @@ entity deef-ac43-8744-0ae2
         position: [0.0, 14.0, 70.0]
         rotation: [0.0, 180.0, 0.0]
         scale: [0.2, 0.2, 0.2]
+        pivot: [0.0, 0.0, 0.0]
 
     component SpotLight
         isActive: true
@@ -432,6 +452,7 @@ entity 687f-facc-2365-009a
         position: [22.0, 15.0, 0.0]
         rotation: [90.0, -110.0, 0.0]
         scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
 
     component ParticleEmitter
         isActive: true

@@ -7,6 +7,7 @@
 #include "core/input.hpp"
 #include "debugging/debug.hpp"
 #include "debugging/debug_draw.hpp"
+#include "components/transform.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -288,8 +289,16 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
     if (this->selectedEntity) {
         for (Component *component : this->selectedEntity->GetComponents()) {
             BoundingBox bounds;
-            if (component->GetWorldBounds(bounds))
+            if (component->GetWorldBounds(bounds)) {
                 DebugDraw::Box(bounds, {1.0f, 1.0f, 0.5, 1.0f});
+            }
+        }
+
+        Transform *transform = this->selectedEntity->GetComponent<Transform>();
+        if (transform) {
+            XMFLOAT3 pivot = transform->GetWorldPosition();
+            BoundingBox pivotBox(pivot, {0.1f, 0.1f, 0.1f});
+            DebugDraw::Box(pivotBox, {1.0f, 0.5f, 0.5, 1.0f});
         }
     }
 }

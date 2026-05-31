@@ -122,7 +122,7 @@ void ParticleEmitter::Update(const Frame_context &context) {
         particle.lifetime = particle.maxLifetime;
 
         if (transform) {
-            particle.position = transform->TransformPoint(particle.position);
+            particle.position = transform->TransformPointRender(particle.position);
             particle.velocity = transform->TransformDirection(particle.velocity);
         }
 

@@ -14,6 +14,8 @@ class Transform : public Component {
     XMFLOAT4 localRotation = {0.0f, 0.0f, 0.0f, 1.0f}; // Quaternion
     XMFLOAT3 localScale = {1.0f, 1.0f, 1.0f};
 
+    XMFLOAT3 localPivot = {0.0f, 0.0f, 0.0f};
+
     XMFLOAT3 localEuler = {0.0f, 0.0f, 0.0f};
 
     mutable XMFLOAT4X4 cachedLocal{};
@@ -64,6 +66,9 @@ public:
     void SetLocalScale(float scale);
     XMFLOAT3 GetLocalScale() const;
 
+    void SetLocalPivot(const XMFLOAT3 &pivot);
+    XMFLOAT3 GetLocalPivot() const;
+
     void SetWorldPosition(const XMFLOAT3 &position);
     void SetWorldPosition(float x, float y, float z);
     XMFLOAT3 GetWorldPosition() const;
@@ -81,10 +86,15 @@ public:
     void SetWorldScale(float scale);
     XMFLOAT3 GetWorldScale() const;
 
+    XMFLOAT3 GetRenderPosition() const;
+
     XMMATRIX GetLocalMatrix() const;
 
     void SetWorldMatrix(const XMMATRIX &worldMatrix);
     XMMATRIX GetWorldMatrix() const;
+
+    // World matrix relative to pivot
+    XMMATRIX GetRenderMatrix() const;
 
     XMFLOAT3 GetForward() const;
     XMVECTOR GetForwardV() const;
@@ -97,10 +107,12 @@ public:
 
     // Local space -> World space
     XMFLOAT3 TransformPoint(const XMFLOAT3 &localPoint) const;
+    XMFLOAT3 TransformPointRender(const XMFLOAT3 &localPoint) const;
     XMFLOAT3 TransformDirection(const XMFLOAT3 &localDirection) const;
 
     // World space -> Local space
     XMFLOAT3 InverseTransformPoint(const XMFLOAT3 &worldPoint) const;
+    XMFLOAT3 InverseTransformPointRender(const XMFLOAT3 &worldPoint) const;
     XMFLOAT3 InverseTransformDirection(const XMFLOAT3 &worldDirection) const;
 
     bool IsWorldDirty() const { return this->isWorldDirty; }

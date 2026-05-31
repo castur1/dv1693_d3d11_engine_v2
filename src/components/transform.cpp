@@ -110,6 +110,8 @@ void Transform::Reflect(ComponentRegistry::Inspector *inspector) {
 
     inspector->Field("scale", this->localScale);
 
+    inspector->Field("pivot", this->localPivot);
+
     this->MarkLocalDirty(); // TODO: This shouldn't be unconditional
 }
 
@@ -166,6 +168,14 @@ void Transform::SetLocalScale(float scale) {
 
 XMFLOAT3 Transform::GetLocalScale() const {
     return this->localScale;
+}
+
+void Transform::SetLocalPivot(const XMFLOAT3 &pivot) {
+    this->localPivot = pivot;
+}
+
+XMFLOAT3 Transform::GetLocalPivot() const {
+    return this->localPivot;
 }
 
 void Transform::SetWorldPosition(const XMFLOAT3 &position) {
@@ -287,6 +297,10 @@ XMFLOAT3 Transform::GetWorldScale() const {
     return this->ExtractScale(this->GetWorldMatrix());
 }
 
+XMFLOAT3 Transform::GetRenderPosition() const {
+    return this->ExtractTranslation(this->GetRenderMatrix());
+}
+
 XMMATRIX Transform::GetLocalMatrix() const {
     if (this->isLocalDirty) {
         XMMATRIX scale = XMMatrixScalingFromVector(XMLoadFloat3(&this->localScale));
@@ -350,6 +364,11 @@ XMMATRIX Transform::GetWorldMatrix() const {
     return XMLoadFloat4x4(&this->cachedWorld);
 }
 
+XMMATRIX Transform::GetRenderMatrix() const {
+    XMMATRIX pivotMatrix = XMMatrixTranslationFromVector(XMVectorNegate(XMLoadFloat3(&this->localPivot)));
+    return pivotMatrix * this->GetWorldMatrix();
+}
+
 XMFLOAT3 Transform::GetForward() const {
     XMFLOAT3 output;
     XMStoreFloat3(&output, this->GetForwardV());
@@ -407,6 +426,13 @@ XMFLOAT3 Transform::TransformPoint(const XMFLOAT3 &localPoint) const {
     return output;
 }
 
+XMFLOAT3 Transform::TransformPointRender(const XMFLOAT3 &localPoint) const {
+    XMVECTOR worldPoint = XMVector3Transform(XMLoadFloat3(&localPoint), this->GetRenderMatrix());
+    XMFLOAT3 output;
+    XMStoreFloat3(&output, worldPoint);
+    return output;
+}
+
 XMFLOAT3 Transform::TransformDirection(const XMFLOAT3 &localDirection) const {
     XMVECTOR worldDir = XMVector3TransformNormal(XMLoadFloat3(&localDirection), this->GetWorldMatrix());
     XMFLOAT3 output;
@@ -416,6 +442,14 @@ XMFLOAT3 Transform::TransformDirection(const XMFLOAT3 &localDirection) const {
 
 XMFLOAT3 Transform::InverseTransformPoint(const XMFLOAT3 &worldPoint) const {
     XMMATRIX inverse = XMMatrixInverse(nullptr, this->GetWorldMatrix());
+    XMVECTOR localPoint = XMVector3Transform(XMLoadFloat3(&worldPoint), inverse);
+    XMFLOAT3 output;
+    XMStoreFloat3(&output, localPoint);
+    return output;
+}
+
+XMFLOAT3 Transform::InverseTransformPointRender(const XMFLOAT3 &worldPoint) const {
+    XMMATRIX inverse = XMMatrixInverse(nullptr, this->GetRenderMatrix());
     XMVECTOR localPoint = XMVector3Transform(XMLoadFloat3(&worldPoint), inverse);
     XMFLOAT3 output;
     XMStoreFloat3(&output, localPoint);

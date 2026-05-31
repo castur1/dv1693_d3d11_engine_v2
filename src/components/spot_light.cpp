@@ -22,7 +22,7 @@ void SpotLight::Render(const Render_view &view, RenderQueue &queue) {
     }
 
     Spot_light_command slc{};
-    slc.position       = transform->GetWorldPosition();
+    slc.position       = transform->GetRenderPosition();
     slc.direction      = transform->GetForward();
     slc.colour         = this->colour;
     slc.intensity      = this->intensity;

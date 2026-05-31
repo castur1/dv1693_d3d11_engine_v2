@@ -24,7 +24,7 @@ void ModelRenderer::Render(const Render_view &view, RenderQueue &queue) {
 
     // TODO: Do culling per sub-model
 
-    const XMMATRIX worldMatrix = XMMatrixTranspose(transform->GetWorldMatrix());
+    const XMMATRIX worldMatrix = XMMatrixTranspose(transform->GetRenderMatrix());
 
     Model *model = this->modelHandle.Get();
     for (int i = 0; i < model->subModels.size(); ++i) {
@@ -63,6 +63,6 @@ bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
         return false;
     }
 
-    model->localBounds.Transform(outBounds, transform->GetWorldMatrix());
+    model->localBounds.Transform(outBounds, transform->GetRenderMatrix());
     return true;
 }
