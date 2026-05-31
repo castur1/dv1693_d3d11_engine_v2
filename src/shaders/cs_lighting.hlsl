@@ -18,6 +18,9 @@ static const float SPOT_PCF_RADIUS = 1.5f;
 static const float DIRECTIONAL_TEXEL_SIZE = 1.0f / 2048.0f;
 static const float SPOT_TEXEL_SIZE = 1.0f / 1024.0f;
 
+static const float DIRECTIONAL_NORMAL_FACTOR = 0.15f;
+static const float SPOT_NORMAL_FACTOR = 0.1f;
+
 cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
     float4x4 invViewMatrix;
@@ -117,16 +120,23 @@ float3 SampleReflectionProbe(float3 reflectV, float3 positionWorld, uint2 pixel)
     return outputTexture[pixel].rgb;
 }
 
+float Ease(float x) {
+    const float x0 = 0.75f;
+    const float k = 15.0f;
+    
+    return 1.0f / (1.0f + exp(-k * (x - x0)));
+}
+
 float SampleShadowDirectional(float3 positionWorld, float3 normalV, int lightIndex) {
     Directional_light_data light = directionalLights[lightIndex];
 
     if (!light.castsShadows || light.shadowSliceIndex < 0)
         return 1.0f;
-    
+        
     float3 lightV = normalize(-light.direction);
     float cosine = saturate(dot(normalV, lightV));
     float tangent = sqrt(1.0f - cosine * cosine) / max(cosine, 0.001f);
-    float normalBias = 0.15f * clamp(tangent, 0.0f, 2.0f);
+    float normalBias = DIRECTIONAL_NORMAL_FACTOR * clamp(tangent, 0.0f, 2.0f);
 
     float4 lightClip = mul(float4(positionWorld + normalV * normalBias, 1.0f), light.viewProjectionMatrix);
     float3 ndc = lightClip.xyz / lightClip.w;
@@ -149,7 +159,7 @@ float SampleShadowDirectional(float3 positionWorld, float3 normalV, int lightInd
     }
     
     shadow /= 16.0f;
-    return shadow * shadow;
+    return Ease(shadow);
 }
 
 float SampleShadowSpot(float3 positionWorld, float3 normalV, int lightIndex) {
@@ -157,11 +167,11 @@ float SampleShadowSpot(float3 positionWorld, float3 normalV, int lightIndex) {
 
     if (!light.castsShadows || light.shadowSliceIndex < 0)
         return 1.0f;
-    
+        
     float3 lightV = normalize(-light.direction);
     float cosine = saturate(dot(normalV, lightV));
     float tangent = sqrt(1.0f - cosine * cosine) / max(cosine, 0.001f);
-    float normalBias = 0.1f * clamp(tangent, 0.0f, 2.0f);
+    float normalBias = SPOT_NORMAL_FACTOR * clamp(tangent, 0.0f, 2.0f);
 
     float4 lightClip = mul(float4(positionWorld + normalV * normalBias, 1.0f), light.viewProjectionMatrix);
     float3 ndc = lightClip.xyz / lightClip.w;
@@ -184,7 +194,7 @@ float SampleShadowSpot(float3 positionWorld, float3 normalV, int lightIndex) {
     }
     
     shadow /= 16.0f;
-    return shadow * shadow;
+    return Ease(shadow);
 }
 
 [numthreads(8, 8, 1)]
@@ -196,7 +206,8 @@ void main(uint3 id : SV_DispatchThreadID) {
         return;
 
     int2 pixel = int2(id.xy);
-    float2 uv = (float2(pixel) + 0.5f) / float2(width, height);
+    float2 positionScreen = float2(pixel) + 0.5f;
+    float2 uv = positionScreen / float2(width, height);
     
     float depth = depthBuffer[pixel].r;
 

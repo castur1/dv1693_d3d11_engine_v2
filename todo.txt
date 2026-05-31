@@ -81,23 +81,6 @@
 
 * I feel like I might be doing gamma correction and/or tone mapping wrong
 
-* Skybox breaks at 10k+ units away.
-
-        float4x4 projectionMatrix = mul(viewProjMatrix, Inverse(viewMatrix));
-        float4x4 invProjectionMatrix = Inverse(projectionMatrix);
-        float4x4 invViewMatrix = Inverse(viewMatrix);
-        
-        float2 clipSpaceCoord = screenUV * float2(2.0, -2.0) + float2(-1.0, 1.0);
-
-        float4 viewSpaceRay = mul(invProjectionMatrix, float4(clipSpaceCoord, 1.0, 1.0));
-        viewSpaceRay /= viewSpaceRay.w;
-
-        float3 worldViewDir = mul((float3x3) invViewMatrix, viewSpaceRay.xyz);
-
-        float3 skyColor = skyTexture.SampleLevel(defaultSampler, normalize(worldViewDir), 0).rgb;
-        backBufferUAV[uint3(screenPos, 0)] = float4(skyColor, 1.0f);
-        return;
-
 * Normal tangents break (e.g. sponza roof) when close to zero or smth
 
 * Apparently the asset folder can be copied to release directory automatically on compile? Custom commands on build.
