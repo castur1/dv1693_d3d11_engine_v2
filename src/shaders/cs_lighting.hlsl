@@ -181,20 +181,12 @@ float SampleShadowSpot(float3 positionWorld, float3 normalV, int lightIndex) {
     
     if (any(uv < 0.0f) || any(uv > 1.0f) || depth < 0.0f || depth > 1.0f)
         return 1.0f;
-
-    float shadow = 0.0f;
-    const float radius = SPOT_PCF_RADIUS * SPOT_TEXEL_SIZE;
-    for (int i = 0; i < 16; ++i) {
-        float2 sampleUV = uv + POISSON_DISK[i] * radius;
-        shadow += shadowMapSpot.SampleCmpLevelZero(
+    
+    return shadowMapSpot.SampleCmpLevelZero(
             samplerShadow,
-            float3(sampleUV, light.shadowSliceIndex),
+            float3(uv, light.shadowSliceIndex),
             depth
         );
-    }
-    
-    shadow /= 16.0f;
-    return Ease(shadow);
 }
 
 [numthreads(8, 8, 1)]
