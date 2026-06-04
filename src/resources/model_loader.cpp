@@ -78,7 +78,27 @@ void ModelLoader::ComputeTangents(std::vector<Vertex> &vertices, const std::vect
         XMVECTOR b = XMLoadFloat3(&bitangents[i]);
 
         // https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-        XMVECTOR to = XMVector3Normalize(t - n * XMVector3Dot(n, t));
+        XMVECTOR to = t - n * XMVector3Dot(n, t);
+
+        if (XMVectorGetX(XMVector3LengthSq(to)) < 1e-6f) {
+            XMVECTOR absN = XMVectorAbs(n);
+            float absNX = XMVectorGetX(absN);
+            float absNY = XMVectorGetY(absN);
+            float absNZ = XMVectorGetZ(absN);
+
+            if (absNX <= absNY && absNX <= absNZ)
+                b = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+            else if (absNY <= absNZ)
+                b = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+            else
+                b = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+            to = XMVector3Normalize(XMVector3Cross(n, b));
+            b = XMVector3Cross(n, to);
+        }
+        else {
+            to = XMVector3Normalize(to);
+        }
 
         XMVECTOR cross = XMVector3Cross(n, to);
         float handedness = XMVectorGetX(XMVector3Dot(cross, b)) < 0.0f ? -1.0f : 1.0f;

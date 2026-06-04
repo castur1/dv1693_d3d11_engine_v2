@@ -43,7 +43,7 @@
 
 * Improve culling
 
-    * Freezing camera in place while moving the view frustum (for culling visualization)
+    * Freezing camera in place while moving the view frustum (for culling visualization)                                    <------
 
     * Use an array instead of a vector in the octree node. Should be faster, right?
 
@@ -70,8 +70,6 @@
 * Better error handling
 
 * Look everything over. Everything. Lots of things could probably be refactored. 
-
-    * The way I submit lights and cube maps feels a bit weird. Renderer is also way too big, probably
 
 * Make shadow sampler common, probably
 
