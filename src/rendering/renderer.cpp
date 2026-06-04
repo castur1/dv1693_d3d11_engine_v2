@@ -3,8 +3,8 @@
 #include "resources/asset_manager.hpp"
 #include "scene/scene.hpp"
 #include "debugging/debug_draw.hpp"
+#include "rendering/render_utils.hpp"
 
-#include <fstream>
 #include <vector>
 
 #define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
@@ -263,22 +263,6 @@ bool Renderer::CreateCommonSamplerStates() {
     return true;
 }
 
-// TODO: Look this over. Refactor?
-static bool LoadShaderBytecode(const std::string &path, std::vector<uint8_t> &out) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open()) {
-        LogError("Failed to load file '%s'", path.c_str());
-        return false;
-    }
-
-    size_t size = (size_t)file.tellg();
-    out.resize(size);
-    file.seekg(0);
-    file.read(reinterpret_cast<char *>(out.data()), size);
-
-    return true;
-}
-
 bool Renderer::LoadDeferredShaders() {
     std::vector<uint8_t> bytecode;
 
@@ -345,103 +329,8 @@ bool Renderer::LoadDeferredShaders() {
     return true;
 }
 
-static bool CreateDepthArray(
-    ID3D11Device *device,
-    int resolution,
-    int arraySize,
-    ID3D11Texture2D **outTexture,
-    ID3D11DepthStencilView **outDSVs,
-    ID3D11ShaderResourceView **outSRV,
-    const char *debugName
-) {
-    D3D11_TEXTURE2D_DESC desc{};
-    desc.Width = resolution;
-    desc.Height = resolution;
-    desc.MipLevels = 1;
-    desc.ArraySize = arraySize;
-    desc.Format = DXGI_FORMAT_R32_TYPELESS;
-    desc.SampleDesc.Count = 1;
-    desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-
-    HRESULT result = device->CreateTexture2D(&desc, nullptr, outTexture);
-    if (FAILED(result)) {
-        LogError("Failed to create depth texture array '%s'", debugName);
-        return false;
-    }
-
-    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-    dsvDesc.Texture2DArray.MipSlice = 0;
-    dsvDesc.Texture2DArray.ArraySize = 1;
-
-    for (int i = 0; i < arraySize; ++i) {
-        dsvDesc.Texture2DArray.FirstArraySlice = i;
-
-        result = device->CreateDepthStencilView(*outTexture, &dsvDesc, &outDSVs[i]);
-        if (FAILED(result)) {
-            LogError("Failed to create DSV[%d] for '%s'", i, debugName);
-            return false;
-        }
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-    srvDesc.Texture2DArray.MipLevels = 1;
-    srvDesc.Texture2DArray.MostDetailedMip = 0;
-    srvDesc.Texture2DArray.FirstArraySlice = 0;
-    srvDesc.Texture2DArray.ArraySize = arraySize;
-
-    result = device->CreateShaderResourceView(*outTexture, &srvDesc, outSRV);
-    if (FAILED(result)) {
-        LogError("Failed to create SRV for '%s'", debugName);
-        return false;
-    }
-
-    return true;
-}
-
-static bool CreateStructuredBuffer(
-    ID3D11Device *device, 
-    UINT elementSize, 
-    UINT elementCount, 
-    ID3D11Buffer **outBuffer, 
-    ID3D11ShaderResourceView **outSRV, 
-    const char *debugName
-) {
-    D3D11_BUFFER_DESC desc{};
-    desc.ByteWidth = elementSize * elementCount;
-    desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    desc.StructureByteStride = elementSize;
-
-    HRESULT result = device->CreateBuffer(&desc, nullptr, outBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create structured buffer '%s'", debugName);
-        return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.NumElements = elementCount;
-
-    result = device->CreateShaderResourceView(*outBuffer, &srvDesc, outSRV);
-    if (FAILED(result)) {
-        LogError("Failed to create SRV for '%s'", debugName);
-        return false;
-    }
-
-    return true;
-}
-
 bool Renderer::CreateShadowResources() {
-    if (!CreateDepthArray(
+    if (!CreateDepthStencilArray(
         this->device,
         SHADOW_MAP_DIRECTIONAL_RESOLUTION,
         MAX_DIRECTIONAL_SHADOW_MAPS,
@@ -464,7 +353,7 @@ bool Renderer::CreateShadowResources() {
         return false;
     }
 
-    if (!CreateDepthArray(
+    if (!CreateDepthStencilArray(
         this->device,
         SHADOW_MAP_SPOT_RESOLUTION,
         MAX_SPOT_SHADOW_MAPS,
@@ -828,7 +717,7 @@ void Renderer::UploadPerFrameData(const Render_view &view) {
     XMStoreFloat4x4(&data.invViewProjectionMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, viewProjectionMatrix)));
     data.cameraPosition = view.cameraPosition;
 
-    this->UploadConstantBuffer(this->perFrameBuffer, data);
+    UploadConstantBuffer(this->deviceContext, this->perFrameBuffer, data);
 }
 
 void Renderer::UploadLightData(const Render_view &view) {
@@ -844,7 +733,7 @@ void Renderer::UploadLightData(const Render_view &view) {
         lightingData.ambientColour.z += dlc.ambientColour.z;
     }
 
-    this->UploadConstantBuffer(this->lightingBuffer, lightingData);
+    UploadConstantBuffer(this->deviceContext, this->lightingBuffer, lightingData);
 
     // Directional
 
@@ -1116,7 +1005,7 @@ void Renderer::BuildFrameGraph() {
                             XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
                         );
 
-                        this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+                        UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
 
                         Material *material = command.material.Get();
                         if (material) {
@@ -1126,7 +1015,7 @@ void Renderer::BuildFrameGraph() {
                             perMaterialData.materialSpecular         = material->specularColour;
                             perMaterialData.materialSpecularExponent = material->specularExponent;
 
-                            this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
+                            UploadConstantBuffer(deviceContext, this->perMaterialBuffer, perMaterialData);
 
                             deviceContext->PSSetShaderResources(2, 1, &material->diffuseTexture.Get()->shaderResourceView);
                         }
@@ -1192,12 +1081,12 @@ void Renderer::BuildFrameGraph() {
                 XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
                 XMFLOAT4X4 viewProjectionMatrix;
                 XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
-                this->UploadConstantBuffer(this->shadowBuffer, viewProjectionMatrix);
+                UploadConstantBuffer(deviceContext, this->shadowBuffer, viewProjectionMatrix);
 
                 for (const Geometry_command &command : view->queue.geometryCommands) {
                     Per_object_data perObjectData{};
                     perObjectData.worldMatrix = command.worldMatrix;
-                    this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+                    UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
 
                     Material *material = command.material.Get();
                     if (material)
@@ -1228,12 +1117,12 @@ void Renderer::BuildFrameGraph() {
                 XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
                 XMFLOAT4X4 viewProjectionMatrix;
                 XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
-                this->UploadConstantBuffer(this->shadowBuffer, viewProjectionMatrix);
+                UploadConstantBuffer(deviceContext, this->shadowBuffer, viewProjectionMatrix);
 
                 for (const Geometry_command &command : view->queue.geometryCommands) {
                     Per_object_data perObjectData{};
                     perObjectData.worldMatrix = command.worldMatrix;
-                    this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+                    UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
 
                     Material *material = command.material.Get();
                     if (material)
@@ -1318,7 +1207,7 @@ void Renderer::BuildFrameGraph() {
                     XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
                 );
 
-                this->UploadConstantBuffer(this->perObjectBuffer, perObjectData);
+                UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
 
                 Material *material = command.material.Get();
                 if (material) {
@@ -1328,7 +1217,7 @@ void Renderer::BuildFrameGraph() {
                     perMaterialData.materialSpecular         = material->specularColour;
                     perMaterialData.materialSpecularExponent = material->specularExponent;
 
-                    this->UploadConstantBuffer(this->perMaterialBuffer, perMaterialData);
+                    UploadConstantBuffer(deviceContext, this->perMaterialBuffer, perMaterialData);
 
                     ID3D11ShaderResourceView *srvs[2] = {
                         material->diffuseTexture.Get()->shaderResourceView,
@@ -1499,7 +1388,7 @@ void Renderer::BuildFrameGraph() {
                 computeData.deltaTime        = command.deltaTime;
                 computeData.maxParticleCount = command.maxParticleCount;
 
-                this->UploadConstantBuffer(this->particleComputeBuffer, computeData);
+                UploadConstantBuffer(deviceContext, this->particleComputeBuffer, computeData);
 
                 deviceContext->CSSetUnorderedAccessViews(0, 1, &command.unorderedAccessView, nullptr);
                 
@@ -1517,7 +1406,7 @@ void Renderer::BuildFrameGraph() {
                 visualData.nearPlane   = view->nearPlane;
                 visualData.farPlane    = view->farPlane;
 
-                this->UploadConstantBuffer(this->particleVisualBuffer, visualData);
+                UploadConstantBuffer(deviceContext, this->particleVisualBuffer, visualData);
 
                 deviceContext->VSSetShaderResources(0, 1, &command.shaderResourceView);
 
@@ -1575,7 +1464,7 @@ void Renderer::BuildFrameGraph() {
                 this->currentDebugData.farPlane  = view->farPlane;
             }
 
-            this->UploadConstantBuffer(this->debugResolveBuffer, this->currentDebugData);
+            UploadConstantBuffer(deviceContext, this->debugResolveBuffer, this->currentDebugData);
             deviceContext->PSSetConstantBuffers(3, 1, &this->debugResolveBuffer); // Debug
 
             ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);

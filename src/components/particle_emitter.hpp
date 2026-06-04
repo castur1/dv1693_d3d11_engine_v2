@@ -3,7 +3,7 @@
 
 #include "scene/component.hpp"
 #include "resources/asset_manager.hpp"
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 
 #include "d3d11.h"
 #include "DirectXMath.h"

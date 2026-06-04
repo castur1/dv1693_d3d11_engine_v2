@@ -2,7 +2,7 @@
 #define PIPELINE_STATE_LOADER_HPP
 
 #include "resources/asset_loader.hpp"
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 
 class MaterialLoader : public AssetLoader<Material> {
 public:

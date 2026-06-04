@@ -2,7 +2,7 @@
 #define TEXTURE2D_LOADER_HPP
 
 #include "resources/asset_loader.hpp"
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 
 class Texture2DLoader : public AssetLoader<Texture2D> {
 public:

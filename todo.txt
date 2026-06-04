@@ -87,8 +87,6 @@
 
 * Distance-based fog?
 
-* Reflection on transform always marks everything as dirty. Check if inspector->Field returns true/false?
-
 * Maybe some sort of billboarded gizmos to represent light positions, entity pivot/origin, that sort of stuff.
 
 

@@ -4,7 +4,7 @@
 #include "scene/component.hpp"
 #include "core/uuid.hpp"
 #include "resources/asset_manager.hpp"
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 
 #include <DirectXCollision.h>
 

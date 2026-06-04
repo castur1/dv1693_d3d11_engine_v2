@@ -138,6 +138,9 @@
     <ClCompile Include="src\components\transform_override.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\render_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\application.hpp">
@@ -188,7 +191,7 @@
     <ClInclude Include="src\components\camera_controller.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\resources\model.hpp">
+    <ClInclude Include="src\resources\assets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\resources\asset_cache.hpp">
@@ -297,6 +300,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\components\transform_override.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\render_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\render_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

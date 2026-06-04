@@ -1,7 +1,7 @@
 #ifndef RENDER_COMMANDS_HPP
 #define RENDER_COMMANDS_HPP
 
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 #include "resources/asset_manager.hpp"
 
 #include <DirectXMath.h>

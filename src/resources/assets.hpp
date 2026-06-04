@@ -1,5 +1,5 @@
-#ifndef MODEL_HPP
-#define MODEL_HPP
+#ifndef ASSETS_HPP
+#define ASSETS_HPP
 
 #include "resources/asset_manager.hpp"
 

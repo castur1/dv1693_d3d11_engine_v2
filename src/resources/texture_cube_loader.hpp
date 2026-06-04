@@ -2,7 +2,7 @@
 #define TEXTURE_CUBE_LOADER_HPP
 
 #include "resources/asset_loader.hpp"
-#include "resources/model.hpp"
+#include "resources/assets.hpp"
 
 class TextureCubeLoader : public AssetLoader<Texture_cube> {
 public:
