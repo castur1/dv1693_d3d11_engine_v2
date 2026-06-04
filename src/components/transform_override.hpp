@@ -3,6 +3,7 @@
 
 #include "scene/component.hpp"
 
+// TODO: I think this is kinda broken
 class TransformOverride : public Component {
 public:
     XMFLOAT3 position = {0.0f, 0.0f, 0.0f};

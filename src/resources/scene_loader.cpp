@@ -81,58 +81,85 @@ public:
         this->fieldValues[name] = value;
     }
 
-    void Field(const std::string &name, int &val) override {
+    bool Field(const std::string &name, int &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = std::stoi(iter->second);
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, unsigned int &val) override {
+    bool Field(const std::string &name, unsigned int &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = static_cast<unsigned int>(std::stoul(iter->second));
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, float &val) override {
+    bool Field(const std::string &name, float &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = std::stof(iter->second);
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, bool &val) override {
+    bool Field(const std::string &name, bool &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = (iter->second == "true" || iter->second == "True" || iter->second == "1");
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, std::string &val) override {
+    bool Field(const std::string &name, std::string &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = iter->second;
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, XMFLOAT2 &val) override {
+    bool Field(const std::string &name, XMFLOAT2 &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = FieldWriter::ParseVector2(iter->second);
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, XMFLOAT3 &val) override {
+    bool Field(const std::string &name, XMFLOAT3 &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = FieldWriter::ParseVector3(iter->second);
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, XMFLOAT4 &val) override {
+    bool Field(const std::string &name, XMFLOAT4 &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = FieldWriter::ParseVector4(iter->second);
+            return true;
+        }
+        return false;
     }
 
-    void Field(const std::string &name, UUID_ &val) override {
+    bool Field(const std::string &name, UUID_ &val) override {
         auto iter = this->fieldValues.find(name);
-        if (iter != this->fieldValues.end())
+        if (iter != this->fieldValues.end()) {
             val = UUID_::FromString(iter->second);
+            return true;
+        }
+        return false;
     }
 };
 

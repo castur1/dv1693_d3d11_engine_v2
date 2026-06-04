@@ -16,17 +16,16 @@ class Component;
 
 class ComponentRegistry {
 public:
-    // TODO: Should these return bools instead to indicate whether or not the value changed?
     struct Inspector {
-        virtual void Field(const std::string &name, int          &val) = 0;
-        virtual void Field(const std::string &name, unsigned int &val) = 0;
-        virtual void Field(const std::string &name, float        &val) = 0;
-        virtual void Field(const std::string &name, bool         &val) = 0;
-        virtual void Field(const std::string &name, std::string  &val) = 0;
-        virtual void Field(const std::string &name, XMFLOAT2     &val) = 0;
-        virtual void Field(const std::string &name, XMFLOAT3     &val) = 0;
-        virtual void Field(const std::string &name, XMFLOAT4     &val) = 0;
-        virtual void Field(const std::string &name, UUID_        &val) = 0;
+        virtual bool Field(const std::string &name, int          &val) = 0;
+        virtual bool Field(const std::string &name, unsigned int &val) = 0;
+        virtual bool Field(const std::string &name, float        &val) = 0;
+        virtual bool Field(const std::string &name, bool         &val) = 0;
+        virtual bool Field(const std::string &name, std::string  &val) = 0;
+        virtual bool Field(const std::string &name, XMFLOAT2     &val) = 0;
+        virtual bool Field(const std::string &name, XMFLOAT3     &val) = 0;
+        virtual bool Field(const std::string &name, XMFLOAT4     &val) = 0;
+        virtual bool Field(const std::string &name, UUID_        &val) = 0;
         // TODO: ...
     };
 
@@ -61,6 +60,7 @@ public:
 #define REGISTER_COMPONENT(type) \
      inline const bool registered_##type = ComponentRegistry::Register<type>(#type)
 
+// Return 'true' if the value was modified
 #define BIND(variable) \
     inspector->Field(#variable, variable)
 

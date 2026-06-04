@@ -19,8 +19,8 @@ public:
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
         AssetID textureID = this->textureCubeHandle.GetID();
-        BIND(textureID);
-        this->textureCubeHandle.SetID(textureID);
+        if (BIND(textureID))
+            this->textureCubeHandle.SetID(textureID);
     }
 };
 

@@ -79,8 +79,8 @@ public:
         BIND(endSize);
 
         AssetID textureID = this->textureHandle.GetID();
-        BIND(textureID);
-        this->textureHandle.SetID(textureID);
+        if (BIND(textureID))
+            this->textureHandle.SetID(textureID);
     }
 };
 

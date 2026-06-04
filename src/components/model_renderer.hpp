@@ -26,8 +26,8 @@ public:
 
     void Reflect(ComponentRegistry::Inspector *inspector) override {
         AssetID modelID = this->modelHandle.GetID();
-        BIND(modelID);
-        this->modelHandle.SetID(modelID);
+        if (BIND(modelID))
+            this->modelHandle.SetID(modelID);
 
         BIND(isReflective);
     }

@@ -101,18 +101,25 @@ XMFLOAT4 Transform::EulerAnglesToQuaternion(const XMFLOAT3 &euler) {
     return output;
 }
 
-// TODO: This doesn't mark dirty correctly. Also, should only set value if value actually changes. Bool on inspector->Field()?
 void Transform::Reflect(ComponentRegistry::Inspector *inspector) {
-    inspector->Field("position", this->localPosition);
+    bool isDirty = false;
 
-    inspector->Field("rotation", this->localEuler);
-    this->localRotation = this->EulerAnglesToQuaternion(this->localEuler);
+    if (inspector->Field("position", this->localPosition))
+        isDirty = true;
 
-    inspector->Field("scale", this->localScale);
+    if (inspector->Field("rotation", this->localEuler)) {
+        this->localRotation = this->EulerAnglesToQuaternion(this->localEuler);
+        isDirty = true;
+    }
 
-    inspector->Field("pivot", this->localPivot);
+    if (inspector->Field("scale", this->localScale))
+        isDirty = true;
 
-    this->MarkLocalDirty(); // TODO: This shouldn't be unconditional
+    if (inspector->Field("pivot", this->localPivot))
+        isDirty = true;
+
+    if (isDirty)
+        this->MarkLocalDirty();
 }
 
 void Transform::SetLocalPosition(const XMFLOAT3 &position) {
