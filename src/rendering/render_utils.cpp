@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
+
 bool LoadShaderBytecode(const std::string &path, std::vector<uint8_t> &outBytecode) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {

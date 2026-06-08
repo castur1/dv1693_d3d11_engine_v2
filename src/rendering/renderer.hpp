@@ -5,13 +5,12 @@
 #include "rendering/frame_graph.hpp"
 #include "rendering/render_view.hpp"
 #include "rendering/render_data.hpp"
+#include "rendering/shared_resources.hpp"
+#include "rendering/shadow_system.hpp"
+#include "rendering/reflection_probe_system.hpp"
+#include "rendering/particle_system.hpp"
 
 #include <Windows.h>
-
-enum class Sampler_state_type {
-    linearWrap = 0,
-    count
-};
 
 class Scene;
 
@@ -21,137 +20,70 @@ class Renderer {
     IDXGISwapChain *swapChain = nullptr;
     ID3D11RenderTargetView *renderTargetView = nullptr;
 
-    ID3D11SamplerState *samplerStates[(int)Sampler_state_type::count] = {};
-
     D3D11_VIEWPORT viewport{};
     int width = 0;
     int height = 0;
-
     float clearColour[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     FrameGraph frameGraph;
     FrameGraph::TextureHandle backbufferHandle = FrameGraph::INVALID_HANDLE;
-
     std::vector<Render_view> views;
+
+    SharedResources sharedResources;
+
+    ShadowSystem shadowSystem;
+    ReflectionProbeSystem reflectionSystem;
+    ParticleSystem particleSystem;
 
     ID3D11VertexShader *gBufferVS = nullptr;
     ID3D11PixelShader *gBufferPS = nullptr;
     ID3D11InputLayout *gBufferLayout = nullptr;
+
     ID3D11ComputeShader *lightingCS = nullptr;
+
     ID3D11VertexShader *resolveVS = nullptr;
     ID3D11PixelShader *resolvePS = nullptr;
 
-    ID3D11Buffer *perObjectBuffer = nullptr;
-    ID3D11Buffer *perFrameBuffer = nullptr;
-    ID3D11Buffer *perMaterialBuffer = nullptr;
-    ID3D11Buffer *lightingBuffer = nullptr;
-    ID3D11Buffer *debugResolveBuffer = nullptr; // Debug
-
-    static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
-    static constexpr int MAX_SPOT_LIGHTS = 64;
-
-    static constexpr int SHADOW_MAP_DIRECTIONAL_RESOLUTION = 2048;
-    static constexpr int SHADOW_MAP_SPOT_RESOLUTION = 1024;
-
-    static constexpr int MAX_DIRECTIONAL_SHADOW_MAPS = 2;
-    static constexpr int MAX_SPOT_SHADOW_MAPS = 8;
-
-    ID3D11VertexShader *shadowVS = nullptr;
-    ID3D11PixelShader *shadowPS = nullptr;
-    ID3D11InputLayout *shadowLayout = nullptr;
-    ID3D11RasterizerState *shadowRS = nullptr;
-    ID3D11SamplerState *shadowSampler = nullptr;
-
-    ID3D11Texture2D *shadowMapDirectionalTexture = nullptr; // Texture2DArray
-    ID3D11ShaderResourceView *shadowMapDirectionalSRV = nullptr;
-    ID3D11DepthStencilView *shadowMapDirectionalDSVs[MAX_DIRECTIONAL_SHADOW_MAPS] = {};
-
-    ID3D11Texture2D *shadowMapSpotTexture = nullptr; // Texture2DArray
-    ID3D11ShaderResourceView *shadowMapSpotSRV = nullptr;
-    ID3D11DepthStencilView *shadowMapSpotDSVs[MAX_SPOT_SHADOW_MAPS] = {};
-
-    ID3D11Buffer *shadowBuffer = nullptr;
-
-    ID3D11Buffer *directionalLightBuffer = nullptr;
-    ID3D11ShaderResourceView *directionalLightBufferSRV = nullptr;
-
-    ID3D11Buffer *spotLightBuffer = nullptr;
-    ID3D11ShaderResourceView *spotLightBufferSRV = nullptr;
-
-    // TODO: There has to be some better way to do this
-    struct Per_frame_shadow_data {
-        int directionalCount = 0;
-        XMFLOAT4X4 directionalViewProjectionMatrices[MAX_DIRECTIONAL_SHADOW_MAPS] = {};
-        int directionalSlotToCommand[MAX_DIRECTIONAL_SHADOW_MAPS] = {};
-
-        int spotCount = 0;
-        XMFLOAT4X4 spotViewProjectionMatrices[MAX_SPOT_SHADOW_MAPS] = {};
-        int spotSlotToCommand[MAX_SPOT_SHADOW_MAPS] = {};
-    } perFrameShadowData;
-
-    static constexpr int MAX_REFLECTION_PROBES = 4;
-    static constexpr int REFLECTION_PROBE_RESOLUTION = 256;
-
-    ID3D11ComputeShader *skyboxCS = nullptr;
-
-    ID3D11VertexShader *reflectionVS = nullptr;
-    ID3D11PixelShader *reflectionPS = nullptr;
-    ID3D11InputLayout *reflectionLayout = nullptr;
-
-    ID3D11Texture2D *reflectionProbeTexture = nullptr;
-    ID3D11ShaderResourceView *reflectionProbeSRV = nullptr;
-    ID3D11RenderTargetView *reflectionProbeRTVs[MAX_REFLECTION_PROBES * 6] = {};
-    ID3D11UnorderedAccessView *reflectionProbeUAVs[MAX_REFLECTION_PROBES * 6] = {};
-    ID3D11Texture2D *reflectionProbeDepth = nullptr; // TODO: Could this not be handled by the frame graph?
-    ID3D11DepthStencilView *reflectionProbeDepthDSV = nullptr;
-
-    ID3D11Buffer *reflectionProbeBuffer = nullptr;
-    ID3D11ShaderResourceView *reflectionProbeBufferSRV = nullptr;
-
-    struct Per_frame_reflection_probe_data {
-        int count = 0;
-        struct Entry {
-            XMFLOAT3 position;
-            float radius;
-        } entries[MAX_REFLECTION_PROBES];
-    } perFrameReflectionProbeData;
-
-    ID3D11ComputeShader *particleCS = nullptr;
-    ID3D11VertexShader *particleVS = nullptr;
-    ID3D11GeometryShader *particleGS = nullptr;
-    ID3D11PixelShader *particlePS = nullptr;
-    ID3D11BlendState *additiveBlendState = nullptr;
-    ID3D11RasterizerState *particleRS = nullptr;
-
-    ID3D11Buffer *particleComputeBuffer = nullptr;
-    ID3D11Buffer *particleVisualBuffer = nullptr;
-
-    Per_frame_data currentFrameData{};
-    Debug_resolve_data currentDebugData{}; // Debug
+    // Debug
+    ID3D11Buffer *debugResolveBuffer = nullptr;
+    Debug_resolve_data currentDebugData{};
 
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
+    bool LoadGBufferShaders();
+    bool LoadLightingShader();
+    bool LoadResolveShaders();
     bool CreateConstantBuffers();
-    bool CreateCommonSamplerStates();
-    bool LoadDeferredShaders();
-    bool CreateShadowResources();
-    bool CreateReflectionProbeResources();
-    bool CreateParticleResources();
+
     void SetViewport(int width, int height);
 
-    void BindCommonSamplerStates();
+    void RegisterGeometryPass(
+        FrameGraph::TextureHandle albedoHandle, 
+        FrameGraph::TextureHandle normalHandle, 
+        FrameGraph::TextureHandle specularHandle, 
+        FrameGraph::TextureHandle depthHandle
+    );
 
-    void UploadPerFrameData(const Render_view &view);
-    void UploadLightData(const Render_view &view);
-    void UploadReflectionProbeData();
+    void RegisterLightingPass(
+        FrameGraph::TextureHandle albedoHandle,
+        FrameGraph::TextureHandle normalHandle,
+        FrameGraph::TextureHandle specularHandle,
+        FrameGraph::TextureHandle depthHandle,
+        const Shadow_handles &shadowHandles,
+        const Reflection_probe_handles &reflectionHandles,
+        FrameGraph::TextureHandle lightingOutputHandle,
+        FrameGraph::TextureHandle lightingDummyHandle
+    );
+
+    void RegisterResolvePass(
+        FrameGraph::TextureHandle lightingOutputHandle,
+        FrameGraph::TextureHandle albedoHandle, 
+        FrameGraph::TextureHandle normalHandle, 
+        FrameGraph::TextureHandle specularHandle, 
+        FrameGraph::TextureHandle depthHandle
+    );
 
     void BuildFrameGraph();
-
-    void ComputeDirectionalLightMatrices(XMMATRIX &outView, XMMATRIX &outProjection, const Directional_light_command &command, const Render_view &primaryView);
-    void ComputeSpotLightMatrices(XMMATRIX &outView, XMMATRIX &outProjection, const Spot_light_command &command);
-    void SetupShadowViews(Scene *scene);
-
-    void SetupReflectionProbeViews(Scene *scene);
 
     Render_view *GetView(View_type type, int index = 0);
 
@@ -176,22 +108,21 @@ public:
     void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug.
     int GetDebugMode(); // Debug
 
-    ID3D11Device *GetDevice() const;
-    ID3D11DeviceContext *GetDeviceContext() const;
-    int GetWidth() const;
-    int GetHeight() const;
-    float GetAspectRatio() const;
+    ID3D11Device *GetDevice() const { return this->device; }
+    ID3D11DeviceContext *GetDeviceContext() const { return this->deviceContext; }
+    int GetWidth() const { return this->width; }
+    int GetHeight() const { return this->height; }
+    float GetAspectRatio() const { return static_cast<float>(this->width) / this->height; }
 
     void ToggleFullscreen();
     bool IsFullscreened();
-
+    
     void SetClearColour(float r, float g, float b, float a = 1.0f);
     const float *GetClearColour() const;
 
-    std::vector<Render_view> &GetViews();
-    FrameGraph &GetFrameGraph();
-
-    FrameGraph::TextureHandle GetBackbufferHandle() const;
+    std::vector<Render_view> &GetViews() { return this->views; }
+    FrameGraph &GetFrameGraph() { return this->frameGraph; }
+    FrameGraph::TextureHandle GetBackbufferHandle() const { return this->backbufferHandle; }
 };
 
 #endif

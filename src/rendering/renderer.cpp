@@ -7,45 +7,16 @@
 
 #include <vector>
 
-#define SafeRelease(obj) do { if (obj) (obj)->Release(); (obj) = nullptr; } while (0)
-
 static const std::string shaderDir = "assets/shaders/";
 
 Renderer::~Renderer() {
     this->frameGraph.Clear();
 
-    SafeRelease(this->particlePS);
-    SafeRelease(this->particleGS);
-    SafeRelease(this->particleVS);
-    SafeRelease(this->particleCS);
-    SafeRelease(this->additiveBlendState);
-    SafeRelease(this->particleRS);
-    SafeRelease(this->particleComputeBuffer);
-    SafeRelease(this->particleVisualBuffer);
+    this->particleSystem.Shutdown();
+    this->reflectionSystem.Shutdown();
+    this->shadowSystem.Shutdown();
+    this->sharedResources.Shutdown();
 
-    SafeRelease(this->skyboxCS);
-
-    SafeRelease(this->reflectionVS);
-    SafeRelease(this->reflectionPS);
-    SafeRelease(this->reflectionLayout);
-
-    SafeRelease(this->reflectionProbeSRV);
-    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
-        SafeRelease(this->reflectionProbeRTVs[i]);
-        SafeRelease(this->reflectionProbeUAVs[i]);
-    }
-    SafeRelease(this->reflectionProbeTexture);
-    SafeRelease(this->reflectionProbeDepthDSV);
-    SafeRelease(this->reflectionProbeDepth);
-
-    SafeRelease(this->reflectionProbeBufferSRV);
-    SafeRelease(this->reflectionProbeBuffer);
-
-    SafeRelease(this->shadowVS);
-    SafeRelease(this->shadowPS);
-    SafeRelease(this->shadowLayout);
-    SafeRelease(this->shadowRS);
-    SafeRelease(this->shadowSampler);
     SafeRelease(this->gBufferVS);
     SafeRelease(this->gBufferPS);
     SafeRelease(this->gBufferLayout);
@@ -53,51 +24,27 @@ Renderer::~Renderer() {
     SafeRelease(this->resolveVS);
     SafeRelease(this->resolvePS);
 
-    SafeRelease(this->shadowMapDirectionalSRV);
-    for (int i = 0; i < MAX_DIRECTIONAL_SHADOW_MAPS; ++i)
-        SafeRelease(this->shadowMapDirectionalDSVs[i]);
-    SafeRelease(this->shadowMapDirectionalTexture);
-
-    SafeRelease(this->shadowMapSpotSRV);
-    for (int i = 0; i < MAX_SPOT_SHADOW_MAPS; ++i)
-        SafeRelease(this->shadowMapSpotDSVs[i]);
-    SafeRelease(this->shadowMapSpotTexture);
-
-    SafeRelease(this->shadowBuffer);
-    SafeRelease(this->perFrameBuffer);
-    SafeRelease(this->perObjectBuffer);
-    SafeRelease(this->perMaterialBuffer);
-    SafeRelease(this->lightingBuffer);
-    SafeRelease(this->debugResolveBuffer); // Debug
-
-    SafeRelease(this->directionalLightBufferSRV);
-    SafeRelease(this->directionalLightBuffer);
-    SafeRelease(this->spotLightBufferSRV);
-    SafeRelease(this->spotLightBuffer);
-
-    for (int i = 0; i < (int)Sampler_state_type::count; ++i)
-        SafeRelease(this->samplerStates[i]);
+    SafeRelease(this->debugResolveBuffer);
 
     SafeRelease(this->renderTargetView);
 
     if (this->deviceContext) {
         this->deviceContext->ClearState();
         this->deviceContext->Flush();
-
         this->deviceContext->Release();
+        this->deviceContext = nullptr;
     }
 
     if (this->swapChain) {
         this->swapChain->SetFullscreenState(false, nullptr);
         this->swapChain->Release();
+        this->swapChain = nullptr;
     }
 
     if (this->device) {
 #ifdef _DEBUG
-        ID3D11Debug *debugDevice{};
-        HRESULT result = this->device->QueryInterface(__uuidof(ID3D11Debug), (void**)&debugDevice);
-
-        if (SUCCEEDED(result)) {
+        ID3D11Debug *debugDevice = nullptr;
+        if (SUCCEEDED(this->device->QueryInterface(__uuidof(ID3D11Debug), (void**)&debugDevice))) {
             OutputDebugStringW(L"\n[ReportLiveDeviceObjects start]\n");
             debugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
             OutputDebugStringW(L"[ReportLiveDeviceObjects end]\n\n");
@@ -107,6 +54,7 @@ Renderer::~Renderer() {
 #endif
 
         this->device->Release();
+        this->device = nullptr;
     }
 }
 
@@ -189,86 +137,12 @@ bool Renderer::CreateRenderTargetView() {
     return true;
 }
 
-bool Renderer::CreateConstantBuffers() {
-    D3D11_BUFFER_DESC bufferDesc{};
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    bufferDesc.ByteWidth = sizeof(Per_object_data);
-    HRESULT result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perObjectBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create per-object constant buffer");
-        return false;
-    }
-
-    bufferDesc.ByteWidth = sizeof(Per_frame_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perFrameBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create per-frame constant buffer");
-        return false;
-    }
-
-    bufferDesc.ByteWidth = sizeof(Per_material_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->perMaterialBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create per-material constant buffer");
-        return false;
-    }
-
-    bufferDesc.ByteWidth = sizeof(Lighting_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->lightingBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create lighting constant buffer");
-        return false;
-    }
-
-    // Debug
-    bufferDesc.ByteWidth = sizeof(Debug_resolve_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->debugResolveBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create debug resolve constant buffer");
-        return false;
-    }
-
-    LogInfo("Constant buffers created\n");
-
-    return true;
-}
-
-bool Renderer::CreateCommonSamplerStates() {
-    D3D11_SAMPLER_DESC samplerDesc{};
-    samplerDesc.MipLODBias = 0.0f;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
-    HRESULT result = this->device->CreateSamplerState(
-        &samplerDesc, 
-        &this->samplerStates[(int)Sampler_state_type::linearWrap]
-    );
-    if (FAILED(result)) {
-        LogError("Failed to create linear wrap sampler state");
-        return false;
-    }
-
-    LogInfo("Common sampler states created\n");
-
-    return true;
-}
-
-bool Renderer::LoadDeferredShaders() {
+bool Renderer::LoadGBufferShaders() {
     std::vector<uint8_t> bytecode;
 
     if (!LoadShaderBytecode(shaderDir + "vs_gbuffer.cso", bytecode))
         return false;
-    
+
     HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->gBufferVS);
     if (FAILED(result)) {
         LogError("Failed to create G-buffer vertex shader");
@@ -297,19 +171,33 @@ bool Renderer::LoadDeferredShaders() {
         return false;
     }
 
+    LogInfo("G-buffer shaders loaded\n");
+    return true;
+}
+
+bool Renderer::LoadLightingShader() {
+    std::vector<uint8_t> bytecode;
+
     if (!LoadShaderBytecode(shaderDir + "cs_lighting.cso", bytecode))
         return false;
 
-    result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->lightingCS);
+    HRESULT result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->lightingCS);
     if (FAILED(result)) {
         LogError("Failed to create lighting compute shader");
         return false;
     }
 
+    LogInfo("Lighting shaders loaded\n");
+    return true;
+}
+
+bool Renderer::LoadResolveShaders() {
+    std::vector<uint8_t> bytecode;
+
     if (!LoadShaderBytecode(shaderDir + "vs_resolve.cso", bytecode))
         return false;
 
-    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->resolveVS);
+    HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->resolveVS);
     if (FAILED(result)) {
         LogError("Failed to create resolve vertex shader");
         return false;
@@ -324,367 +212,24 @@ bool Renderer::LoadDeferredShaders() {
         return false;
     }
 
-    LogInfo("Loaded shaders for deferred rendering\n");
-
+    LogInfo("Resolve shaders loaded\n");
     return true;
 }
 
-bool Renderer::CreateShadowResources() {
-    if (!CreateDepthStencilArray(
-        this->device,
-        SHADOW_MAP_DIRECTIONAL_RESOLUTION,
-        MAX_DIRECTIONAL_SHADOW_MAPS,
-        &this->shadowMapDirectionalTexture,
-        this->shadowMapDirectionalDSVs,
-        &this->shadowMapDirectionalSRV,
-        "directional"
-    )) {
-        return false;
-    }
+bool Renderer::CreateConstantBuffers() {
+    D3D11_BUFFER_DESC desc{};
+    desc.ByteWidth = sizeof(Debug_resolve_data);
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    if (!CreateStructuredBuffer(
-        this->device,
-        sizeof(Directional_light_data),
-        MAX_DIRECTIONAL_LIGHTS,
-        &this->directionalLightBuffer,
-        &this->directionalLightBufferSRV,
-        "directional"
-    )) {
-        return false;
-    }
-
-    if (!CreateDepthStencilArray(
-        this->device,
-        SHADOW_MAP_SPOT_RESOLUTION,
-        MAX_SPOT_SHADOW_MAPS,
-        &this->shadowMapSpotTexture,
-        this->shadowMapSpotDSVs,
-        &this->shadowMapSpotSRV,
-        "spot"
-    )) {
-        return false;
-    }
-
-    if (!CreateStructuredBuffer(
-        this->device,
-        sizeof(Spot_light_data),
-        MAX_SPOT_LIGHTS,
-        &this->spotLightBuffer,
-        &this->spotLightBufferSRV,
-        "spot"
-    )) {
-        return false;
-    }
-
-    std::vector<uint8_t> bytecode;
-
-    if (!LoadShaderBytecode(shaderDir + "vs_shadow.cso", bytecode))
-        return false;
-
-    HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->shadowVS);
+    HRESULT result = this->device->CreateBuffer(&desc, nullptr, &this->debugResolveBuffer);
     if (FAILED(result)) {
-        LogError("Failed to create vertex shader");
+        LogError("Failed to create debug resolve constant buffer");
         return false;
     }
 
-    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-
-    result = this->device->CreateInputLayout(layoutDesc, 2, bytecode.data(), bytecode.size(), &this->shadowLayout);
-    if (FAILED(result)) {
-        LogError("Failed to create input layout");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "ps_shadow.cso", bytecode))
-        return false;
-
-    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->shadowPS);
-    if (FAILED(result)) {
-        LogError("Failed to create pixel shader");
-        return false;
-    }
-
-    D3D11_BUFFER_DESC bufferDesc{};
-    bufferDesc.ByteWidth = sizeof(XMFLOAT4X4);
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->shadowBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create constant buffer");
-        return false;
-    }
-
-    D3D11_RASTERIZER_DESC rasterizerDesc{};
-    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_BACK; // TODO: D3D11_CULL_FRONT?
-    rasterizerDesc.DepthBias = 1000;
-    rasterizerDesc.SlopeScaledDepthBias = 1.0f;
-    rasterizerDesc.DepthBiasClamp = 0.01f;
-    rasterizerDesc.DepthClipEnable = true;
-
-    result = this->device->CreateRasterizerState(&rasterizerDesc, &this->shadowRS);
-    if (FAILED(result)) {
-        LogError("Failed to create rasterizer state");
-        return false;
-    }
-
-    D3D11_SAMPLER_DESC samplerDesc{};
-    samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-    samplerDesc.BorderColor[0] = samplerDesc.BorderColor[1] = samplerDesc.BorderColor[2] = 1.0f;
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    result = this->device->CreateSamplerState(&samplerDesc, &this->shadowSampler);
-    if (FAILED(result)) {
-        LogError("Failed to create sampler");
-        return false;
-    }
-
-    LogInfo("Shadow resources created\n");
-
-    return true;
-}
-
-bool Renderer::CreateReflectionProbeResources() {
-    D3D11_TEXTURE2D_DESC desc{};
-    desc.Width = REFLECTION_PROBE_RESOLUTION;
-    desc.Height = REFLECTION_PROBE_RESOLUTION;
-    desc.MipLevels = 0;
-    desc.ArraySize = MAX_REFLECTION_PROBES * 6;
-    desc.Format = DXGI_FORMAT_R11G11B10_FLOAT; // HDR output
-    desc.SampleDesc.Count = 1;
-    desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE | D3D11_RESOURCE_MISC_GENERATE_MIPS;
-
-    HRESULT result = this->device->CreateTexture2D(&desc, nullptr, &this->reflectionProbeTexture);
-    if (FAILED(result)) {
-        LogError("Failed to create texture cube array");
-        return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = desc.Format;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-    srvDesc.TextureCubeArray.MostDetailedMip = 0;
-    srvDesc.TextureCubeArray.MipLevels = -1;
-    srvDesc.TextureCubeArray.First2DArrayFace = 0;
-    srvDesc.TextureCubeArray.NumCubes = MAX_REFLECTION_PROBES;
-
-    result = this->device->CreateShaderResourceView(this->reflectionProbeTexture, &srvDesc, &this->reflectionProbeSRV);
-    if (FAILED(result)) {
-        LogError("Failed to create SRV");
-        return false;
-    }
-
-    D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
-    rtvDesc.Format = desc.Format;
-    rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-    rtvDesc.Texture2DArray.MipSlice = 0;
-    rtvDesc.Texture2DArray.ArraySize = 1;
-
-    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
-        rtvDesc.Texture2DArray.FirstArraySlice = i;
-        result = this->device->CreateRenderTargetView(this->reflectionProbeTexture, &rtvDesc, &this->reflectionProbeRTVs[i]);
-        if (FAILED(result)) {
-            LogError("Failed to create RTV[%d]", i);
-            return false;
-        }
-    }
-
-    D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
-    uavDesc.Format = desc.Format;
-    uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-    uavDesc.Texture2DArray.MipSlice = 0;
-    uavDesc.Texture2DArray.ArraySize = 1;
-
-    for (int i = 0; i < MAX_REFLECTION_PROBES * 6; ++i) {
-        uavDesc.Texture2DArray.FirstArraySlice = i;
-        result = this->device->CreateUnorderedAccessView(this->reflectionProbeTexture, &uavDesc, &this->reflectionProbeUAVs[i]);
-        if (FAILED(result)) {
-            LogError("Failed to create UAV[%d]", i);
-            return false;
-        }
-    }
-
-    D3D11_TEXTURE2D_DESC dsDesc{};
-    dsDesc.Width = REFLECTION_PROBE_RESOLUTION;
-    dsDesc.Height = REFLECTION_PROBE_RESOLUTION;
-    dsDesc.MipLevels = 1;
-    dsDesc.ArraySize = 1;
-    dsDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsDesc.SampleDesc.Count = 1;
-    dsDesc.Usage = D3D11_USAGE_DEFAULT;
-    dsDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-    result = this->device->CreateTexture2D(&dsDesc, nullptr, &this->reflectionProbeDepth);
-    if (FAILED(result)) {
-        LogError("Failed to create depth stencil texture");
-        return false;
-    }
-
-    result = this->device->CreateDepthStencilView(this->reflectionProbeDepth, nullptr, &this->reflectionProbeDepthDSV);
-    if (FAILED(result)) {
-        LogError("Failed to create DSV");
-        return false;
-    }
-
-    if (!CreateStructuredBuffer(
-        this->device,
-        sizeof(Reflection_probe_data),
-        MAX_REFLECTION_PROBES,
-        &this->reflectionProbeBuffer,
-        &this->reflectionProbeBufferSRV,
-        "reflection"
-    )) {
-        return false;
-    }
-
-    std::vector<uint8_t> bytecode;
-
-    if (!LoadShaderBytecode(shaderDir + "vs_reflection.cso", bytecode))
-        return false;
-
-    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->reflectionVS);
-    if (FAILED(result)) {
-        LogError("Failed to create vertex shader");
-        return false;
-    }
-
-    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-
-    result = this->device->CreateInputLayout(layoutDesc, 4, bytecode.data(), bytecode.size(), &this->reflectionLayout);
-    if (FAILED(result)) {
-        LogError("Failed to create input layout");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "ps_reflection.cso", bytecode))
-        return false;
-
-    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->reflectionPS);
-    if (FAILED(result)) {
-        LogError("Failed to create pixel shader");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "cs_skybox.cso", bytecode))
-        return false;
-
-    result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->skyboxCS);
-    if (FAILED(result)) {
-        LogError("Failed to create skybox compute shader");
-        return false;
-    }
-
-    LogInfo("Reflection probe resources created\n");
-
-    return true;
-}
-
-bool Renderer::CreateParticleResources() {
-    std::vector<uint8_t> bytecode;
-
-    if (!LoadShaderBytecode(shaderDir + "cs_particle.cso", bytecode))
-        return false;
-
-    HRESULT result = this->device->CreateComputeShader(bytecode.data(), bytecode.size(), nullptr, &this->particleCS);
-    if (FAILED(result)) {
-        LogError("Failed to create particle compute shader");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "vs_particle.cso", bytecode))
-        return false;
-
-    result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->particleVS);
-    if (FAILED(result)) {
-        LogError("Failed to create particle vertex shader");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "gs_particle.cso", bytecode))
-        return false;
-
-    result = this->device->CreateGeometryShader(bytecode.data(), bytecode.size(), nullptr, &this->particleGS);
-    if (FAILED(result)) {
-        LogError("Failed to create particle geometry shader");
-        return false;
-    }
-
-    if (!LoadShaderBytecode(shaderDir + "ps_particle.cso", bytecode))
-        return false;
-
-    result = this->device->CreatePixelShader(bytecode.data(), bytecode.size(), nullptr, &this->particlePS);
-    if (FAILED(result)) {
-        LogError("Failed to create particle pixel shader");
-        return false;
-    }
-
-    D3D11_BLEND_DESC blendDesc{};
-    auto &rt0 = blendDesc.RenderTarget[0];
-    rt0.BlendEnable = TRUE;
-
-    rt0.SrcBlend  = D3D11_BLEND_SRC_ALPHA;
-    rt0.DestBlend = D3D11_BLEND_ONE;
-    rt0.BlendOp   = D3D11_BLEND_OP_ADD;
-
-    rt0.SrcBlendAlpha  = D3D11_BLEND_ZERO;
-    rt0.DestBlendAlpha = D3D11_BLEND_ONE;
-    rt0.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
-
-    rt0.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-    result = this->device->CreateBlendState(&blendDesc, &this->additiveBlendState);
-    if (FAILED(result)) {
-        LogError("Failed to create additive blend state");
-        return false;
-    }
-
-    D3D11_RASTERIZER_DESC rsDesc{};
-    rsDesc.FillMode = D3D11_FILL_SOLID;
-    rsDesc.CullMode = D3D11_CULL_NONE;
-    rsDesc.DepthClipEnable = TRUE;
-
-    result = this->device->CreateRasterizerState(&rsDesc, &this->particleRS);
-    if (FAILED(result)) {
-        LogError("Failed to create particle rasterizer state");
-        return false;
-    }
-
-    D3D11_BUFFER_DESC bufferDesc{};
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    bufferDesc.ByteWidth = sizeof(Particle_compute_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->particleComputeBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create particle compute buffer");
-        return false;
-    }
-
-    bufferDesc.ByteWidth = sizeof(Particle_visual_data);
-    result = this->device->CreateBuffer(&bufferDesc, nullptr, &this->particleVisualBuffer);
-    if (FAILED(result)) {
-        LogError("Failed to create particle visual buffer");
-        return false;
-    }
-
-    LogInfo("Particle resources created\n");
+    LogInfo("Constant buffers created\n");
 
     return true;
 }
@@ -692,456 +237,18 @@ bool Renderer::CreateParticleResources() {
 void Renderer::SetViewport(int width, int height) {
     this->viewport.TopLeftX = 0.0f;
     this->viewport.TopLeftY = 0.0f;
-    this->viewport.Width    = (FLOAT)width;
-    this->viewport.Height   = (FLOAT)height;
+    this->viewport.Width    = static_cast<FLOAT>(width);
+    this->viewport.Height   = static_cast<FLOAT>(height);
     this->viewport.MinDepth = 0.0f;
     this->viewport.MaxDepth = 1.0f;
 }
 
-void Renderer::BindCommonSamplerStates() {
-    this->deviceContext->PSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
-    this->deviceContext->CSSetSamplers(0, (int)Sampler_state_type::count, this->samplerStates);
-}
-
-void Renderer::UploadPerFrameData(const Render_view &view) {
-    XMMATRIX viewMatrix = XMLoadFloat4x4(&view.viewMatrix);
-    XMMATRIX projectionMatrix = XMLoadFloat4x4(&view.projectionMatrix);
-    XMMATRIX viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-
-    Per_frame_data data{};
-    XMStoreFloat4x4(&data.viewMatrix, XMMatrixTranspose(viewMatrix));
-    XMStoreFloat4x4(&data.invViewMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, viewMatrix)));
-    XMStoreFloat4x4(&data.projectionMatrix, XMMatrixTranspose(projectionMatrix));
-    XMStoreFloat4x4(&data.invProjectionMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, projectionMatrix)));
-    XMStoreFloat4x4(&data.viewProjectionMatrix, XMMatrixTranspose(viewProjectionMatrix));
-    XMStoreFloat4x4(&data.invViewProjectionMatrix, XMMatrixTranspose(XMMatrixInverse(nullptr, viewProjectionMatrix)));
-    data.cameraPosition = view.cameraPosition;
-
-    UploadConstantBuffer(this->deviceContext, this->perFrameBuffer, data);
-}
-
-void Renderer::UploadLightData(const Render_view &view) {
-    Lighting_data lightingData{};
-    lightingData.directionalLightCount = view.queue.directionalLightCommands.size();
-    lightingData.spotLightCount = view.queue.spotLightCommands.size();
-    lightingData.reflectionProbeCount = this->perFrameReflectionProbeData.count;
-    lightingData.hasSkybox = view.queue.skyboxCommand.has_value() ? 1 : 0;
-
-    for (const auto &dlc : view.queue.directionalLightCommands) {
-        lightingData.ambientColour.x += dlc.ambientColour.x;
-        lightingData.ambientColour.y += dlc.ambientColour.y;
-        lightingData.ambientColour.z += dlc.ambientColour.z;
-    }
-
-    UploadConstantBuffer(this->deviceContext, this->lightingBuffer, lightingData);
-
-    // Directional
-
-    int directionalCommandToSlot[MAX_DIRECTIONAL_LIGHTS];
-    memset(directionalCommandToSlot, -1, sizeof(directionalCommandToSlot));
-    for (int i = 0; i < this->perFrameShadowData.directionalCount; ++i)
-        directionalCommandToSlot[this->perFrameShadowData.directionalSlotToCommand[i]] = i;
-
-    int directionalCount = min(MAX_DIRECTIONAL_LIGHTS, view.queue.directionalLightCommands.size());
-
-    Directional_light_data directionalData[MAX_DIRECTIONAL_LIGHTS];
-    for (int i = 0; i < directionalCount; ++i) {
-        const Directional_light_command &dlc = view.queue.directionalLightCommands[i];
-        Directional_light_data &entry = directionalData[i];
-
-        entry.direction        = dlc.direction;
-        entry.intensity        = dlc.intensity;
-        entry.colour           = dlc.colour;
-        entry.castsShadows     = dlc.castsShadows ? 1 : 0;
-        entry.shadowSliceIndex = directionalCommandToSlot[i];
-
-        if (entry.shadowSliceIndex >= 0)
-            entry.viewProjectionMatrix = this->perFrameShadowData.directionalViewProjectionMatrices[entry.shadowSliceIndex];
-        else
-            XMStoreFloat4x4(&entry.viewProjectionMatrix, XMMatrixIdentity());
-    }
-
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    HRESULT result = this->deviceContext->Map(this->directionalLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-    if (FAILED(result)) {
-        LogWarn("Failed to map directional light buffer\n");
-        return;
-    }
-
-    memcpy(mapped.pData, directionalData, sizeof(Directional_light_data) * directionalCount);
-    this->deviceContext->Unmap(this->directionalLightBuffer, 0);
-    
-    // Spot
-
-    int spotCommandToSlot[MAX_SPOT_LIGHTS];
-    memset(spotCommandToSlot, -1, sizeof(spotCommandToSlot));
-    for (int i = 0; i < this->perFrameShadowData.spotCount; ++i)
-        spotCommandToSlot[this->perFrameShadowData.spotSlotToCommand[i]] = i;
-
-    int spotCount = min(MAX_SPOT_LIGHTS, view.queue.spotLightCommands.size());
-
-    Spot_light_data spotData[MAX_SPOT_LIGHTS];
-    for (int i = 0; i < spotCount; ++i) {
-        const Spot_light_command &slc = view.queue.spotLightCommands[i];
-        Spot_light_data &entry = spotData[i];
-
-        entry.position         = slc.position;
-        entry.intensity        = slc.intensity;
-        entry.direction        = slc.direction;
-        entry.range            = slc.range;
-        entry.colour           = slc.colour;
-        entry.cosInnerAngle    = cosf(slc.innerConeAngle);
-        entry.cosOuterAngle    = cosf(slc.outerConeAngle);
-        entry.castsShadows     = slc.castsShadows ? 1 : 0;
-        entry.shadowSliceIndex = spotCommandToSlot[i];
-
-        if (entry.shadowSliceIndex >= 0)
-            entry.viewProjectionMatrix = this->perFrameShadowData.spotViewProjectionMatrices[entry.shadowSliceIndex];
-        else
-            XMStoreFloat4x4(&entry.viewProjectionMatrix, XMMatrixIdentity());
-    }
-
-    result = this->deviceContext->Map(this->spotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-    if (FAILED(result)) {
-        LogWarn("Failed to map spot light buffer\n");
-        return;
-    }
-
-    memcpy(mapped.pData, spotData, sizeof(Spot_light_data) * spotCount);
-    this->deviceContext->Unmap(this->spotLightBuffer, 0);
-}
-
-void Renderer::UploadReflectionProbeData() {
-    if (this->perFrameReflectionProbeData.count <= 0)
-        return;
-
-    Reflection_probe_data data[MAX_REFLECTION_PROBES];
-    for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
-        data[i].position = this->perFrameReflectionProbeData.entries[i].position;
-        data[i].radius = this->perFrameReflectionProbeData.entries[i].radius;
-        data[i].slotIndex = i;
-    }
-
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    HRESULT result = this->deviceContext->Map(this->reflectionProbeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-    if (FAILED(result)) {
-        LogWarn("Failed to map reflection probe buffer\n");
-        return;
-    }
-
-    memcpy(mapped.pData, data, sizeof(Reflection_probe_data) * this->perFrameReflectionProbeData.count);
-    this->deviceContext->Unmap(this->reflectionProbeBuffer, 0);
-}
-
-void Renderer::BuildFrameGraph() {
-    this->frameGraph.Clear();
-
-    this->backbufferHandle = this->frameGraph.ImportTexture(
-        "Backbuffer", 
-        nullptr, 
-        this->renderTargetView
-    );
-
-    auto shadowMapDirectionalHandle = this->frameGraph.ImportTexture(
-        "ShadowMap_directional",
-        this->shadowMapDirectionalTexture,
-        nullptr,
-        this->shadowMapDirectionalSRV,
-        this->shadowMapDirectionalDSVs[0]
-    );
-
-    auto shadowMapSpotHandle = this->frameGraph.ImportTexture(
-        "ShadowMap_spot",
-        this->shadowMapSpotTexture,
-        nullptr,
-        this->shadowMapSpotSRV,
-        this->shadowMapSpotDSVs[0]
-    );
-
-    auto reflectionProbeHandle = this->frameGraph.ImportTexture(
-        "ReflectionProbe", 
-        this->reflectionProbeTexture, 
-        nullptr, 
-        this->reflectionProbeSRV
-    );
-
-    // G-buffers:
-    // T0: R8G8B8A8_UNORM    = albedo.rgb | specular exponent / 1000 = 32 bits
-    // T1: R10G10B10A2_UNORM = encoded normal | isReflective flag    = 32 bits
-    // T2: R11G11B10_FLOAT   = specular colour                       = 32 bits
-    //                                                               = 96 bits
-    // Position is reconstructed from the depth map
-    // TODO: Per-object ambient?
-
-    FrameGraph::Texture_desc desc{};
-    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::relative;
-    desc.width = desc.height = 1.0f;
-    desc.mipLevels = 1;
-    desc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    desc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    auto albedoHandle = this->frameGraph.CreateTexture("GBuffer_albedo", desc);
-
-    desc.format = DXGI_FORMAT_R10G10B10A2_UNORM;
-    auto normalHandle = this->frameGraph.CreateTexture("GBuffer_normal", desc);
-
-    desc.format = DXGI_FORMAT_R11G11B10_FLOAT;
-    auto specularHandle = this->frameGraph.CreateTexture("GBuffer_specular", desc);
-
-    desc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    desc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    auto depthHandle = this->frameGraph.CreateTexture("Depth_stencil", desc);
-
-    desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-    desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-    auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
-
-    // TODO: There must be a better way to reuse the same texture between multiple passes
-    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::absolute;
-    desc.width = desc.height = 1.0f;
-    desc.bindFlags = 0;
-    desc.format = DXGI_FORMAT_R8_UNORM;
-    auto lightingDummyHandle = this->frameGraph.CreateTexture("Lighting_dummy", desc); // Used to ensure correct ordering of the particle pass
-
-    struct Reflection_pass_data {
-        FrameGraph::TextureHandle reflectionProbes;
-    };
-
-    this->frameGraph.AddRenderPass<Reflection_pass_data>(
-        "Reflection pass",
-        [&](Reflection_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
-            data.reflectionProbes = builder.Write(reflectionProbeHandle);
-        },
-        [this](const Reflection_pass_data &data, FrameGraph::ExecutionContext &context) {
-            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
-
-            if (this->perFrameReflectionProbeData.count <= 0)
-                return;
-
-            Render_view *primaryView = context.GetView(View_type::primary);
-            if (!primaryView) {
-                LogWarn("Primary view was nullptr\n");
-                return;
-            }
-
-            this->UploadLightData(*primaryView);
-
-            ID3D11ShaderResourceView *skyboxSRV = nullptr;
-            if (primaryView->queue.skyboxCommand.has_value())
-                skyboxSRV = primaryView->queue.skyboxCommand->textureCubeHandle.Get()->shaderResourceView;
-
-            if (skyboxSRV) {
-                deviceContext->CSSetShader(this->skyboxCS, nullptr, 0);
-                deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-                deviceContext->CSSetShaderResources(0, 1, &skyboxSRV);
-                
-                const UINT groups = (REFLECTION_PROBE_RESOLUTION + 7) / 8;
-
-                for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
-                    for (int face = 0; face < 6; ++face) {
-                        Render_view *view = context.GetView(View_type::cubeFace, i * 6 + face);
-                        if (!view)
-                            continue;
-
-                        this->UploadPerFrameData(*view);
-
-                        ID3D11UnorderedAccessView *uav = this->reflectionProbeUAVs[i * 6 + face];
-                        deviceContext->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
-                        deviceContext->Dispatch(groups, groups, 1);
-                    }
-                }
-
-                deviceContext->CSSetShader(nullptr, nullptr, 0);
-                ID3D11ShaderResourceView *nullSRV = nullptr;
-                deviceContext->CSSetShaderResources(0, 1, &nullSRV);
-                ID3D11UnorderedAccessView *nullUAV = nullptr;
-                deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
-            }
-
-            D3D11_VIEWPORT viewport{};
-            viewport.Width = viewport.Height = REFLECTION_PROBE_RESOLUTION;
-            viewport.MaxDepth = 1.0f;
-            deviceContext->RSSetViewports(1, &viewport);
-
-            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            deviceContext->IASetInputLayout(this->reflectionLayout);
-            deviceContext->VSSetShader(this->reflectionVS, nullptr, 0);
-            deviceContext->PSSetShader(this->reflectionPS, nullptr, 0);
-
-            deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
-
-            deviceContext->PSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->PSSetConstantBuffers(1, 1, &this->perMaterialBuffer);
-            deviceContext->PSSetConstantBuffers(2, 1, &this->lightingBuffer);
-
-            deviceContext->PSSetShaderResources(0, 1, &this->directionalLightBufferSRV);
-            deviceContext->PSSetShaderResources(1, 1, &this->spotLightBufferSRV);
-            
-            for (int i = 0; i < this->perFrameReflectionProbeData.count; ++i) {
-                for (int face = 0; face < 6; ++face) {
-                    Render_view *view = context.GetView(View_type::cubeFace, i * 6 + face);
-                    if (!view)
-                        continue;
-
-                    ID3D11RenderTargetView *rtv = this->reflectionProbeRTVs[i * 6 + face];
-
-                    if (!skyboxSRV)
-                        deviceContext->ClearRenderTargetView(rtv, this->clearColour);
-
-                    deviceContext->ClearDepthStencilView(this->reflectionProbeDepthDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-                    deviceContext->OMSetRenderTargets(1, &rtv, this->reflectionProbeDepthDSV);
-
-                    this->UploadPerFrameData(*view);
-
-                    for (const Geometry_command &command : view->queue.geometryCommands) {
-                        if (command.isReflective)
-                            continue;
-
-                        Per_object_data perObjectData{};
-                        perObjectData.worldMatrix = command.worldMatrix;
-                        XMStoreFloat4x4(
-                            &perObjectData.worldMatrixInvTranspose, 
-                            XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
-                        );
-
-                        UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
-
-                        Material *material = command.material.Get();
-                        if (material) {
-                            Per_material_data perMaterialData{};
-                            perMaterialData.materialDiffuse          = material->diffuseColour;
-                            perMaterialData.isReflective             = command.isReflective;
-                            perMaterialData.materialSpecular         = material->specularColour;
-                            perMaterialData.materialSpecularExponent = material->specularExponent;
-
-                            UploadConstantBuffer(deviceContext, this->perMaterialBuffer, perMaterialData);
-
-                            deviceContext->PSSetShaderResources(2, 1, &material->diffuseTexture.Get()->shaderResourceView);
-                        }
-
-                        const UINT stride = sizeof(Vertex);
-                        const UINT offset = 0;
-                        deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
-                        deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-                        deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
-                    }
-                }
-            }
-
-            deviceContext->GenerateMips(this->reflectionProbeSRV);
-
-            deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-            ID3D11ShaderResourceView *nullSRVs[3] = {};
-            deviceContext->PSSetShaderResources(0, 3, nullSRVs);
-        }
-    );
-
-    struct Shadow_pass_data {
-        FrameGraph::TextureHandle shadowMapDirectional;
-        FrameGraph::TextureHandle shadowMapSpot;
-    };
-
-    this->frameGraph.AddRenderPass<Shadow_pass_data>(
-        "Shadow pass",
-        [&](Shadow_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
-            data.shadowMapDirectional = builder.Write(shadowMapDirectionalHandle);
-            data.shadowMapSpot        = builder.Write(shadowMapSpotHandle);
-        },
-        [this](const Shadow_pass_data &data, FrameGraph::ExecutionContext &context) {
-            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
-
-            deviceContext->RSSetState(this->shadowRS);
-
-            deviceContext->IASetInputLayout(this->shadowLayout);
-            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-            deviceContext->VSSetShader(this->shadowVS, nullptr, 0);
-            deviceContext->PSSetShader(this->shadowPS, nullptr, 0);
-
-            D3D11_VIEWPORT viewport{};
-            viewport.Width = viewport.Height = SHADOW_MAP_DIRECTIONAL_RESOLUTION;
-            viewport.MaxDepth = 1.0f;
-            deviceContext->RSSetViewports(1, &viewport);
-
-            deviceContext->VSSetConstantBuffers(0, 1, &this->shadowBuffer);
-            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
-
-            for (int i = 0; i < this->perFrameShadowData.directionalCount; ++i) {
-                Render_view *view = context.GetView(View_type::shadowMapDirectional, i);
-                if (!view)
-                    break;
-
-                deviceContext->ClearDepthStencilView(this->shadowMapDirectionalDSVs[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
-                
-                deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapDirectionalDSVs[i]);
-
-                XMMATRIX viewMatrix = XMLoadFloat4x4(&view->viewMatrix);
-                XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
-                XMFLOAT4X4 viewProjectionMatrix;
-                XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
-                UploadConstantBuffer(deviceContext, this->shadowBuffer, viewProjectionMatrix);
-
-                for (const Geometry_command &command : view->queue.geometryCommands) {
-                    Per_object_data perObjectData{};
-                    perObjectData.worldMatrix = command.worldMatrix;
-                    UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
-
-                    Material *material = command.material.Get();
-                    if (material)
-                        deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView); // Required for alpha testing
-
-                    const UINT stride = sizeof(Vertex);
-                    const UINT offset = 0;
-                    deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
-                    deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-                    deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
-                }
-            }
-
-            viewport.Width = viewport.Height = SHADOW_MAP_SPOT_RESOLUTION;
-            deviceContext->RSSetViewports(1, &viewport);
-
-            for (int i = 0; i < this->perFrameShadowData.spotCount; ++i) {
-                Render_view *view = context.GetView(View_type::shadowMapSpot, i);
-                if (!view)
-                    break;
-
-                deviceContext->ClearDepthStencilView(this->shadowMapSpotDSVs[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
-                
-                deviceContext->OMSetRenderTargets(0, nullptr, this->shadowMapSpotDSVs[i]);
-
-                XMMATRIX viewMatrix = XMLoadFloat4x4(&view->viewMatrix);
-                XMMATRIX projectionMatrix = XMLoadFloat4x4(&view->projectionMatrix);
-                XMFLOAT4X4 viewProjectionMatrix;
-                XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
-                UploadConstantBuffer(deviceContext, this->shadowBuffer, viewProjectionMatrix);
-
-                for (const Geometry_command &command : view->queue.geometryCommands) {
-                    Per_object_data perObjectData{};
-                    perObjectData.worldMatrix = command.worldMatrix;
-                    UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
-
-                    Material *material = command.material.Get();
-                    if (material)
-                        deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView); // Required for alpha testing
-
-                    const UINT stride = sizeof(Vertex);
-                    const UINT offset = 0;
-                    deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
-                    deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-                    deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
-                }
-            }
-
-            deviceContext->RSSetState(nullptr);
-            deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-        }
-    );
-
+void Renderer::RegisterGeometryPass(
+    FrameGraph::TextureHandle albedoHandle,
+    FrameGraph::TextureHandle normalHandle,
+    FrameGraph::TextureHandle specularHandle,
+    FrameGraph::TextureHandle depthHandle
+) {
     struct Geometry_pass_data {
         FrameGraph::TextureHandle albedo;
         FrameGraph::TextureHandle normal;
@@ -1166,7 +273,7 @@ void Renderer::BuildFrameGraph() {
                 return;
             }
 
-            this->UploadPerFrameData(*view);
+            this->sharedResources.UploadPerFrameData(deviceContext, *view);
 
             ID3D11RenderTargetView *rtvs[3] = {
                 context.GetRenderTargetView(data.albedo),
@@ -1193,9 +300,9 @@ void Renderer::BuildFrameGraph() {
             deviceContext->VSSetShader(this->gBufferVS, nullptr, 0);
             deviceContext->PSSetShader(this->gBufferPS, nullptr, 0);
 
-            deviceContext->VSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->VSSetConstantBuffers(1, 1, &this->perObjectBuffer);
-            deviceContext->PSSetConstantBuffers(2, 1, &this->perMaterialBuffer);
+            deviceContext->VSSetConstantBuffers(0, 1, &this->sharedResources.perFrameBuffer);
+            deviceContext->VSSetConstantBuffers(1, 1, &this->sharedResources.perObjectBuffer);
+            deviceContext->PSSetConstantBuffers(2, 1, &this->sharedResources.perMaterialBuffer);
 
             deviceContext->RSSetViewports(1, &this->viewport);
 
@@ -1207,7 +314,7 @@ void Renderer::BuildFrameGraph() {
                     XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
                 );
 
-                UploadConstantBuffer(deviceContext, this->perObjectBuffer, perObjectData);
+                UploadConstantBuffer(deviceContext, this->sharedResources.perObjectBuffer, perObjectData);
 
                 Material *material = command.material.Get();
                 if (material) {
@@ -1217,7 +324,7 @@ void Renderer::BuildFrameGraph() {
                     perMaterialData.materialSpecular         = material->specularColour;
                     perMaterialData.materialSpecularExponent = material->specularExponent;
 
-                    UploadConstantBuffer(deviceContext, this->perMaterialBuffer, perMaterialData);
+                    UploadConstantBuffer(deviceContext, this->sharedResources.perMaterialBuffer, perMaterialData);
 
                     ID3D11ShaderResourceView *srvs[2] = {
                         material->diffuseTexture.Get()->shaderResourceView,
@@ -1241,7 +348,18 @@ void Renderer::BuildFrameGraph() {
             deviceContext->PSSetShaderResources(0, 2, nullSrv);
         }
     );
+}
 
+void Renderer::RegisterLightingPass(
+    FrameGraph::TextureHandle albedoHandle,
+    FrameGraph::TextureHandle normalHandle,
+    FrameGraph::TextureHandle specularHandle,
+    FrameGraph::TextureHandle depthHandle,
+    const Shadow_handles &shadowHandles,
+    const Reflection_probe_handles &reflectionHandles,
+    FrameGraph::TextureHandle lightingOutputHandle,
+    FrameGraph::TextureHandle lightingDummyHandle
+) {
     struct Lighting_pass_data {
         FrameGraph::TextureHandle albedo;
         FrameGraph::TextureHandle normal;
@@ -1266,16 +384,16 @@ void Renderer::BuildFrameGraph() {
             data.specular = builder.Read(specularHandle);
             data.depth    = builder.Read(depthHandle);
 
-            data.shadowMapDirectional = builder.Read(shadowMapDirectionalHandle);
-            data.shadowMapSpot        = builder.Read(shadowMapSpotHandle);
+            data.shadowMapDirectional = builder.Read(shadowHandles.shadowMapDirectional);
+            data.shadowMapSpot        = builder.Read(shadowHandles.shadowMapSpot);
 
-            data.reflectionProbes = builder.Read(reflectionProbeHandle);
+            data.reflectionProbes = builder.Read(reflectionHandles.reflectionProbes);
 
             data.output = builder.Write(lightingOutputHandle);
 
             data.dummy = builder.Write(lightingDummyHandle); // Needed to ensure that this pass executes before the particle pass
         },
-        [this](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
+        [this, shadowHandles, reflectionHandles](const Lighting_pass_data &data, FrameGraph::ExecutionContext &context) {
             ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
 
             Render_view *view = context.GetView(View_type::primary);
@@ -1284,16 +402,23 @@ void Renderer::BuildFrameGraph() {
                 return;
             }
 
-            this->UploadLightData(*view);
-            this->UploadReflectionProbeData();
+            this->shadowSystem.UploadLightData(
+                deviceContext, 
+                *view, 
+                this->sharedResources, 
+                this->reflectionSystem.GetActiveProbeCount()
+            );
+
+            this->reflectionSystem.UploadProbeData(deviceContext);
 
             deviceContext->CSSetShader(this->lightingCS, nullptr, 0);
-            deviceContext->CSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->CSSetConstantBuffers(1, 1, &this->lightingBuffer);
+            deviceContext->CSSetConstantBuffers(0, 1, &this->sharedResources.perFrameBuffer);
+            deviceContext->CSSetConstantBuffers(1, 1, &this->sharedResources.lightingBuffer);
 
             ID3D11ShaderResourceView *skyboxSRV = nullptr;
             if (view->queue.skyboxCommand.has_value())
-                skyboxSRV = view->queue.skyboxCommand->textureCubeHandle.Get()->shaderResourceView;
+                if (Texture_cube *cube = view->queue.skyboxCommand->textureCubeHandle.Get())
+                    skyboxSRV = cube->shaderResourceView;
 
             ID3D11ShaderResourceView *srvs[11] = {
                 context.GetShaderResourceView(data.albedo),
@@ -1302,16 +427,13 @@ void Renderer::BuildFrameGraph() {
                 context.GetShaderResourceView(data.depth),
                 context.GetShaderResourceView(data.shadowMapDirectional),
                 context.GetShaderResourceView(data.shadowMapSpot),
-                this->directionalLightBufferSRV,
-                this->spotLightBufferSRV,
+                shadowHandles.directionalLightBufferSRV,
+                shadowHandles.spotLightBufferSRV,
                 context.GetShaderResourceView(data.reflectionProbes),
-                this->reflectionProbeBufferSRV,
+                reflectionHandles.reflectionProbeBufferSRV,
                 skyboxSRV
             };
             deviceContext->CSSetShaderResources(0, 11, srvs);
-
-            // TODO: Make common sampler? This currently overwrites the 2nd common sampler, I think
-            deviceContext->CSSetSamplers(1, 1, &this->shadowSampler);
 
             ID3D11UnorderedAccessView *uav = context.GetUnorderedAccessView(data.output);
             deviceContext->ClearUnorderedAccessViewFloat(uav, this->clearColour);
@@ -1330,105 +452,15 @@ void Renderer::BuildFrameGraph() {
             deviceContext->CSSetShader(nullptr, nullptr, 0);
         }
     );
+}
 
-    struct Particle_pass_data {
-        FrameGraph::TextureHandle depth;
-        FrameGraph::TextureHandle lightingOutput;
-
-        FrameGraph::TextureHandle dummy;
-    };
-
-    // NOTE: This pass also reads from the lightingOutput, but declaring that would likely
-    // lead to a cyclic dependency since we also declare a write on it. Instead we rely
-    // on a dummy handle to ensure the correct pass ordering.
-    this->frameGraph.AddRenderPass<Particle_pass_data>(
-        "Particle pass",
-        [&](Particle_pass_data &data, FrameGraph::RenderPassBuilder &builder) {
-            data.depth = builder.Read(depthHandle);
-
-            data.lightingOutput = builder.Write(lightingOutputHandle);
-
-            data.dummy = builder.Read(lightingDummyHandle); // Needed to ensure that this pass executes after the lighting pass
-        },
-        [this](const Particle_pass_data &data, FrameGraph::ExecutionContext &context) {
-            ID3D11DeviceContext *deviceContext = context.GetDeviceContext();
-
-            Render_view *view = context.GetView(View_type::primary);
-            if (!view || view->queue.particleEmitterCommands.empty())
-                return;
-
-            ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.lightingOutput);
-            ID3D11ShaderResourceView *depthSRV = context.GetShaderResourceView(data.depth);
-
-            deviceContext->RSSetViewports(1, &this->viewport);
-            deviceContext->RSSetState(this->particleRS);
-
-            deviceContext->OMSetRenderTargets(1, &rtv, nullptr);
-            deviceContext->OMSetBlendState(this->additiveBlendState, nullptr, 0xFFFFFFFF);
-
-            deviceContext->IASetInputLayout(nullptr);
-            deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-            deviceContext->VSSetShader(this->particleVS, nullptr, 0);
-            deviceContext->GSSetShader(this->particleGS, nullptr, 0);
-            deviceContext->PSSetShader(this->particlePS, nullptr, 0);
-
-            deviceContext->GSSetConstantBuffers(0, 1, &this->perFrameBuffer);
-            deviceContext->GSSetConstantBuffers(1, 1, &this->particleVisualBuffer);
-
-            deviceContext->PSSetConstantBuffers(0, 1, &this->particleVisualBuffer);
-            deviceContext->PSSetShaderResources(1, 1, &depthSRV);
-
-            deviceContext->CSSetShader(this->particleCS, nullptr, 0);
-            deviceContext->CSSetConstantBuffers(0, 1, &this->particleComputeBuffer);
-
-            for (const Particle_emitter_command &command : view->queue.particleEmitterCommands) {
-                Particle_compute_data computeData{};
-                computeData.acceleration     = command.acceleration;
-                computeData.deltaTime        = command.deltaTime;
-                computeData.maxParticleCount = command.maxParticleCount;
-
-                UploadConstantBuffer(deviceContext, this->particleComputeBuffer, computeData);
-
-                deviceContext->CSSetUnorderedAccessViews(0, 1, &command.unorderedAccessView, nullptr);
-                
-                const UINT groups = (command.maxParticleCount + 63) / 64;
-                deviceContext->Dispatch(groups, 1, 1);
-
-                ID3D11UnorderedAccessView *nullUAV = nullptr;
-                deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
-
-                Particle_visual_data visualData{};
-                visualData.startColour = command.startColour;
-                visualData.endColour   = command.endColour;
-                visualData.startSize   = command.startSize;
-                visualData.endSize     = command.endSize;
-                visualData.nearPlane   = view->nearPlane;
-                visualData.farPlane    = view->farPlane;
-
-                UploadConstantBuffer(deviceContext, this->particleVisualBuffer, visualData);
-
-                deviceContext->VSSetShaderResources(0, 1, &command.shaderResourceView);
-
-                ID3D11ShaderResourceView *srv = command.textureHandle.Get()->shaderResourceView;
-                deviceContext->PSSetShaderResources(0, 1, &srv);
-
-                deviceContext->Draw(command.maxParticleCount, 0);
-            }
-
-            deviceContext->GSSetShader(nullptr, nullptr, 0);
-            deviceContext->RSSetState(nullptr);
-            deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
-
-            ID3D11RenderTargetView *nullRTV = nullptr;
-            deviceContext->OMSetRenderTargets(1, &nullRTV, nullptr);
-
-            ID3D11ShaderResourceView *nullSRVs[2] = {};
-            deviceContext->VSSetShaderResources(0, 1, nullSRVs);
-            deviceContext->PSSetShaderResources(0, 2, nullSRVs);
-        }
-    );
-
+void Renderer::RegisterResolvePass(
+    FrameGraph::TextureHandle lightingOutputHandle,
+    FrameGraph::TextureHandle albedoHandle,
+    FrameGraph::TextureHandle normalHandle,
+    FrameGraph::TextureHandle specularHandle,
+    FrameGraph::TextureHandle depthHandle
+) {
     struct Resolve_pass_data {
         FrameGraph::TextureHandle lightingOutput;
 
@@ -1500,74 +532,85 @@ void Renderer::BuildFrameGraph() {
             deviceContext->OMSetRenderTargets(1, &nullRtv, nullptr);
         }
     );
+}
+
+void Renderer::BuildFrameGraph() {
+    this->frameGraph.Clear();
+
+    this->backbufferHandle = this->frameGraph.ImportTexture(
+        "Backbuffer", 
+        nullptr, 
+        this->renderTargetView
+    );
+
+    // G-buffers:
+    // T0: R8G8B8A8_UNORM    = albedo.rgb | specular exponent / 1000 = 32 bits
+    // T1: R10G10B10A2_UNORM = encoded normal | isReflective flag    = 32 bits
+    // T2: R11G11B10_FLOAT   = specular colour                       = 32 bits
+    //                                                               = 96 bits
+    // Position is reconstructed from the depth map
+    // TODO: Per-object ambient?
+
+    FrameGraph::Texture_desc desc{};
+    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::relative;
+    desc.width = desc.height = 1.0f;
+    desc.mipLevels = 1;
+    desc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    desc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    auto albedoHandle = this->frameGraph.CreateTexture("GBuffer_albedo", desc);
+
+    desc.format = DXGI_FORMAT_R10G10B10A2_UNORM;
+    auto normalHandle = this->frameGraph.CreateTexture("GBuffer_normal", desc);
+
+    desc.format = DXGI_FORMAT_R11G11B10_FLOAT;
+    auto specularHandle = this->frameGraph.CreateTexture("GBuffer_specular", desc);
+
+    desc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    desc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    auto depthHandle = this->frameGraph.CreateTexture("Depth_stencil", desc);
+
+    desc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+    desc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    auto lightingOutputHandle = this->frameGraph.CreateTexture("Lighting_output", desc);
+
+    // Dummy handle is used to ensure correct ordering of the particle pass
+    desc.sizeMode = FrameGraph::Texture_desc::Size_mode::absolute;
+    desc.width = desc.height = 1.0f;
+    desc.bindFlags = 0;
+    desc.format = DXGI_FORMAT_R8_UNORM;
+    auto lightingDummyHandle = this->frameGraph.CreateTexture("Lighting_dummy", desc);
+
+    Reflection_probe_handles reflectionHandles = this->reflectionSystem.RegisterRenderPasses(
+        this->frameGraph, 
+        this->sharedResources, 
+        this->clearColour
+    );
+
+    Shadow_handles shadowHandles = this->shadowSystem.RegisterRenderPasses(
+        this->frameGraph, 
+        this->sharedResources
+    );
+
+    this->RegisterGeometryPass(albedoHandle, normalHandle, specularHandle, depthHandle);
+
+    this->RegisterLightingPass(
+        albedoHandle, normalHandle, specularHandle, depthHandle, 
+        shadowHandles, reflectionHandles, lightingOutputHandle, lightingDummyHandle
+    );
+
+    Particle_handles particleHandles = this->particleSystem.RegisterRenderPasses(
+        this->frameGraph, 
+        this->sharedResources, 
+        this->viewport, 
+        depthHandle, 
+        lightingOutputHandle, 
+        lightingDummyHandle
+    );
+
+    this->RegisterResolvePass(lightingOutputHandle, albedoHandle, normalHandle, specularHandle, depthHandle);
 
     this->frameGraph.Compile(this->width, this->height);
-}
-
-void Renderer::ComputeDirectionalLightMatrices(
-    XMMATRIX &outView, 
-    XMMATRIX &outProjection, 
-    const Directional_light_command &command, 
-    const Render_view &primaryView
-) {
-    XMFLOAT3 corners[8];
-    primaryView.frustum.GetCorners(corners);
-
-    float t = min(primaryView.shadowDistance / primaryView.farPlane, 1.0f);
-    for (int i = 0; i < 4; ++i)
-        XMStoreFloat3(&corners[i + 4], XMVectorLerp(XMLoadFloat3(&corners[i]), XMLoadFloat3(&corners[i + 4]), t));
-
-    XMVECTOR centre = XMVectorZero();
-    for (const XMFLOAT3 &corner : corners)
-        centre += XMLoadFloat3(&corner);
-    centre /= 8.0f;
-
-    float radius = 0.0f;
-    for (const XMFLOAT3 &corner : corners) {
-        float distance = XMVectorGetX(XMVector3Length(XMLoadFloat3(&corner) - centre));
-        radius = max(radius, distance);
-    }
-
-    float worldUnitsPerTexel = (2.0f * radius) / SHADOW_MAP_DIRECTIONAL_RESOLUTION;
-
-    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
-    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
-
-    XMMATRIX refView = XMMatrixLookToLH(XMVectorZero(), direction, up);
-    XMMATRIX invRefView = XMMatrixInverse(nullptr, refView);
-
-    XMFLOAT3 centreRef;
-    XMStoreFloat3(&centreRef, XMVector3Transform(centre, refView));
-
-    centreRef.x = floorf(centreRef.x / worldUnitsPerTexel) * worldUnitsPerTexel;
-    centreRef.y = floorf(centreRef.y / worldUnitsPerTexel) * worldUnitsPerTexel;
-    
-    XMVECTOR snappedCentre = XMVector3Transform(XMLoadFloat3(&centreRef), invRefView);
-    outView = XMMatrixLookToLH(snappedCentre, direction, up);
-
-    float minZ = FLT_MAX;
-    float maxZ = -FLT_MAX;
-    for (const XMFLOAT3 &corner : corners) {
-        float z = XMVectorGetZ(XMVector3Transform(XMLoadFloat3(&corner), outView));
-        minZ = min(minZ, z);
-        maxZ = max(maxZ, z);
-    }
-    minZ -= 500.0f;
-
-    outProjection = XMMatrixOrthographicOffCenterLH(-radius, radius, -radius, radius, minZ, maxZ);
-}
-
-void Renderer::ComputeSpotLightMatrices(
-    XMMATRIX &outView, 
-    XMMATRIX &outProjection, 
-    const Spot_light_command &command
-) {
-    XMVECTOR position = XMLoadFloat3(&command.position);
-    XMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&command.direction));
-    XMVECTOR up = fabsf(XMVectorGetY(direction)) < 0.99f ? XMVectorSet(0, 1, 0, 0) : XMVectorSet(1, 0, 0, 0);
-
-    outView = XMMatrixLookToLH(position, direction, up);
-    outProjection = XMMatrixPerspectiveFovLH(command.outerConeAngle * 2.0f, 1.0f, 0.1f, command.range);
 }
 
 Render_view *Renderer::GetView(View_type type, int index) {
@@ -1576,157 +619,6 @@ Render_view *Renderer::GetView(View_type type, int index) {
             return &view;
 
     return nullptr;
-}
-
-void Renderer::SetupShadowViews(Scene *scene) {
-    if (!scene)
-        return;
-
-    Render_view *primaryView = this->GetView(View_type::primary);
-    if (!primaryView)
-        return;
-
-    this->perFrameShadowData.directionalCount = 0;
-    this->perFrameShadowData.spotCount = 0;
-
-    std::vector<Render_view> shadowViews;
-
-    for (int i = 0; i < primaryView->queue.directionalLightCommands.size(); ++i) {
-        if (this->perFrameShadowData.directionalCount >= MAX_DIRECTIONAL_SHADOW_MAPS)
-            break;
-
-        const Directional_light_command &command = primaryView->queue.directionalLightCommands[i];
-        if (!command.castsShadows)
-            continue;
-
-        int slot = this->perFrameShadowData.directionalCount;
-        XMMATRIX viewMatrix;
-        XMMATRIX projectionMatrix;
-        this->ComputeDirectionalLightMatrices(viewMatrix, projectionMatrix, command, *primaryView);
-
-        Render_view view{};
-        view.type = View_type::shadowMapDirectional;
-        view.index = slot;
-        view.skipFrustumCulling = true;
-        XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
-        XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
-        shadowViews.push_back(view);
-
-        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
-        XMStoreFloat4x4(
-            &this->perFrameShadowData.directionalViewProjectionMatrices[slot], 
-            viewProjectionMatrix
-        );
-        this->perFrameShadowData.directionalSlotToCommand[slot] = i;
-        ++this->perFrameShadowData.directionalCount;
-    }
-
-    for (int i = 0; i < primaryView->queue.spotLightCommands.size(); ++i) {
-        if (this->perFrameShadowData.spotCount >= MAX_SPOT_SHADOW_MAPS)
-            break;
-
-        const Spot_light_command &command = primaryView->queue.spotLightCommands[i];
-        if (!command.castsShadows)
-            continue;
-
-        int slot = this->perFrameShadowData.spotCount;
-        XMMATRIX viewMatrix;
-        XMMATRIX projectionMatrix;
-        this->ComputeSpotLightMatrices(viewMatrix, projectionMatrix, command);
-
-        Render_view view{};
-        view.type = View_type::shadowMapSpot;
-        view.index = slot;
-        XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
-        XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
-
-        BoundingFrustum::CreateFromMatrix(view.frustum, projectionMatrix);
-        view.frustum.Transform(view.frustum, XMMatrixInverse(nullptr, viewMatrix));
-
-        shadowViews.push_back(view);
-
-        XMMATRIX viewProjectionMatrix = XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix));
-        XMStoreFloat4x4(
-            &this->perFrameShadowData.spotViewProjectionMatrices[slot], 
-            viewProjectionMatrix
-        );
-        this->perFrameShadowData.spotSlotToCommand[slot] = i;
-        ++this->perFrameShadowData.spotCount;
-    }
-
-    scene->GatherVisibility(shadowViews);
-    this->views.insert(this->views.end(), shadowViews.begin(), shadowViews.end());
-}
-
-void Renderer::SetupReflectionProbeViews(Scene *scene) {
-    if (!scene)
-        return;
-
-    Render_view *primaryView = this->GetView(View_type::primary);
-    if (!primaryView)
-        return;
-
-    this->perFrameReflectionProbeData.count = 0;
-
-    const auto &reflectionProbeCommands = primaryView->queue.reflectionProbeCommands;
-    if (reflectionProbeCommands.empty())
-        return;
-
-    struct Face {
-        XMFLOAT3 forward;
-        XMFLOAT3 up;
-    };
-    static constexpr Face faces[6] = {
-        {{ 1,  0,  0}, {0,  1,  0}}, // +x
-        {{-1,  0,  0}, {0,  1,  0}}, // -x
-        {{ 0,  1,  0}, {0,  0, -1}}, // +y
-        {{ 0, -1,  0}, {0,  0,  1}}, // -y
-        {{ 0,  0,  1}, {0,  1,  0}}, // +z
-        {{ 0,  0, -1}, {0,  1,  0}}  // -z
-    };
-
-    std::vector<Render_view> reflectionProbeViews;
-
-    for (int i = 0; i < reflectionProbeCommands.size(); ++i) {
-        if (this->perFrameReflectionProbeData.count >= MAX_REFLECTION_PROBES)
-            break;
-
-        const Reflection_probe_command &command = reflectionProbeCommands[i];
-        int slot = this->perFrameReflectionProbeData.count;
-
-        XMVECTOR position = XMLoadFloat3(&command.position);
-        XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV2, 1.0f, command.nearPlane, command.farPlane);
-
-        for (int face = 0; face < 6; ++face) {
-            XMVECTOR forward = XMLoadFloat3(&faces[face].forward);
-            XMVECTOR up = XMLoadFloat3(&faces[face].up);
-
-            XMMATRIX viewMatrix = XMMatrixLookToLH(position, forward, up);
-
-            Render_view view{};
-            view.type = View_type::cubeFace;
-            view.index = slot * 6 + face;
-
-            XMStoreFloat4x4(&view.viewMatrix, viewMatrix);
-            XMStoreFloat4x4(&view.projectionMatrix, projectionMatrix);
-
-            view.cameraPosition = command.position;
-            view.nearPlane = command.nearPlane;
-            view.farPlane = command.farPlane;
-
-            BoundingFrustum::CreateFromMatrix(view.frustum, projectionMatrix);
-            view.frustum.Transform(view.frustum, XMMatrixInverse(nullptr, viewMatrix));
-
-            reflectionProbeViews.push_back(view);
-        }
-
-        this->perFrameReflectionProbeData.entries[slot] = {command.position, command.radius};
-
-        ++this->perFrameReflectionProbeData.count;
-    }
-
-    scene->GatherVisibility(reflectionProbeViews);
-    this->views.insert(this->views.end(), reflectionProbeViews.begin(), reflectionProbeViews.end());
 }
 
 bool Renderer::Initialize(HWND hWnd) {
@@ -1744,22 +636,28 @@ bool Renderer::Initialize(HWND hWnd) {
     if (!this->CreateRenderTargetView())
         return false;
 
+    if (!this->sharedResources.Initialize(this->device))
+        return false;
+
+    if (!this->LoadGBufferShaders())
+        return false;
+
+    if (!this->LoadLightingShader())
+        return false;
+
+    if (!this->LoadResolveShaders())
+        return false;
+
+    if (!this->shadowSystem.Initialize(this->device, shaderDir))
+        return false;
+
+    if (!this->reflectionSystem.Initialize(this->device, shaderDir, &this->shadowSystem))
+        return false;
+
+    if (!this->particleSystem.Initialize(this->device, shaderDir))
+        return false;
+
     if (!this->CreateConstantBuffers())
-        return false;
-
-    if (!this->CreateCommonSamplerStates())
-        return false;
-
-    if (!this->LoadDeferredShaders())
-        return false;
-
-    if (!this->CreateShadowResources())
-        return false;
-
-    if (!this->CreateReflectionProbeResources())
-        return false;
-
-    if (!this->CreateParticleResources())
         return false;
 
     this->SetViewport(this->width, this->height);
@@ -1768,7 +666,6 @@ bool Renderer::Initialize(HWND hWnd) {
     this->BuildFrameGraph();
 
     LogUnindent();
-
     return true;
 }
 
@@ -1795,14 +692,12 @@ bool Renderer::Resize(int width, int height) {
         return false;
 
     this->SetViewport(width, height);
-
     this->width = width;
     this->height = height;
 
     this->frameGraph.OnResize(width, height);
 
     LogUnindent();
-
     return true;
 }
 
@@ -1822,17 +717,22 @@ void Renderer::Render(Scene *scene) {
         this->renderTargetView
     );
 
-    this->BindCommonSamplerStates();
+    this->sharedResources.BindSamplers(this->deviceContext);
 
     scene->GatherVisibility(this->views);
-    this->SetupReflectionProbeViews(scene);
-    this->SetupShadowViews(scene);
+
+    const Render_view *primary = this->GetView(View_type::primary);
+
+    if (primary) {
+        this->reflectionSystem.PrepareViews(scene, *primary, this->views);
+        this->shadowSystem.PrepareViews(scene, *primary, this->views);
+    }
+
     this->frameGraph.Execute(this->deviceContext, this->views);
 
     // Needed for DebugDraw and ImGui
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 
-    const Render_view *primary = this->GetView(View_type::primary);
     if (primary) {
         XMMATRIX viewMatrix = XMLoadFloat4x4(&primary->viewMatrix);
         XMMATRIX projectionMatrix = XMLoadFloat4x4(&primary->projectionMatrix);
@@ -1884,26 +784,6 @@ int Renderer::GetDebugMode() {
     return this->currentDebugData.debugMode;
 }
 
-ID3D11Device *Renderer::GetDevice() const {
-    return this->device;
-}
-
-ID3D11DeviceContext *Renderer::GetDeviceContext() const {
-    return this->deviceContext;
-}
-
-int Renderer::GetWidth() const {
-    return this->width;
-}
-
-int Renderer::GetHeight() const {
-    return this->height;
-}
-
-float Renderer::GetAspectRatio() const {
-    return (float)this->width / this->height;
-}
-
 void Renderer::ToggleFullscreen() {
     this->swapChain->SetFullscreenState(!this->IsFullscreened(), nullptr);
 }
@@ -1915,29 +795,14 @@ bool Renderer::IsFullscreened() {
     return state;
 }
 
-inline float Clamp(float value, float min, float max) {
-    return value < min ? min : value > max ? max : value;
-}
-
 void Renderer::SetClearColour(float r, float g, float b, float a) {
-    this->clearColour[0] = Clamp(r, 0.0f, 1.0f);
-    this->clearColour[1] = Clamp(g, 0.0f, 1.0f);
-    this->clearColour[2] = Clamp(b, 0.0f, 1.0f);
-    this->clearColour[3] = Clamp(a, 0.0f, 1.0f);
+    auto clamp = [](float value) { return value < 0.0f ? 0.0f : value > 1.0f ? 1.0f : value; };
+    this->clearColour[0] = clamp(r);
+    this->clearColour[1] = clamp(g);
+    this->clearColour[2] = clamp(b);
+    this->clearColour[3] = clamp(a);
 }
 
 const float *Renderer::GetClearColour() const {
     return this->clearColour;
-}
-
-std::vector<Render_view> &Renderer::GetViews() {
-    return this->views;
-}
-
-FrameGraph &Renderer::GetFrameGraph() {
-    return this->frameGraph;
-}
-
-FrameGraph::TextureHandle Renderer::GetBackbufferHandle() const {
-    return this->backbufferHandle;
 }

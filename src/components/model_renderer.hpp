@@ -12,7 +12,6 @@ class ModelRenderer : public Component {
     AssetHandle<Model> modelHandle;
     bool isReflective = false; // TODO: "Hack" to get dynamic cube maps to work. Should probably be part of the material instead.
 
-
 public:
     ModelRenderer(Entity *owner, bool isActive) : Component(owner, isActive) {}
     ~ModelRenderer() = default;
