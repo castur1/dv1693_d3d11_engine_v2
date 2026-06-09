@@ -357,5 +357,8 @@
     <FxCompile Include="src\shaders\vs_particle.hlsl" />
     <FxCompile Include="src\shaders\gs_particle.hlsl" />
     <FxCompile Include="src\shaders\ps_particle.hlsl" />
+    <FxCompile Include="src\shaders\vs_gbuffer_tessellation.hlsl" />
+    <FxCompile Include="src\shaders\hs_gbuffer_tessellation.hlsl" />
+    <FxCompile Include="src\shaders\ds_gbuffer_tessellation.hlsl" />
   </ItemGroup>
 </Project>

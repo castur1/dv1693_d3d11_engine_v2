@@ -104,6 +104,10 @@ struct Material {
     XMFLOAT3 diffuseColour = {1.0f, 1.0f, 1.0f};
     XMFLOAT3 specularColour = {1.0f, 1.0f, 1.0f};
     float specularExponent = 32.0f;
+
+    AssetHandle<Texture2D> displacementTexture;
+    bool useTessellation = false;
+    float displacementScale = 0.05f;
 };
 
 struct Model {

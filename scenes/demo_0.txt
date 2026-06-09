@@ -469,6 +469,24 @@ entity 687f-facc-2365-009a
         endSize: 0.8
         textureID: 67cf-ef4c-9b8a-20ec
 
+entity afc3-e765-b907-ec23
+    name: "bricks"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, -15.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [2.0, 1.0, 2.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "89d4-ece5-4e23-0e19"
+        isReflective: false
+
 assets:
     0dbc-caa8-2206-5ca7
     5488-7f75-fd77-3eb3
@@ -476,3 +494,4 @@ assets:
     4429-118e-4188-675f
     67cf-ef4c-9b8a-20ec
     3d31-8c5b-00de-2879
+    89d4-ece5-4e23-0e19

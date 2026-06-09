@@ -44,7 +44,11 @@ void ModelRenderer::Render(const Render_view &view, RenderQueue &queue) {
 
         XMStoreFloat4x4(&command.worldMatrix, worldMatrix);
 
-        queue.Submit(command);
+        Material *material = subModel.material.Get();
+        if (material && material->useTessellation && view.type == View_type::primary)
+            queue.SubmitTessellated(command);
+        else
+            queue.Submit(command);
     }
 }
 

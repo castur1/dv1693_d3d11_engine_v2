@@ -9,13 +9,6 @@ Material *MaterialLoader::Load(AssetID uuid) {
 Material *MaterialLoader::CreateDefault() {
     Material *material = new Material();
 
-    material->pipelineState = this->assetManager->GetHandle<Pipeline_state>(AssetID::invalid);
-    material->diffuseTexture = this->assetManager->GetHandle<Texture2D>(AssetID::invalid);
-    material->ambientColour = {1.0f, 1.0f, 1.0f};
-    material->diffuseColour = {1.0f, 1.0f, 1.0f};
-    material->specularColour = {1.0f, 1.0f, 1.0f};
-    material->specularExponent = 32.0f;
-
     Texture2DLoader loader(this->assetManager);
     loader.SetDevice(this->device);
     loader.SetDeviceContext(this->deviceContext);
@@ -28,7 +21,19 @@ Material *MaterialLoader::CreateDefault() {
 
     Texture2D *normalTexture = loader.CreateFromBitmap(pixels, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, false);
 
+    material->pipelineState = this->assetManager->GetHandle<Pipeline_state>(AssetID::invalid);
+
+    material->diffuseTexture = this->assetManager->GetHandle<Texture2D>(AssetID::invalid);
     material->normalTexture = this->assetManager->AddAsset<Texture2D>(normalTexture, true);
+
+    material->ambientColour = {1.0f, 1.0f, 1.0f};
+    material->diffuseColour = {1.0f, 1.0f, 1.0f};
+    material->specularColour = {1.0f, 1.0f, 1.0f};
+    material->specularExponent = 32.0f;
+
+    material->displacementTexture = this->assetManager->GetHandle<Texture2D>(AssetID::invalid);
+    material->useTessellation = false;
+    material->displacementScale = 0.05f;
 
     LogInfo("Default Material asset created\n");
 

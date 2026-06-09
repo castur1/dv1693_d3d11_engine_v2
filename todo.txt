@@ -89,6 +89,8 @@
 
 * Maybe some sort of billboarded gizmos to represent light positions, entity pivot/origin, that sort of stuff.
 
+* Wireframe rendering mode
+
 
 For skyboxes:
 bk -> pz

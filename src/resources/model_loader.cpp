@@ -173,6 +173,19 @@ Model *ModelLoader::Load(AssetID uuid) {
             newMaterial->normalTexture = defaultMaterial->normalTexture;
         }
 
+        if (!materials[i].displacement_texname.empty()) {
+            AssetID textureID = this->assetManager->PathToUUID(baseDir + materials[i].displacement_texname);
+            newMaterial->displacementTexture = this->assetManager->GetHandle<Texture2D>(textureID);
+
+            newMaterial->useTessellation = true;
+
+            float bumpMultiplier = materials[i].displacement_texopt.bump_multiplier;
+            newMaterial->displacementScale = bumpMultiplier > 0.0f ? bumpMultiplier : defaultMaterial->displacementScale;
+        }
+        else {
+            newMaterial->useTessellation = false;
+        }
+
         newMaterial->ambientColour = XMFLOAT3(materials[i].ambient);
 
         if (materials[i].diffuse[0] == 0.0f && materials[i].diffuse[1] == 0.0f && materials[i].diffuse[2] == 0.0f)

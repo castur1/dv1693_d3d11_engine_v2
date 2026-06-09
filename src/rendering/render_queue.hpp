@@ -9,6 +9,7 @@
 class RenderQueue {
 public:
     std::vector<Geometry_command> geometryCommands;
+    std::vector<Geometry_command> tessellatedGeometryCommands;
     std::vector<Spot_light_command> spotLightCommands;
     std::vector<Directional_light_command> directionalLightCommands;
     std::optional<Skybox_command> skyboxCommand;
@@ -17,6 +18,7 @@ public:
 
     void Clear() {
         this->geometryCommands.clear();
+        this->tessellatedGeometryCommands.clear();
         this->spotLightCommands.clear();
         this->directionalLightCommands.clear();
         this->skyboxCommand.reset();
@@ -26,6 +28,10 @@ public:
 
     void Submit(const Geometry_command &command) {
         this->geometryCommands.push_back(command);
+    }
+
+    void SubmitTessellated(const Geometry_command &command) {
+        this->tessellatedGeometryCommands.push_back(command);
     }
 
     void Submit(const Spot_light_command &command) {

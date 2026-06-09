@@ -20,7 +20,14 @@ Renderer::~Renderer() {
     SafeRelease(this->gBufferVS);
     SafeRelease(this->gBufferPS);
     SafeRelease(this->gBufferLayout);
+
+    SafeRelease(this->tessellationVS);
+    SafeRelease(this->tessellationHS);
+    SafeRelease(this->tessellationDS);
+    SafeRelease(this->tessellationBuffer);
+
     SafeRelease(this->lightingCS);
+
     SafeRelease(this->resolveVS);
     SafeRelease(this->resolvePS);
 
@@ -175,6 +182,40 @@ bool Renderer::LoadGBufferShaders() {
     return true;
 }
 
+bool Renderer::LoadTessellationShaders() {
+    std::vector<uint8_t> bytecode;
+
+    if (!LoadShaderBytecode(shaderDir + "vs_gbuffer_tessellation.cso", bytecode))
+        return false;
+
+    HRESULT result = this->device->CreateVertexShader(bytecode.data(), bytecode.size(), nullptr, &this->tessellationVS);
+    if (FAILED(result)) {
+        LogError("Failed to create tessellation vertex shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "hs_gbuffer_tessellation.cso", bytecode))
+        return false;
+
+    result = this->device->CreateHullShader(bytecode.data(), bytecode.size(), nullptr, &this->tessellationHS);
+    if (FAILED(result)) {
+        LogError("Failed to create tessellation hull shader");
+        return false;
+    }
+
+    if (!LoadShaderBytecode(shaderDir + "ds_gbuffer_tessellation.cso", bytecode))
+        return false;
+
+    result = this->device->CreateDomainShader(bytecode.data(), bytecode.size(), nullptr, &this->tessellationDS);
+    if (FAILED(result)) {
+        LogError("Failed to create tessellation domain shader");
+        return false;
+    }
+
+    LogInfo("Tessellation shaders loaded\n");
+    return true;
+}
+
 bool Renderer::LoadLightingShader() {
     std::vector<uint8_t> bytecode;
 
@@ -218,19 +259,25 @@ bool Renderer::LoadResolveShaders() {
 
 bool Renderer::CreateConstantBuffers() {
     D3D11_BUFFER_DESC desc{};
-    desc.ByteWidth = sizeof(Debug_resolve_data);
     desc.Usage = D3D11_USAGE_DYNAMIC;
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    HRESULT result = this->device->CreateBuffer(&desc, nullptr, &this->debugResolveBuffer);
+    desc.ByteWidth = sizeof(Tessellation_data);
+    HRESULT result = this->device->CreateBuffer(&desc, nullptr, &this->tessellationBuffer);
+    if (FAILED(result)) {
+        LogError("Failed to create tessellation constant buffer");
+        return false;
+    }
+
+    desc.ByteWidth = sizeof(Debug_resolve_data);
+    result = this->device->CreateBuffer(&desc, nullptr, &this->debugResolveBuffer);
     if (FAILED(result)) {
         LogError("Failed to create debug resolve constant buffer");
         return false;
     }
 
     LogInfo("Constant buffers created\n");
-
     return true;
 }
 
@@ -341,11 +388,78 @@ void Renderer::RegisterGeometryPass(
                 deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
             }
 
+            if (!view->queue.tessellatedGeometryCommands.empty()) {
+                deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+
+                deviceContext->VSSetShader(this->tessellationVS, nullptr, 0);
+                deviceContext->HSSetShader(this->tessellationHS, nullptr, 0);
+                deviceContext->DSSetShader(this->tessellationDS, nullptr, 0);
+
+                deviceContext->HSSetConstantBuffers(0, 1, &this->sharedResources.perFrameBuffer);
+                deviceContext->HSSetConstantBuffers(3, 1, &this->tessellationBuffer);
+
+                deviceContext->DSSetConstantBuffers(0, 1, &this->sharedResources.perFrameBuffer);
+                deviceContext->DSSetConstantBuffers(3, 1, &this->tessellationBuffer);
+
+                for (Geometry_command &command : view->queue.tessellatedGeometryCommands) {
+                    Per_object_data perObjectData{};
+                    perObjectData.worldMatrix = command.worldMatrix;
+                    XMStoreFloat4x4(
+                        &perObjectData.worldMatrixInvTranspose, 
+                        XMMatrixInverse(nullptr, XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)))
+                    );
+
+                    UploadConstantBuffer(deviceContext, this->sharedResources.perObjectBuffer, perObjectData);
+
+                    Material *material = command.material.Get();
+                    if (material) {
+                        Per_material_data perMaterialData{};
+                        perMaterialData.materialDiffuse          = material->diffuseColour;
+                        perMaterialData.isReflective             = command.isReflective;
+                        perMaterialData.materialSpecular         = material->specularColour;
+                        perMaterialData.materialSpecularExponent = material->specularExponent;
+
+                        UploadConstantBuffer(deviceContext, this->sharedResources.perMaterialBuffer, perMaterialData);
+
+                        Tessellation_data tessellationData = this->tessellationData;
+                        tessellationData.displacementScale = material->displacementScale;
+
+                        UploadConstantBuffer(deviceContext, this->tessellationBuffer, tessellationData);
+
+                        ID3D11ShaderResourceView *psSRVs[2] = {
+                            material->diffuseTexture.Get()->shaderResourceView,
+                            material->normalTexture.Get()->shaderResourceView
+                        };
+                        deviceContext->PSSetShaderResources(0, 2, psSRVs);
+
+                        ID3D11ShaderResourceView *dsSRVs[1] = {
+                            material->displacementTexture.Get()->shaderResourceView
+                        };
+                        deviceContext->DSSetShaderResources(2, 1, dsSRVs);
+                    }
+
+                    const UINT stride = sizeof(Vertex);
+                    const UINT offset = 0;
+                    deviceContext->IASetVertexBuffers(0, 1, &command.vertexBuffer, &stride, &offset);
+                    deviceContext->IASetIndexBuffer(command.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                    deviceContext->DrawIndexed(command.indexCount, command.startIndex, command.baseVertex);
+                }
+
+                deviceContext->HSSetShader(nullptr, nullptr, 0);
+                deviceContext->DSSetShader(nullptr, nullptr, 0);
+                deviceContext->VSSetShader(this->gBufferVS, nullptr, 0);
+                deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+                ID3D11ShaderResourceView *nullSRV = nullptr;
+                deviceContext->DSSetShaderResources(2, 1, &nullSRV);
+            }
+
             ID3D11RenderTargetView *nullRtvs[3] = {};
             deviceContext->OMSetRenderTargets(3, nullRtvs, nullptr);
 
-            ID3D11ShaderResourceView *nullSrv[2] = {};
-            deviceContext->PSSetShaderResources(0, 2, nullSrv);
+            ID3D11ShaderResourceView *nullSRVs[2] = {};
+            deviceContext->PSSetShaderResources(0, 2, nullSRVs);
         }
     );
 }
@@ -640,6 +754,9 @@ bool Renderer::Initialize(HWND hWnd) {
         return false;
 
     if (!this->LoadGBufferShaders())
+        return false;
+
+    if (!this->LoadTessellationShaders())
         return false;
 
     if (!this->LoadLightingShader())

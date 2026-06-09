@@ -67,6 +67,17 @@ struct Particle_visual_data {
 static_assert(sizeof(Particle_visual_data) % 16 == 0);
 
 // CBuffer
+struct Tessellation_data {
+    float minFactor = 1.0f;
+    float maxFactor = 128.0f;
+    float minDistance = 2.0f;
+    float maxDistance = 40.0f;
+    float displacementScale = 0.05f;
+    float pad0[3];
+};
+static_assert(sizeof(Tessellation_data) % 16 == 0);
+
+// CBuffer
 struct Debug_resolve_data {
     int   debugMode;
     float nearPlane;

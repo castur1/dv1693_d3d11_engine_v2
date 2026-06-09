@@ -39,6 +39,11 @@ class Renderer {
     ID3D11PixelShader *gBufferPS = nullptr;
     ID3D11InputLayout *gBufferLayout = nullptr;
 
+    ID3D11VertexShader *tessellationVS = nullptr;
+    ID3D11HullShader *tessellationHS = nullptr;
+    ID3D11DomainShader *tessellationDS = nullptr;
+    ID3D11Buffer *tessellationBuffer = nullptr;
+
     ID3D11ComputeShader *lightingCS = nullptr;
 
     ID3D11VertexShader *resolveVS = nullptr;
@@ -48,9 +53,12 @@ class Renderer {
     ID3D11Buffer *debugResolveBuffer = nullptr;
     Debug_resolve_data currentDebugData{};
 
+    Tessellation_data tessellationData{};
+
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
     bool LoadGBufferShaders();
+    bool LoadTessellationShaders();
     bool LoadLightingShader();
     bool LoadResolveShaders();
     bool CreateConstantBuffers();
@@ -123,6 +131,8 @@ public:
     std::vector<Render_view> &GetViews() { return this->views; }
     FrameGraph &GetFrameGraph() { return this->frameGraph; }
     FrameGraph::TextureHandle GetBackbufferHandle() const { return this->backbufferHandle; }
+
+    Tessellation_data &GetTessellationData() { return this->tessellationData; }
 };
 
 #endif
