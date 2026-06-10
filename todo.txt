@@ -4,9 +4,17 @@
     X Shadow mapping
     X Particle system
     X Dynamic cube mapping
-    * Tessellation
+    X Tessellation
     X Hierarchical view frustum culling
     X Normal mapping
+
+* Things I must fix before handing in:
+
+    * Freezing the camera in place to showcase hierarchical frustum culling
+
+    * Being able to toggle wireframe rendering to showcase tessellation
+
+    * Probably add more options to the debug overlay rather than relying on buttons
 
 * Bind enums
 
@@ -32,9 +40,9 @@
 
     * Saving the scene
 
-* XMVECTOR versions of Get/Set in Transform
+    * Make renderer debugMode a setting instead, maybe? Would require non-bool settings
 
-* Make renderer debugMode a setting instead, maybe? Would require non-bool settings
+* XMVECTOR versions of Get/Set in Transform
 
 * Assets that are loaded by other assets (e.g. textures loaded by models) are not present in the asset section and 
   will thus be unloaded. Since the owning asset is still loaded, those child asset will never get reloaded.
@@ -43,7 +51,7 @@
 
 * Improve culling
 
-    * Freezing camera in place while moving the view frustum (for culling visualization)                                    <------
+    * Freezing camera in place while moving the view frustum (for culling visualization)
 
     * Use an array instead of a vector in the octree node. Should be faster, right?
 
@@ -89,7 +97,15 @@
 
 * Maybe some sort of billboarded gizmos to represent light positions, entity pivot/origin, that sort of stuff.
 
-* Wireframe rendering mode
+* Tessellation
+
+    * Wireframe rendering mode
+
+    * Should tessellation be visible in shadows?
+
+    * Make tessellation displacement scale relative to the scale of the object (extracted from world matrix on the CPU probably)
+
+    * Allow model rnderer to control tessellation parameters?
 
 
 For skyboxes:

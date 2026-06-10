@@ -1,18 +1,6 @@
-// ds_gbuffer.hlsl
-//
-// Domain shader for the tessellated G-buffer pass.
-//
-// Runs once per tessellated vertex. Responsibilities:
-//   1. Barycentric interpolation of world-space attributes
-//   2. Displacement mapping: sample the heightmap along the interpolated
-//      normal, scale by displacementScale, and offset the world position
-//   3. Final clip-space projection
-//
-// Output struct semantics match Pixel_shader_input in ps_gbuffer.hlsl
-// exactly, so that PS is reused without modification.
+SamplerState samplerLinearWrap : register(s0);
 
-cbuffer Per_frame : register(b0)
-{
+cbuffer Per_frame : register(b0) {
     float4x4 viewMatrix;
     float4x4 invViewMatrix;
     float4x4 projectionMatrix;
@@ -23,39 +11,31 @@ cbuffer Per_frame : register(b0)
     float pad0;
 };
 
-cbuffer Tessellation_data : register(b3)
-{
+cbuffer Tessellation_data : register(b3) {
     float tessMinFactor;
     float tessMaxFactor;
     float tessMinDistance;
     float tessMaxDistance;
     float displacementScale;
-    float3 pad1;
+    float3 pad1; // TODO: Normal strength multiplier and texel size I guess
 };
 
-// Displacement map at t2; t0 and t1 are diffuse and normal (bound in PS).
-// Using SampleLevel since DS has no implicit LOD derivatives.
-Texture2D displacementMap : register(t2);
-SamplerState linearSampler : register(s0);
+Texture2D displacementTexture : register(t2);
 
-struct Control_point
-{
-    float3 worldPos : POSITION;
+struct Control_point {
+    float3 positionWorld : POSITION;
     float3 normal : TEXCOORD0;
     float3 tangent : TEXCOORD1;
     float3 bitangent : TEXCOORD2;
     float2 uv : TEXCOORD3;
 };
 
-struct HS_Constant_data
-{
-    float edgeTess[3] : SV_TessFactor;
-    float insideTess : SV_InsideTessFactor;
+struct HS_constant_data {
+    float edgeFactors[3] : SV_TessFactor;
+    float insideFactor : SV_InsideTessFactor;
 };
 
-// Matches ps_gbuffer.hlsl Pixel_shader_input exactly
-struct DS_Output
-{
+struct Domain_shader_output {
     float4 position : SV_POSITION;
     float3 normal : TEXCOORD0;
     float3 tangent : TEXCOORD1;
@@ -64,38 +44,49 @@ struct DS_Output
 };
 
 [domain("tri")]
-DS_Output main(
-    HS_Constant_data patchConst,
-    float3 bary : SV_DomainLocation,
-    const OutputPatch<Control_point, 3> patch)
-{
-    DS_Output output;
+Domain_shader_output main(
+    HS_constant_data patchConst,
+    float3 barycentric : SV_DomainLocation,
+    const OutputPatch<Control_point, 3> patch
+) {
+    Domain_shader_output output;
 
-    // ---- Barycentric interpolation ----------------------------------------
-    float3 worldPos = bary.x * patch[0].worldPos + bary.y * patch[1].worldPos + bary.z * patch[2].worldPos;
-    float3 normal = bary.x * patch[0].normal + bary.y * patch[1].normal + bary.z * patch[2].normal;
-    float3 tangent = bary.x * patch[0].tangent + bary.y * patch[1].tangent + bary.z * patch[2].tangent;
-    float3 bitangent = bary.x * patch[0].bitangent + bary.y * patch[1].bitangent + bary.z * patch[2].bitangent;
-    float2 uv = bary.x * patch[0].uv + bary.y * patch[1].uv + bary.z * patch[2].uv;
+    float3 positionWorld = barycentric.x * patch[0].positionWorld + barycentric.y * patch[1].positionWorld + barycentric.z * patch[2].positionWorld;
+    float3 normal = barycentric.x * patch[0].normal + barycentric.y * patch[1].normal + barycentric.z * patch[2].normal;
+    float3 tangent = barycentric.x * patch[0].tangent + barycentric.y * patch[1].tangent + barycentric.z * patch[2].tangent;
+    float3 bitangent = barycentric.x * patch[0].bitangent + barycentric.y * patch[1].bitangent + barycentric.z * patch[2].bitangent;
+    float2 uv = barycentric.x * patch[0].uv + barycentric.y * patch[1].uv + barycentric.z * patch[2].uv;
 
-    // Re-normalise after interpolation to keep unit length across the patch
     normal = normalize(normal);
     tangent = normalize(tangent);
     bitangent = normalize(bitangent);
+    
+    float height = displacementTexture.SampleLevel(samplerLinearWrap, uv, 0).r;
+    positionWorld += normal * height * displacementScale;
+            
+    static const float texelSize = 1.0f / 1024.0f;
+    static const float normalStrength = 3.0f;
 
-    // ---- Displacement mapping --------------------------------------------
-    // Heightmap is expected in [0, 1] range.
-    // displacementScale controls the maximum offset in world units.
-    // Sampling mip 0 explicitly — no implicit gradients available in DS.
-    float height = displacementMap.SampleLevel(linearSampler, uv, 0).r;
-    worldPos += normal * (height * displacementScale);
+    float heightLeft = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(-texelSize, 0), 0).r;
+    float heightRight = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(texelSize, 0), 0).r;
+    float heightDown = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, -texelSize), 0).r;
+    float heightUp = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, texelSize), 0).r;
 
-    // ---- Projection -------------------------------------------------------
-    output.position = mul(float4(worldPos, 1.0f), viewProjectionMatrix);
+    float3 displacedNormal = normalize(float3(
+        (heightLeft - heightRight) * normalStrength,
+        (heightDown - heightUp) * normalStrength,
+        1.0f
+    ));
+    
+    float3x3 tbnMatrix = float3x3(tangent, bitangent, normal);
+    normal = normalize(mul(displacedNormal, tbnMatrix));
+
+    output.position = mul(float4(positionWorld, 1.0f), viewProjectionMatrix);
 
     output.normal = normal;
     output.tangent = tangent;
     output.bitangent = bitangent;
+    
     output.uv = uv;
 
     return output;

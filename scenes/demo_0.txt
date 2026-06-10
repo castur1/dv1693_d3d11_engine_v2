@@ -479,12 +479,12 @@ entity afc3-e765-b907-ec23
         isActive: true
         position: [0.0, 0.0, -15.0]
         rotation: [0.0, 0.0, 0.0]
-        scale: [2.0, 1.0, 2.0]
+        scale: [2.0, 2.0, 2.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: "89d4-ece5-4e23-0e19"
+        modelID: "9424-deb3-3fb2-bb9c"
         isReflective: false
 
 assets:
@@ -494,4 +494,4 @@ assets:
     4429-118e-4188-675f
     67cf-ef4c-9b8a-20ec
     3d31-8c5b-00de-2879
-    89d4-ece5-4e23-0e19
+    9424-deb3-3fb2-bb9c
