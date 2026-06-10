@@ -15,7 +15,8 @@ cbuffer Tessellation_data : register(b3) {
     float tessellationMinDistance;
     float tessellationMaxDistance;
     float displacementScale;
-    float3 pad1;
+    float normalStrength;
+    float2 texelSize;
 };
 
 struct Control_point {

@@ -10,4 +10,4 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd Bricks005_1K-JPG_Color.jpg
-disp -bm 0.6 Bricks005_1K-JPG_Displacement.jpg
+disp -bm 0.3 Bricks005_1K-JPG_Displacement.jpg

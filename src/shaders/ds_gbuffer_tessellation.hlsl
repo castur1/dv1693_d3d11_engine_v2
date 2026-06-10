@@ -17,7 +17,8 @@ cbuffer Tessellation_data : register(b3) {
     float tessMinDistance;
     float tessMaxDistance;
     float displacementScale;
-    float3 pad1; // TODO: Normal strength multiplier and texel size I guess
+    float normalStrength;
+    float2 texelSize;
 };
 
 Texture2D displacementTexture : register(t2);
@@ -63,14 +64,11 @@ Domain_shader_output main(
     
     float height = displacementTexture.SampleLevel(samplerLinearWrap, uv, 0).r;
     positionWorld += normal * height * displacementScale;
-            
-    static const float texelSize = 1.0f / 1024.0f;
-    static const float normalStrength = 3.0f;
 
-    float heightLeft = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(-texelSize, 0), 0).r;
-    float heightRight = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(texelSize, 0), 0).r;
-    float heightDown = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, -texelSize), 0).r;
-    float heightUp = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, texelSize), 0).r;
+    float heightLeft = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(-texelSize.x, 0), 0).r;
+    float heightRight = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(texelSize.x, 0), 0).r;
+    float heightDown = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, -texelSize.y), 0).r;
+    float heightUp = displacementTexture.SampleLevel(samplerLinearWrap, uv + float2(0, texelSize.y), 0).r;
 
     float3 displacedNormal = normalize(float3(
         (heightLeft - heightRight) * normalStrength,

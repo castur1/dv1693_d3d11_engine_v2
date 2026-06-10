@@ -4,8 +4,12 @@
 #include "scene/scene.hpp"
 #include "debugging/debug_draw.hpp"
 #include "rendering/render_utils.hpp"
+#include "components/transform.hpp"
 
 #include <vector>
+
+#undef min
+#undef max
 
 static const std::string shaderDir = "assets/shaders/";
 
@@ -421,8 +425,18 @@ void Renderer::RegisterGeometryPass(
 
                         UploadConstantBuffer(deviceContext, this->sharedResources.perMaterialBuffer, perMaterialData);
 
+                        XMFLOAT3 scale = Transform::ExtractScale(XMMatrixTranspose(XMLoadFloat4x4(&command.worldMatrix)));
+                        float uniformScale = std::max({scale.x, scale.y, scale.z});
+
                         Tessellation_data tessellationData = this->tessellationData;
-                        tessellationData.displacementScale = material->displacementScale;
+                        tessellationData.displacementScale = material->displacementScale * uniformScale;
+
+                        const float normalStrengthMultiplier = 5.0f;
+                        tessellationData.normalStrength = material->displacementScale * uniformScale * normalStrengthMultiplier;
+
+                        Texture2D *displacementTexture = material->displacementTexture.Get();
+                        tessellationData.texelSize.x = 1.0f / displacementTexture->width;
+                        tessellationData.texelSize.y = 1.0f / displacementTexture->height;
 
                         UploadConstantBuffer(deviceContext, this->tessellationBuffer, tessellationData);
 
@@ -433,7 +447,7 @@ void Renderer::RegisterGeometryPass(
                         deviceContext->PSSetShaderResources(0, 2, psSRVs);
 
                         ID3D11ShaderResourceView *dsSRVs[1] = {
-                            material->displacementTexture.Get()->shaderResourceView
+                            displacementTexture->shaderResourceView
                         };
                         deviceContext->DSSetShaderResources(2, 1, dsSRVs);
                     }
