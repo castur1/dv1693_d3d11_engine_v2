@@ -8,11 +8,11 @@
     X Hierarchical view frustum culling
     X Normal mapping
 
+    Everything done :D
+
 * Things I must fix before handing in:
 
     * Freezing the camera in place to showcase hierarchical frustum culling
-
-    * Being able to toggle wireframe rendering to showcase tessellation
 
     * Probably add more options to the debug overlay rather than relying on buttons
 
@@ -79,8 +79,6 @@
 
 * Look everything over. Everything. Lots of things could probably be refactored. 
 
-* Make shadow sampler common, probably
-
 * FixedUpdate()
 
 * Improve particles
@@ -99,13 +97,9 @@
 
 * Tessellation
 
-    * Wireframe rendering mode
-
     * Should tessellation be visible in shadows?
 
-    * Make tessellation displacement scale relative to the scale of the object (extracted from world matrix on the CPU probably)
-
-    * Allow model rnderer to control tessellation parameters?
+    * Allow model renderer to control tessellation parameters?
 
 
 For skyboxes:

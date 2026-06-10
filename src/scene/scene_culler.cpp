@@ -5,6 +5,7 @@
 #include "debugging/debug.hpp"
 #include "scene/entity.hpp"
 #include "debugging/debug_draw.hpp"
+#include "rendering/render_utils.hpp"
 
 #include <algorithm>
 

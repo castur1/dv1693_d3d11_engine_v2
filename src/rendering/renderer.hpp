@@ -57,6 +57,10 @@ class Renderer {
 
     Tessellation_data tessellationData{};
 
+    // Debug
+    bool isCameraFrozen = false;
+    Render_view frozenRenderView{};
+
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
     bool LoadGBufferShaders();
@@ -95,8 +99,6 @@ class Renderer {
     );
 
     void BuildFrameGraph();
-
-    Render_view *GetView(View_type type, int index = 0);
 
 public:
     Renderer() = default;

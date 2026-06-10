@@ -73,7 +73,7 @@ public:
 
     void Build();
 
-    void GatherVisibility(std::vector<Render_view> &views) const; // TODO: Rename. Go through the rest of the code as well
+    void GatherVisibility(std::vector<Render_view> &views) const;
 
     void Clear();
 

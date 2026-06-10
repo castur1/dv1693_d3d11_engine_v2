@@ -120,3 +120,11 @@ bool CreateStructuredBuffer(
 
     return true;
 }
+
+Render_view *GetView(std::vector<Render_view> &views, View_type type, int index) {
+    for (Render_view &view : views)
+        if (view.type == type && view.index == index)
+            return &view;
+
+    return nullptr;
+}

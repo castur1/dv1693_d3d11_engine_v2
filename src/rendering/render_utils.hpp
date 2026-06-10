@@ -2,6 +2,7 @@
 #define RENDER_UTILS_HPP
 
 #include "core/logging.hpp"
+#include "rendering/render_view.hpp"
 
 #include <d3d11.h>
 #include <string>
@@ -50,5 +51,7 @@ bool CreateStructuredBuffer(
     ID3D11ShaderResourceView **outSRV,
     const char *debugName
 );
+
+Render_view *GetView(std::vector<Render_view> &views, View_type type, int index = 0);
 
 #endif

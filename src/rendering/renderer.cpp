@@ -342,7 +342,8 @@ void Renderer::RegisterGeometryPass(
                 return;
             }
 
-            this->sharedResources.UploadPerFrameData(deviceContext, *view);
+            const Render_view &renderView = this->isCameraFrozen ? this->frozenRenderView : *view;
+            this->sharedResources.UploadPerFrameData(deviceContext, renderView);
 
             ID3D11RenderTargetView *rtvs[3] = {
                 context.GetRenderTargetView(data.albedo),
@@ -764,14 +765,6 @@ void Renderer::BuildFrameGraph() {
     this->frameGraph.Compile(this->width, this->height);
 }
 
-Render_view *Renderer::GetView(View_type type, int index) {
-    for (Render_view &view : this->views)
-        if (view.type == type && view.index == index)
-            return &view;
-
-    return nullptr;
-}
-
 bool Renderer::Initialize(HWND hWnd) {
     LogInfo("Creating renderer...\n");
     LogIndent();
@@ -878,21 +871,37 @@ void Renderer::Render(Scene *scene) {
 
     scene->GatherVisibility(this->views);
 
-    const Render_view *primary = this->GetView(View_type::primary);
+    const Render_view *primary = GetView(this->views, View_type::primary);
 
     if (primary) {
         this->reflectionSystem.PrepareViews(scene, *primary, this->views);
         this->shadowSystem.PrepareViews(scene, *primary, this->views);
     }
 
+    bool isFreezeRequested = Debug::GetSetting("renderer.freezeCamera", false);
+    
+    if (isFreezeRequested && !this->isCameraFrozen) {
+        if (primary) {
+            this->frozenRenderView = *primary;
+            this->isCameraFrozen = true;
+        }
+    }
+    else if (!isFreezeRequested) {
+        this->isCameraFrozen = false;
+    }
+
+    if (this->isCameraFrozen && primary)
+        DebugDraw::Frustum(primary->frustum, {1.0f, 0.8f, 0.2f, 1.0f});
+
     this->frameGraph.Execute(this->deviceContext, this->views);
 
     // Needed for DebugDraw and ImGui
     this->deviceContext->OMSetRenderTargets(1, &this->renderTargetView, nullptr);
 
-    if (primary) {
-        XMMATRIX viewMatrix = XMLoadFloat4x4(&primary->viewMatrix);
-        XMMATRIX projectionMatrix = XMLoadFloat4x4(&primary->projectionMatrix);
+    const Render_view *debugView = this->isCameraFrozen ? &this->frozenRenderView : primary;
+    if (debugView) {
+        XMMATRIX viewMatrix = XMLoadFloat4x4(&debugView->viewMatrix);
+        XMMATRIX projectionMatrix = XMLoadFloat4x4(&debugView->projectionMatrix);
         XMFLOAT4X4 viewProjectionMatrix;
         XMStoreFloat4x4(&viewProjectionMatrix, XMMatrixTranspose(XMMatrixMultiply(viewMatrix, projectionMatrix)));
         DebugDraw::Render(this->deviceContext, viewProjectionMatrix);
