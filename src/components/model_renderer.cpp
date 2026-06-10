@@ -54,6 +54,7 @@ void ModelRenderer::Render(const Render_view &view, RenderQueue &queue) {
 
 void ModelRenderer::OnDestroy(const Engine_context &context) {}
 
+// TODO: This currently doesn't take tessellation into account
 bool ModelRenderer::GetWorldBounds(BoundingBox &outBounds) const {
     Model *model = this->modelHandle.Get();
     if (!model) {

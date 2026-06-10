@@ -69,9 +69,9 @@ static_assert(sizeof(Particle_visual_data) % 16 == 0);
 // CBuffer
 struct Tessellation_data {
     float    minFactor         = 1.0f;
-    float    maxFactor         = 64.0f;
+    float    maxFactor         = 32.0f;
     float    minDistance       = 2.0f;
-    float    maxDistance       = 40.0f;
+    float    maxDistance       = 50.0f;
     float    displacementScale = 0.05f;
     float    normalStrength    = 1.0f;
     XMFLOAT2 texelSize         = { 1.0f / 1024.0f, 1.0f / 1024.0f };

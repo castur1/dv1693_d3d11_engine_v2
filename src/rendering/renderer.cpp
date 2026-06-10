@@ -5,6 +5,7 @@
 #include "debugging/debug_draw.hpp"
 #include "rendering/render_utils.hpp"
 #include "components/transform.hpp"
+#include "debugging/debug.hpp"
 
 #include <vector>
 
@@ -24,6 +25,8 @@ Renderer::~Renderer() {
     SafeRelease(this->gBufferVS);
     SafeRelease(this->gBufferPS);
     SafeRelease(this->gBufferLayout);
+
+    SafeRelease(this->wireframeRS);
 
     SafeRelease(this->tessellationVS);
     SafeRelease(this->tessellationHS);
@@ -183,6 +186,21 @@ bool Renderer::LoadGBufferShaders() {
     }
 
     LogInfo("G-buffer shaders loaded\n");
+    return true;
+}
+
+bool Renderer::CreateWireframeRasterizerState() {
+    D3D11_RASTERIZER_DESC desc{};
+    desc.FillMode = D3D11_FILL_WIREFRAME;
+    desc.CullMode = D3D11_CULL_NONE;
+    desc.DepthClipEnable = TRUE;
+
+    HRESULT result = this->device->CreateRasterizerState(&desc, &this->wireframeRS);
+    if (FAILED(result)) {
+        LogWarn("Failed to create wireframe rasterizer state\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -357,6 +375,9 @@ void Renderer::RegisterGeometryPass(
 
             deviceContext->RSSetViewports(1, &this->viewport);
 
+            if (Debug::GetSetting("renderer.wireframe", false))
+                deviceContext->RSSetState(this->wireframeRS);
+
             for (Geometry_command &command : view->queue.geometryCommands) {
                 Per_object_data perObjectData{};
                 perObjectData.worldMatrix = command.worldMatrix;
@@ -474,6 +495,8 @@ void Renderer::RegisterGeometryPass(
 
             ID3D11ShaderResourceView *nullSRVs[2] = {};
             deviceContext->PSSetShaderResources(0, 2, nullSRVs);
+
+            deviceContext->RSSetState(nullptr);
         }
     );
 }
@@ -768,6 +791,9 @@ bool Renderer::Initialize(HWND hWnd) {
         return false;
 
     if (!this->LoadGBufferShaders())
+        return false;
+
+    if (!this->CreateWireframeRasterizerState())
         return false;
 
     if (!this->LoadTessellationShaders())
