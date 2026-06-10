@@ -38,7 +38,7 @@ Renderer::~Renderer() {
     SafeRelease(this->resolveVS);
     SafeRelease(this->resolvePS);
 
-    SafeRelease(this->debugResolveBuffer);
+    SafeRelease(this->deferredDebugBuffer);
 
     SafeRelease(this->renderTargetView);
 
@@ -292,8 +292,8 @@ bool Renderer::CreateConstantBuffers() {
         return false;
     }
 
-    desc.ByteWidth = sizeof(Debug_resolve_data);
-    result = this->device->CreateBuffer(&desc, nullptr, &this->debugResolveBuffer);
+    desc.ByteWidth = sizeof(Deferred_debug_data);
+    result = this->device->CreateBuffer(&desc, nullptr, &this->deferredDebugBuffer);
     if (FAILED(result)) {
         LogError("Failed to create debug resolve constant buffer");
         return false;
@@ -644,12 +644,12 @@ void Renderer::RegisterResolvePass(
 
             Render_view *view = context.GetView(View_type::primary);
             if (view) {
-                this->currentDebugData.nearPlane = view->nearPlane;
-                this->currentDebugData.farPlane  = view->farPlane;
+                this->deferredDebugData.nearPlane = view->nearPlane;
+                this->deferredDebugData.farPlane  = view->farPlane;
             }
 
-            UploadConstantBuffer(deviceContext, this->debugResolveBuffer, this->currentDebugData);
-            deviceContext->PSSetConstantBuffers(3, 1, &this->debugResolveBuffer); // Debug
+            UploadConstantBuffer(deviceContext, this->deferredDebugBuffer, this->deferredDebugData);
+            deviceContext->PSSetConstantBuffers(3, 1, &this->deferredDebugBuffer); // Debug
 
             ID3D11RenderTargetView *rtv = context.GetRenderTargetView(data.backbuffer);
             deviceContext->ClearRenderTargetView(rtv, this->clearColour);
@@ -893,6 +893,10 @@ void Renderer::Render(Scene *scene) {
     if (this->isCameraFrozen && primary)
         DebugDraw::Frustum(primary->frustum, {1.0f, 0.8f, 0.2f, 1.0f});
 
+    int deferredDebugMode = Debug::GetIntegerSetting("renderer.deferredMode");
+    this->deferredDebugData.debugMode = deferredDebugMode % 6;
+    Debug::SetIntegerSetting("renderer.deferredMode", this->deferredDebugData.debugMode);
+
     this->frameGraph.Execute(this->deviceContext, this->views);
 
     // Needed for DebugDraw and ImGui
@@ -936,18 +940,6 @@ void Renderer::AddView(const Render_view &view, const XMMATRIX &viewMatrix, cons
     v.frustum.Transform(v.frustum, invViewMatrix);
 
     this->AddView(v);
-}
-
- // Debug
-void Renderer::SetDebugData(int debugMode, float nearPlane, float farPlane) {
-    this->currentDebugData.debugMode = debugMode;
-    this->currentDebugData.nearPlane = nearPlane;
-    this->currentDebugData.farPlane = farPlane;
-}
-
-// Debug
-int Renderer::GetDebugMode() {
-    return this->currentDebugData.debugMode;
 }
 
 void Renderer::ToggleFullscreen() {

@@ -52,8 +52,8 @@ class Renderer {
     ID3D11PixelShader *resolvePS = nullptr;
 
     // Debug
-    ID3D11Buffer *debugResolveBuffer = nullptr;
-    Debug_resolve_data currentDebugData{};
+    ID3D11Buffer *deferredDebugBuffer = nullptr;
+    Deferred_debug_data deferredDebugData{};
 
     Tessellation_data tessellationData{};
 
@@ -116,10 +116,6 @@ public:
 
     void AddView(const Render_view &view);
     void AddView(const Render_view &view, const XMMATRIX &viewMatrix, const XMMATRIX &projectionMatrix);
-
-    // TODO: This is kinda redundant now, at least nearPlane/farPlane since we're getting those from the Render_view
-    void SetDebugData(int debugMode, float nearPlane, float farPlane); // Debug.
-    int GetDebugMode(); // Debug
 
     ID3D11Device *GetDevice() const { return this->device; }
     ID3D11DeviceContext *GetDeviceContext() const { return this->deviceContext; }

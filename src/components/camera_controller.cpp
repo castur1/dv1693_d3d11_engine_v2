@@ -122,9 +122,8 @@ void CameraController::Update(const Frame_context &context) {
 
     // Debug //
 
-    int debugMode = renderer->GetDebugMode();
     if (Input::IsKeyPressed('C'))
-        debugMode = (debugMode + 1) % 6;
+        Debug::SetIntegerSetting("renderer.deferredMode", (Debug::GetIntegerSetting("renderer.deferredMode") + 1) % 6);
 
     static int skyboxIndex = 0;
     if (Input::IsKeyPressed('F')) {
@@ -164,8 +163,6 @@ void CameraController::Update(const Frame_context &context) {
             
         }
     }
-
-    renderer->SetDebugData(debugMode, this->nearPlane, this->farPlane);
 
     if (Input::IsKeyPressed('P')) {
         LogInfo("Position: [%.2f, %.2f, %.2f]\n", position.x, position.y, position.z);

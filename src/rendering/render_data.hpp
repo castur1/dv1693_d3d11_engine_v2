@@ -79,13 +79,13 @@ struct Tessellation_data {
 static_assert(sizeof(Tessellation_data) % 16 == 0);
 
 // CBuffer
-struct Debug_resolve_data {
-    int   debugMode;
-    float nearPlane;
-    float farPlane;
+struct Deferred_debug_data {
+    int   debugMode = 0;
+    float nearPlane = 0.1f;
+    float farPlane  = 512.0f;
     float pad0;
 };
-static_assert(sizeof(Debug_resolve_data) % 16 == 0);
+static_assert(sizeof(Deferred_debug_data) % 16 == 0);
 
 // Structured buffer element
 struct Directional_light_data {

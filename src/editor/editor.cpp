@@ -235,6 +235,10 @@ void Editor::DrawInspector() {
     ImGui::End();
 }
 
+static inline float CalculateInputIntWidth(int value) {
+    return ImGui::CalcTextSize(std::to_string(value).c_str()).x + 85.0f;
+}
+
 void Editor::DrawSettings() {
     if (!this->showSettings)
         return;
@@ -250,6 +254,14 @@ void Editor::DrawSettings() {
         bool newValue = value;
         if (ImGui::Checkbox(name.c_str(), &newValue))
             Debug::SetSetting(name, newValue);
+    }
+
+    for (const auto &[name, value] : Debug::GetCurrentIntegerSettings()) {
+        int newValue = value;
+        ImGui::SetNextItemWidth(CalculateInputIntWidth(value));
+        if (ImGui::InputInt(name.c_str(), &newValue)) {
+            Debug::SetIntegerSetting(name, newValue);
+        }
     }
 
     ImGui::End();

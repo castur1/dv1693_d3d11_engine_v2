@@ -1,6 +1,7 @@
 #include "debug.hpp"
 
 std::map<std::string, bool> Debug::settings;
+std::map<std::string, int> Debug::integerSettings;
 std::map<std::string, std::string> Debug::stats;
 
 void Debug::NewFrame() { 
@@ -17,6 +18,18 @@ bool Debug::GetSetting(const std::string &name, bool defaultValue) {
         return iter->second;
 
     return settings[name] = defaultValue;
+}
+
+void Debug::SetIntegerSetting(const std::string &name, int value) {
+    integerSettings[name] = value;
+}
+
+int Debug::GetIntegerSetting(const std::string &name, int defaultValue) {
+    auto iter = integerSettings.find(name);
+    if (iter != integerSettings.end())
+        return iter->second;
+
+    return integerSettings[name] = defaultValue;
 }
 
 void Debug::SetStat(const std::string &name, const std::string &value) { 
@@ -43,6 +56,10 @@ void Debug::SetStat(const std::string &name, XMFLOAT3 value) {
 
 const std::map<std::string, bool> &Debug::GetCurrentSettings() {
     return settings;
+}
+
+const std::map<std::string, int> &Debug::GetCurrentIntegerSettings() {
+    return integerSettings;
 }
 
 const std::map<std::string, std::string> &Debug::GetCurrentStats() {
