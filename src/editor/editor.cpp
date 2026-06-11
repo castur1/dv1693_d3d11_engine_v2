@@ -8,6 +8,7 @@
 #include "debugging/debug.hpp"
 #include "debugging/debug_draw.hpp"
 #include "components/transform.hpp"
+#include "scene/scene_manager.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -267,7 +268,7 @@ void Editor::DrawSettings() {
     ImGui::End();
 }
 
-void Editor::NewFrame(float deltaTime, Scene *scene) {
+void Editor::NewFrame(float deltaTime, SceneManager *sceneManager) {
     // NOTE: There's a bug where the game freezes temporarily when a mouse button is held down,
     // the mouse is captured, and there's an ImGui window over (0, 0)
     ImGuiIO &io = ImGui::GetIO();
@@ -294,7 +295,7 @@ void Editor::NewFrame(float deltaTime, Scene *scene) {
     }
 
     this->DrawFPSOverlay(deltaTime);
-    this->DrawEntityHierarchy(scene);
+    this->DrawEntityHierarchy(sceneManager->GetCurrentScene());
     this->DrawInspector();
     this->DrawSettings();
 

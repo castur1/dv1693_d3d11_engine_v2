@@ -5,6 +5,7 @@
 #include <d3d11.h>
 
 class Scene;
+class SceneManager;
 class Entity;
 
 class Editor {
@@ -34,7 +35,7 @@ public:
     bool Initalize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *deviceContext);
     void Shutdown();
 
-    void NewFrame(float deltaTime, Scene *scene);
+    void NewFrame(float deltaTime, SceneManager *sceneManager);
     void Render();
 
     bool HasCapturedInput();

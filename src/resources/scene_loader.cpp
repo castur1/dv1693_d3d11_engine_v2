@@ -192,7 +192,7 @@ static std::pair<std::string, std::string> ParseKeyValuePair(const std::string &
     return {key, value};
 }
 
-bool SceneLoader::Load(Scene &scene, const std::string &name) {
+bool SceneLoader::Load(Scene &outScene, const std::string &name) {
     LogInfo("\n");
     LogInfo("Loading scene '%s'...\n", name.c_str());
     LogIndent();
@@ -206,8 +206,8 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         return false;
     }
 
-    scene.Clear();
-    scene.name = name;
+    outScene.Clear();
+    outScene.name = name;
 
     if (this->assetManager)
         this->assetManager->MarkAllAssetsUnused();
@@ -264,7 +264,7 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 if (iter != localLookup.end())
                     LogWarn("Entity with UUID '%s' already exists in scene!\n", uuidStr.c_str());
 
-                currentEntity = scene.AddEntity(uuid);
+                currentEntity = outScene.AddEntity(uuid);
                 localLookup[uuid] = currentEntity;
 
 #if LOGGING_VERBOSE

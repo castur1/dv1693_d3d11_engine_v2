@@ -3,6 +3,7 @@
 
 #include "scene/scene.hpp"
 #include "core/frame_context.hpp"
+#include "scene/scene_registry.hpp"
 
 #include <string>
 #include <memory>
@@ -18,6 +19,8 @@ class SceneManager {
     std::string currentSceneName;
     std::string targetSceneName;
 
+    SceneRegistry registry;
+
     void ChangeScene(const std::string &name);
 
 public:
@@ -31,7 +34,8 @@ public:
 
     void Update(const Frame_context &context);
 
-    Scene *GetCurrentScene();
+    Scene *GetCurrentScene() { return &this->currentScene; }
+    const SceneRegistry &GetRegistry() const { return this->registry; }
 };
 
 #endif

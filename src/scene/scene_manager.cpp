@@ -30,6 +30,9 @@ bool SceneManager::Initialize(const Engine_context &context) {
 
     this->currentScene.SetEngineContext(&context);
 
+    this->registry.SetSceneDirectory("scenes/");
+    this->registry.RegisterScenes();
+
     // TODO: Read this from a file or something instead idk
     this->RequestSceneChange("demo_0");
 
@@ -45,8 +48,4 @@ void SceneManager::Update(const Frame_context &context) {
         this->ChangeScene(this->targetSceneName);
 
     this->currentScene.Update(context);
-}
-
-Scene * SceneManager::GetCurrentScene() {
-    return &this->currentScene;
 }

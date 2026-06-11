@@ -15,7 +15,7 @@ public:
     SceneLoader()  = default;
     ~SceneLoader() = default;
 
-    virtual bool Load(Scene &scene, const std::string &name);
+    virtual bool Load(Scene &outScene, const std::string &name);
 
     void SetAssetManager(AssetManager *assetManager) { this->assetManager = assetManager; }
     void SetSceneDirectory(const std::string &path) { this->sceneDir = path; }
