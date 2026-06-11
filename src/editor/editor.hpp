@@ -1,6 +1,8 @@
 #ifndef EDITOR_HPP
 #define EDITOR_HPP
 
+#include "core/uuid.hpp"
+
 #include <Windows.h>
 #include <d3d11.h>
 
@@ -12,13 +14,17 @@ class Editor {
     float fpsSmoothed = 0.0f;
     float fpsAlpha = 0.02f;
 
+    EntityID selectedEntityID = EntityID::invalid;
     Entity *selectedEntity = nullptr;
 
     bool showFPSOverlay = true;
     bool showEntityHierarchy = true;
     bool showInspector = true;
     bool showSettings = true;
+    
+    bool showOpenScenePopup = false;
 
+    void DrawSceneMenu(SceneManager *sceneManager);
     void DrawFPSOverlay(float deltaTime);
     void DrawEntityNodeRecursive(Entity *entity);
     void DrawEntityHierarchy(Scene *scene);

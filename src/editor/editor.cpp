@@ -49,6 +49,54 @@ void Editor::Shutdown() {
     ImGui::DestroyContext();
 }
 
+void Editor::DrawSceneMenu(SceneManager *sceneManager) {
+    if (!sceneManager)
+        return;
+
+    if (ImGui::BeginMenu("Scene")) {
+        if (ImGui::MenuItem("Open..."))
+            this->showOpenScenePopup = true;
+
+        ImGui::BeginDisabled();
+        ImGui::MenuItem("Save");
+        ImGui::MenuItem("Save as...");
+        ImGui::EndDisabled();
+
+        ImGui::EndMenu();
+    }
+
+    if (this->showOpenScenePopup)
+        ImGui::OpenPopup("Open...");
+
+    ImGui::SetNextWindowSize({250.0f, 0.0f});
+    if (ImGui::BeginPopupModal("Open...", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        const std::vector<std::string> &names = sceneManager->GetRegistry().GetSceneNames();
+        int namesCount = names.size();
+
+        float itemHeight = ImGui::GetTextLineHeightWithSpacing();
+        float listHeight = itemHeight * (namesCount < 1 ? 1 : namesCount > 10 ? 10 : namesCount) + 5.0f;
+
+        if (ImGui::BeginListBox("##scene_list", {-FLT_MIN, listHeight})) {
+            for (const std::string &name : names) {
+                if (ImGui::Selectable(name.c_str())) {
+                    sceneManager->RequestSceneChange(name);
+                    this->showOpenScenePopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            ImGui::EndListBox();
+        }
+
+        if (ImGui::Button("Cancel")) {
+            this->showOpenScenePopup = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
 void Editor::DrawFPSOverlay(float deltaTime) {
     if (!this->showFPSOverlay)
         return;
@@ -121,8 +169,16 @@ void Editor::DrawEntityNodeRecursive(Entity *entity) {
 
     bool isOpened = ImGui::TreeNodeEx(label.c_str(), flags);
 
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-        this->selectedEntity = isSelected ? nullptr : entity;
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+        if (isSelected) {
+            this->selectedEntity = nullptr;
+            this->selectedEntityID = EntityID::invalid;
+        }
+        else {
+            this->selectedEntity = entity;
+            this->selectedEntityID = uuid;
+        }
+    }
 
     if (isOpened) {
         for (Entity *child : entity->GetChildren())
@@ -179,7 +235,7 @@ void Editor::DrawInspector() {
     if (!this->showInspector)
         return;
 
-    ImGui::SetNextWindowSize({0.0f, 0.0f}, ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize({-FLT_MIN, 0.0f}, ImGuiCond_Appearing);
 
     if (!ImGui::Begin("Inspector", &this->showInspector, ImGuiWindowFlags_NoFocusOnAppearing)) {
         ImGui::End();
@@ -269,6 +325,13 @@ void Editor::DrawSettings() {
 }
 
 void Editor::NewFrame(float deltaTime, SceneManager *sceneManager) {
+    if (!sceneManager) {
+        LogWarn("Scene manager was nullptr\n");
+        return;
+    }
+
+    this->selectedEntity = sceneManager->GetCurrentScene()->GetEntityByUUID(this->selectedEntityID);
+
     // NOTE: There's a bug where the game freezes temporarily when a mouse button is held down,
     // the mouse is captured, and there's an ImGui window over (0, 0)
     ImGuiIO &io = ImGui::GetIO();
@@ -291,6 +354,9 @@ void Editor::NewFrame(float deltaTime, SceneManager *sceneManager) {
 
             ImGui::EndMenu();
         }
+
+        this->DrawSceneMenu(sceneManager);
+
         ImGui::EndMainMenuBar();
     }
 
