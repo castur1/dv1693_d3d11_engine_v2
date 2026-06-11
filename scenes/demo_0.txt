@@ -30,6 +30,9 @@ entity a1b2-c3d4-e5f6-0123
         isActive: true
         textureID: "220f-2c7f-91c2-0e6e"
 
+    component DebugController
+        isActive: true
+
 entity 9865-ad23-fb56-0964
     name: "player_capsule"
     isActive: true

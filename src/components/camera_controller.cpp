@@ -113,55 +113,6 @@ void CameraController::Update(const Frame_context &context) {
 
     context.engineContext.renderer->AddView(view, viewMatrix, projectionMatrix);
 
-    if (Input::IsKeyPressed('1'))
-        context.engineContext.sceneManager->RequestSceneChange("demo_0");
-    if (Input::IsKeyPressed('2'))
-        context.engineContext.sceneManager->RequestSceneChange("demo_1");
-
-    // Debug //
-
-    if (Input::IsKeyPressed('C'))
-        Debug::SetIntegerSetting("renderer.deferredMode", (Debug::GetIntegerSetting("renderer.deferredMode") + 1) % 6);
-
-    static int skyboxIndex = 0;
-    if (Input::IsKeyPressed('F')) {
-        skyboxIndex = (skyboxIndex + 1) % 9;
-
-        Skybox *skybox = this->GetOwner()->GetComponent<Skybox>();
-        if (skybox) {
-            skybox->isActive = true;
-            switch (skyboxIndex) {
-                case 0:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("220f-2c7f-91c2-0e6e"));
-                    break;
-                case 1:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("88b8-d931-0b5b-d141"));
-                    break;
-                case 2:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("cf25-b8d0-ac68-2630"));
-                    break;
-                case 3:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("8987-5239-c4b9-e148"));
-                    break;
-                case 4:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("b3b6-8117-f6f0-0f9f"));
-                    break;
-                case 5:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("269e-0a2c-a060-833b"));
-                    break;
-                case 6:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("e262-8483-154f-c662"));
-                    break;
-                case 7:
-                    skybox->textureCubeHandle.SetID(AssetID::FromString("f094-dfd7-d324-10c3"));
-                    break;
-                case 8:
-                    skybox->isActive = false;
-            }
-            
-        }
-    }
-
     if (Input::IsKeyPressed('P')) {
         LogInfo("Position: [%.2f, %.2f, %.2f]\n", position.x, position.y, position.z);
         LogInfo("Rotation: [%.2f, %.2f, %.2f]\n", rotation.x, rotation.y, rotation.z);
@@ -172,5 +123,4 @@ void CameraController::Update(const Frame_context &context) {
 }
 
 void CameraController::Render(const Render_view &view, RenderQueue &queue) {}
-
 void CameraController::OnDestroy(const Engine_context &context) {}
