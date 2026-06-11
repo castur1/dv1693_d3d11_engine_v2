@@ -15,8 +15,6 @@ void CameraController::Update(const Frame_context &context) {
     if (!this->isActive)
         return;
 
-    Renderer *renderer = context.engineContext.renderer;
-
     Transform *transform = this->GetOwner()->GetComponent<Transform>();
     if (!transform) {
         LogWarn("Missing Transform component on owner\n");
@@ -98,7 +96,7 @@ void CameraController::Update(const Frame_context &context) {
 
     XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
         XMConvertToRadians(this->fieldOfView), 
-        renderer->GetAspectRatio(), 
+        context.engineContext.renderer->GetAspectRatio(), 
         this->nearPlane, 
         this->farPlane
     );

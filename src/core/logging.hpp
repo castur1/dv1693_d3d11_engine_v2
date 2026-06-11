@@ -3,6 +3,8 @@
 
 #include "stdio.h"
 
+#define LOGGING_VERBOSE 0
+
 namespace LogImpl {
     static const int SPACES_PER_INDENT = 2;
 

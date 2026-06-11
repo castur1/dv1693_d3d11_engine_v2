@@ -12,9 +12,9 @@
 
 * Things I must fix before handing in:
 
-    * Freezing the camera in place to showcase hierarchical frustum culling
+    * Construct a better demo scene?
 
-    * Probably add more options to the debug overlay rather than relying on buttons
+    * Probably add more options to the debug overlay rather than relying on buttons (e.g. scene changing)
 
 * Bind enums
 
@@ -40,8 +40,6 @@
 
     * Saving the scene
 
-    * Make renderer debugMode a setting instead, maybe? Would require non-bool settings
-
 * XMVECTOR versions of Get/Set in Transform
 
 * Assets that are loaded by other assets (e.g. textures loaded by models) are not present in the asset section and 
@@ -50,8 +48,6 @@
     * Rethink asset reuse. Or just include the sub-assets in the asset list. 
 
 * Improve culling
-
-    * Freezing camera in place while moving the view frustum (for culling visualization)
 
     * Use an array instead of a vector in the octree node. Should be faster, right?
 

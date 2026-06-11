@@ -83,7 +83,9 @@ void AssetRegistry::RegisterAssets() {
             this->uuidToPath[uuid] = assetPathRel;
             this->pathToUUID[assetPathRel] = uuid;
 
+#if LOGGING_VERBOSE
             LogInfo("Registered asset '%s': '%s'\n", iter->second.c_str(), assetPathRel.c_str());
+#endif
 
             auto &metadata = this->metadata[uuid];
             for (const auto &[key, value] : data)
@@ -122,7 +124,9 @@ void AssetRegistry::RegisterAssets() {
             this->uuidToPath[uuid] = assetPathRel;
             this->pathToUUID[assetPathRel] = uuid;
 
+#if LOGGING_VERBOSE
             LogInfo("Registered asset '%s': '%s'\n", uuidStr.c_str(), assetPathRel.c_str());
+#endif
         }
     }
 

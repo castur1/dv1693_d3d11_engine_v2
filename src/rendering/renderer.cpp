@@ -894,7 +894,7 @@ void Renderer::Render(Scene *scene) {
         DebugDraw::Frustum(primary->frustum, {1.0f, 0.8f, 0.2f, 1.0f});
 
     int deferredDebugMode = Debug::GetIntegerSetting("renderer.deferredMode");
-    this->deferredDebugData.debugMode = deferredDebugMode % 6;
+    this->deferredDebugData.debugMode = ((deferredDebugMode % 6) + 6) % 6;
     Debug::SetIntegerSetting("renderer.deferredMode", this->deferredDebugData.debugMode);
 
     this->frameGraph.Execute(this->deviceContext, this->views);

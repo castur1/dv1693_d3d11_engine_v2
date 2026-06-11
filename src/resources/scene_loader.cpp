@@ -267,7 +267,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 currentEntity = scene.AddEntity(uuid);
                 localLookup[uuid] = currentEntity;
 
+#if LOGGING_VERBOSE
                 LogInfo("Created entity '%s'\n", uuidStr.c_str());
+#endif
                 LogIndent();
             }
             else if (line == "assets:") {
@@ -278,16 +280,22 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                     LogUnindent();
                 }
 
+#if LOGGING_VERBOSE
                 LogInfo("Parsing asset section\n");
+#endif
                 LogIndent();
             }
             else if (line.find("version:") == 0) {   // unused
                 auto [key, value] = ParseKeyValuePair(line);
+#if LOGGING_VERBOSE
                 LogInfo("Scene version: '%s'\n", value.c_str());
+#endif
             }
             else if (line.find("scene:") == 0) {     // unused
                 auto [key, value] = ParseKeyValuePair(line);
+#if LOGGING_VERBOSE
                 LogInfo("Scene name: '%s'\n", value.c_str());
+#endif
             }
         }
         else if (indent == 4) {
@@ -298,7 +306,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                 AssetID uuid = AssetID::FromString(line);
                 if (uuid.IsValid()) {
                     assets.push_back(uuid);
+#if LOGGING_VERBOSE
                     LogInfo("Found asset '%s'\n", line.c_str());
+#endif
                 }
             }
             else if (line.find("component ") == 0) {
@@ -314,7 +324,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
                     currentEntity->AddComponentRaw(currentComponent);
                     fieldWriter = FieldWriter();
 
+#if LOGGING_VERBOSE
                     LogInfo("Added component '%s'\n", currentComponentType.c_str());
+#endif
                 }
                 else {
                     LogWarn("Unknown component type '%s' at line %d\n", currentComponentType.c_str(), lineNumber);
@@ -328,7 +340,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
 
                     if (key == "name") {
                         currentEntity->name = value;
+#if LOGGING_VERBOSE
                         LogInfo("Entity name: '%s'\n", value.c_str());
+#endif
                     }
                     else if (key == "isActive") {
                         currentEntity->SetActive(value == "true" || value == "True" || value == "1");
@@ -377,7 +391,9 @@ bool SceneLoader::Load(Scene &scene, const std::string &name) {
         auto iter = localLookup.find(parentUUID);
         if (iter != localLookup.end()) {
             child->SetParent(iter->second);
+#if LOGGING_VERBOSE
             LogInfo("Parented entity '%s' to '%s'\n", child->GetID().ToString().c_str(), parentUUID.ToString().c_str());
+#endif
         }
         else {
             LogWarn("Parent UUID '%s' not found in scene\n", parentUUID.ToString().c_str());
