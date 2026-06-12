@@ -18,7 +18,7 @@ struct Geometry_command {
     INT  baseVertex = 0;
 
     AssetHandle<Material> material{};
-    bool isReflective = false; // TODO: Should probably be part of the material
+    bool isReflective = false;
 
     XMFLOAT4X4 worldMatrix{};
 };

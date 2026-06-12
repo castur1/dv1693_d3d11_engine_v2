@@ -108,6 +108,8 @@ struct Material {
     AssetHandle<Texture2D> displacementTexture;
     bool useTessellation = false;
     float displacementScale = 0.05f;
+
+    bool enableBackfaceCulling = true;
 };
 
 struct Model {

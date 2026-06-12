@@ -189,18 +189,34 @@ bool Renderer::LoadGBufferShaders() {
     return true;
 }
 
-bool Renderer::CreateWireframeRasterizerState() {
-    D3D11_RASTERIZER_DESC desc{};
-    desc.FillMode = D3D11_FILL_WIREFRAME;
-    desc.CullMode = D3D11_CULL_NONE;
-    desc.DepthClipEnable = TRUE;
+bool Renderer::CreateRasterizerStates() {
+    {
+        D3D11_RASTERIZER_DESC desc{};
+        desc.FillMode = D3D11_FILL_WIREFRAME;
+        desc.CullMode = D3D11_CULL_NONE;
+        desc.DepthClipEnable = TRUE;
 
-    HRESULT result = this->device->CreateRasterizerState(&desc, &this->wireframeRS);
-    if (FAILED(result)) {
-        LogWarn("Failed to create wireframe rasterizer state\n");
-        return false;
+        HRESULT result = this->device->CreateRasterizerState(&desc, &this->wireframeRS);
+        if (FAILED(result)) {
+            LogWarn("Failed to create wireframe rasterizer state\n");
+            return false;
+        }
     }
 
+    {
+        D3D11_RASTERIZER_DESC desc{};
+        desc.FillMode = D3D11_FILL_SOLID;
+        desc.CullMode = D3D11_CULL_NONE;
+        desc.DepthClipEnable = TRUE;
+
+        HRESULT result = this->device->CreateRasterizerState(&desc, &this->noBackfaceCullingRS);
+        if (FAILED(result)) {
+            LogWarn("Failed to create no backface culling rasterizer state\n");
+            return false;
+        }
+    }
+
+    LogInfo("Created rasterizer states\n");
     return true;
 }
 
@@ -376,9 +392,9 @@ void Renderer::RegisterGeometryPass(
 
             deviceContext->RSSetViewports(1, &this->viewport);
 
-            if (Debug::GetSetting("renderer.wireframe", false))
-                deviceContext->RSSetState(this->wireframeRS);
+            bool isWireframe = Debug::GetSetting("renderer.wireframe", false);
 
+            ID3D11RasterizerState *currentRS = nullptr;
             for (Geometry_command &command : view->queue.geometryCommands) {
                 Per_object_data perObjectData{};
                 perObjectData.worldMatrix = command.worldMatrix;
@@ -388,6 +404,10 @@ void Renderer::RegisterGeometryPass(
                 );
 
                 UploadConstantBuffer(deviceContext, this->sharedResources.perObjectBuffer, perObjectData);
+
+                ID3D11RasterizerState *wantedRS = nullptr;
+                if (isWireframe)
+                    wantedRS = this->wireframeRS;
 
                 Material *material = command.material.Get();
                 if (material) {
@@ -404,6 +424,14 @@ void Renderer::RegisterGeometryPass(
                         material->normalTexture.Get()->shaderResourceView
                     };
                     deviceContext->PSSetShaderResources(0, 2, srvs);
+
+                    if (!material->enableBackfaceCulling && !isWireframe)
+                        wantedRS = this->noBackfaceCullingRS;
+                }
+
+                if (wantedRS != currentRS) {
+                    deviceContext->RSSetState(wantedRS);
+                    currentRS = wantedRS;
                 }
 
                 const UINT stride = sizeof(Vertex);
@@ -436,6 +464,10 @@ void Renderer::RegisterGeometryPass(
                     );
 
                     UploadConstantBuffer(deviceContext, this->sharedResources.perObjectBuffer, perObjectData);
+
+                    ID3D11RasterizerState *wantedRS = nullptr;
+                    if (isWireframe)
+                        wantedRS = this->wireframeRS;
 
                     Material *material = command.material.Get();
                     if (material) {
@@ -472,6 +504,14 @@ void Renderer::RegisterGeometryPass(
                             displacementTexture->shaderResourceView
                         };
                         deviceContext->DSSetShaderResources(2, 1, dsSRVs);
+
+                        if (!material->enableBackfaceCulling && !isWireframe)
+                            wantedRS = this->noBackfaceCullingRS;
+                    }
+
+                    if (wantedRS != currentRS) {
+                        deviceContext->RSSetState(wantedRS);
+                        currentRS = wantedRS;
                     }
 
                     const UINT stride = sizeof(Vertex);
@@ -786,7 +826,7 @@ bool Renderer::Initialize(HWND hWnd) {
     if (!this->LoadGBufferShaders())
         return false;
 
-    if (!this->CreateWireframeRasterizerState())
+    if (!this->CreateRasterizerStates())
         return false;
 
     if (!this->LoadTessellationShaders())

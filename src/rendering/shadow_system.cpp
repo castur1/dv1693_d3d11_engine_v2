@@ -120,8 +120,9 @@ void ShadowSystem::ExecuteShadowPass(
                 UploadConstantBuffer(deviceContext, sharedResources.perObjectBuffer, perObjectData);
 
                 Material *material = command.material.Get();
-                if (material)
+                if (material) {
                     deviceContext->PSSetShaderResources(0, 1, &material->diffuseTexture.Get()->shaderResourceView); // Required for alpha testing
+                }
 
                 const UINT stride = sizeof(Vertex);
                 const UINT offset = 0;

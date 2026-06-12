@@ -9,8 +9,8 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd C:/Bark_NormalTree.png
-map_Bump -bm 1.000000 C:/Bark_NormalTree_Normal.png
+map_Kd Textures/Bark_NormalTree.png
+map_Bump -bm 1.000000 Textures/Bark_NormalTree_Normal.png
 
 newmtl Leaves_Pine
 Ns 0.000000
@@ -19,5 +19,5 @@ Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 illum 2
-map_Kd C:/Leaf_Pine_C.png
-map_d C:/Leaf_Pine_C.png
+map_Kd Textures/Leaf_Pine_C.png
+map_d Textures/Leaf_Pine_C.png

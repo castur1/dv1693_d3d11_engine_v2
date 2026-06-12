@@ -40,6 +40,7 @@ class Renderer {
     ID3D11InputLayout *gBufferLayout = nullptr;
 
     ID3D11RasterizerState *wireframeRS = nullptr;
+    ID3D11RasterizerState *noBackfaceCullingRS = nullptr;
 
     ID3D11VertexShader *tessellationVS = nullptr;
     ID3D11HullShader *tessellationHS = nullptr;
@@ -64,7 +65,7 @@ class Renderer {
     bool CreateInterface(HWND hWnd);
     bool CreateRenderTargetView();
     bool LoadGBufferShaders();
-    bool CreateWireframeRasterizerState();
+    bool CreateRasterizerStates();
     bool LoadTessellationShaders();
     bool LoadLightingShader();
     bool LoadResolveShaders();

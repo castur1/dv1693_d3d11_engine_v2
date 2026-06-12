@@ -136,6 +136,8 @@ Model *ModelLoader::Load(AssetID uuid) {
 
     baseDir = baseDir.substr(this->assetManager->GetAssetDirectory().size());
 
+    bool enableBackfaceCulling = this->assetManager->GetMetadata(uuid, "enable_backface_culling") != "false";
+
     std::vector<AssetHandle<Material>> modelMaterials(materials.size());
 
     for (int i = 0; i < materials.size(); ++i) {
@@ -199,6 +201,8 @@ Model *ModelLoader::Load(AssetID uuid) {
             newMaterial->specularExponent = defaultMaterial->specularExponent;
         else
             newMaterial->specularExponent = materials[i].shininess;
+
+        newMaterial->enableBackfaceCulling = enableBackfaceCulling;
 
         this->assetManager->AddAsset<Material>(newMaterial, materialID);
     }
