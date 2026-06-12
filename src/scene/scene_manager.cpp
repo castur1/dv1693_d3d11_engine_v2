@@ -17,6 +17,10 @@ void SceneManager::RequestSceneChange(const std::string &name) {
     this->targetSceneName = name;
 }
 
+void SceneManager::ReloadCurrentScene() {
+    this->shouldReload = true;
+}
+
 bool SceneManager::Initialize(const Engine_context &context) {
     LogInfo("Creating scene manager...\n");
 
@@ -44,8 +48,10 @@ void SceneManager::Shutdown() {
 }
 
 void SceneManager::Update(const Frame_context &context) {
-    if (this->targetSceneName != this->currentSceneName)
+    if (this->targetSceneName != this->currentSceneName || this->shouldReload) {
         this->ChangeScene(this->targetSceneName);
+        this->shouldReload = false;
+    }
 
     this->currentScene.Update(context);
 }

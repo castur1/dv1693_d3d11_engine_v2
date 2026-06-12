@@ -54,6 +54,9 @@ void Editor::DrawSceneMenu(SceneManager *sceneManager) {
         return;
 
     if (ImGui::BeginMenu("Scene")) {
+        if (ImGui::MenuItem("Reload"))
+            sceneManager->ReloadCurrentScene();
+
         if (ImGui::MenuItem("Open..."))
             this->showOpenScenePopup = true;
 

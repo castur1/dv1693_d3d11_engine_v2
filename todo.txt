@@ -34,10 +34,6 @@
 
     * isStatic toggle
 
-    * Editor currently crashes if you change scene while an entity is selected
-
-    * Scene selection
-
     * Saving the scene
 
 * XMVECTOR versions of Get/Set in Transform

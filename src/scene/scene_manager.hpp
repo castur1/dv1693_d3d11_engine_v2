@@ -18,6 +18,7 @@ class SceneManager {
     Scene currentScene;
     std::string currentSceneName;
     std::string targetSceneName;
+    bool shouldReload = false;
 
     SceneRegistry registry;
 
@@ -31,6 +32,7 @@ public:
     void Shutdown();
 
     void RequestSceneChange(const std::string &name);
+    void ReloadCurrentScene();
 
     void Update(const Frame_context &context);
 
