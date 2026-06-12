@@ -27,6 +27,7 @@ Renderer::~Renderer() {
     SafeRelease(this->gBufferLayout);
 
     SafeRelease(this->wireframeRS);
+    SafeRelease(this->noBackfaceCullingRS);
 
     SafeRelease(this->tessellationVS);
     SafeRelease(this->tessellationHS);

@@ -9,8 +9,8 @@ entity a1b2-c3d4-e5f6-0123
 
     component Transform
         isActive: true
-        position: [-20.0, 1.8, 0.0]
-        rotation: [0.0, 90.0, 0.0]
+        position: [-1.0, 1.75, -17.0]
+        rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
@@ -69,16 +69,35 @@ entity faff-6543-8755-014a
     component Transform
         isActive: true
         position: [0.0, 0.0, 0.0]
-        rotation: [80.0, 70.0, 0.0]
+        rotation: [45.0, 210.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component DirectionalLight
         isActive: true
         colour: [1.0, 0.95, 0.8]
-        intensity: 6.0
+        intensity: 4.0
         ambient: [0.05, 0.08, 0.12]
         castsShadows: true
 
+entity 5674-ad45-980e-cd34
+    name: "ground"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: "9d6a-5630-703c-c35c"
+        isReflective: false
+
 assets:
     3d31-8c5b-00de-2879
+    9d6a-5630-703c-c35c

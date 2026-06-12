@@ -38,7 +38,7 @@ bool SceneManager::Initialize(const Engine_context &context) {
     this->registry.RegisterScenes();
 
     // TODO: Read this from a file or something instead idk
-    this->RequestSceneChange("demo_0");
+    this->RequestSceneChange("demo_2");
 
     return true;
 }
