@@ -2,6 +2,7 @@
 #define EDITOR_HPP
 
 #include "core/uuid.hpp"
+#include "core/frame_context.hpp"
 
 #include <Windows.h>
 #include <d3d11.h>
@@ -9,6 +10,7 @@
 class Scene;
 class SceneManager;
 class Entity;
+class AssetManager;
 
 class Editor {
     float fpsSmoothed = 0.0f;
@@ -28,7 +30,7 @@ class Editor {
     void DrawFPSOverlay(float deltaTime);
     void DrawEntityNodeRecursive(Entity *entity);
     void DrawEntityHierarchy(Scene *scene);
-    void DrawInspector();
+    void DrawInspector(AssetManager *assetManager);
     void DrawSettings();
 
 public:
@@ -41,7 +43,7 @@ public:
     bool Initalize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *deviceContext);
     void Shutdown();
 
-    void NewFrame(float deltaTime, SceneManager *sceneManager);
+    void NewFrame(float deltaTime, const Engine_context &context);
     void Render();
 
     bool HasCapturedInput();

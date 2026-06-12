@@ -234,7 +234,7 @@ static std::string GetComponentTypeName(Component *component) {
     return name;
 }
 
-void Editor::DrawInspector() {
+void Editor::DrawInspector(AssetManager *assetManager) {
     if (!this->showInspector)
         return;
 
@@ -262,7 +262,7 @@ void Editor::DrawInspector() {
     ImGui::Separator();
 
     std::vector<Component *> components = this->selectedEntity->GetComponents();
-    ImGuiInspector inspector;
+    ImGuiInspector inspector(assetManager);
 
     if (components.empty()) {
         ImGui::TextDisabled("No components.");
@@ -327,13 +327,8 @@ void Editor::DrawSettings() {
     ImGui::End();
 }
 
-void Editor::NewFrame(float deltaTime, SceneManager *sceneManager) {
-    if (!sceneManager) {
-        LogWarn("Scene manager was nullptr\n");
-        return;
-    }
-
-    this->selectedEntity = sceneManager->GetCurrentScene()->GetEntityByUUID(this->selectedEntityID);
+void Editor::NewFrame(float deltaTime, const Engine_context &context) {
+    this->selectedEntity = context.sceneManager->GetCurrentScene()->GetEntityByUUID(this->selectedEntityID);
 
     // NOTE: There's a bug where the game freezes temporarily when a mouse button is held down,
     // the mouse is captured, and there's an ImGui window over (0, 0)
@@ -358,14 +353,14 @@ void Editor::NewFrame(float deltaTime, SceneManager *sceneManager) {
             ImGui::EndMenu();
         }
 
-        this->DrawSceneMenu(sceneManager);
+        this->DrawSceneMenu(context.sceneManager);
 
         ImGui::EndMainMenuBar();
     }
 
     this->DrawFPSOverlay(deltaTime);
-    this->DrawEntityHierarchy(sceneManager->GetCurrentScene());
-    this->DrawInspector();
+    this->DrawEntityHierarchy(context.sceneManager->GetCurrentScene());
+    this->DrawInspector(context.assetManager);
     this->DrawSettings();
 
     if (this->selectedEntity) {

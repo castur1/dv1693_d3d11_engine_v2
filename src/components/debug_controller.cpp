@@ -13,8 +13,10 @@ void DebugController::Update(const Frame_context &context) {
 
     if (Input::IsKeyPressed('1'))
         context.engineContext.sceneManager->RequestSceneChange("demo_0");
-    if (Input::IsKeyPressed('2'))
+    else if (Input::IsKeyPressed('2'))
         context.engineContext.sceneManager->RequestSceneChange("demo_1");
+    else if (Input::IsKeyPressed('3'))
+        context.engineContext.sceneManager->RequestSceneChange("demo_2");
 
     if (Input::IsKeyPressed('C'))
         Debug::SetIntegerSetting("renderer.deferredMode", (Debug::GetIntegerSetting("renderer.deferredMode") + 1) % 6);

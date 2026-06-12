@@ -47,7 +47,7 @@ void Application::Render(float deltaTime) {
     this->renderer.Render(this->sceneManager.GetCurrentScene());
 
     if (this->isEditorEnabled) {
-        this->editor.NewFrame(deltaTime, &this->sceneManager);
+        this->editor.NewFrame(deltaTime, this->context);
         this->editor.Render();
     }
 
