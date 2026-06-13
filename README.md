@@ -19,6 +19,8 @@ The following keybinds also exist but can be accessed through the editor GUI:
 
 The editor interface should hopefully be self-explanatory.
 
+! The first time you launch the application the resolution might be weird. If so, try toggling fullscreen on and off with F4 and then relaunching the application. I have no idea why this happens.
+
 ## Techniques
 - **Deferred rendering**: Easiest to see through *renderer.deferredMode = 5* under Settings
 - **Shadow Mapping**: Should be self-demonstrating. *castsShadows* can be toggled for each light source component under Inspector. The player's capsule model also casts shadows.
