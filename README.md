@@ -28,6 +28,8 @@ The editor interface should hopefully be self-explanatory.
 - **Hierarchical Frustum Culling**: Easiest to see through *octree.showWireframe* and *renderer.freezeCamera* under Settings.
 - **Normal mapping**: Probably easiest seen on the Stanford Dragon model while looking at the specular highlights or when *renderer.deferredMode = 2*.
 
+In the debug build there's also a console window that the engine writes info/warnings/errors to, which has a verbose mode that can be toggled in *core/logging.h*.
+
 ## Credits
 - The engine was created by me, Casper Turesson
 - Nature 3D assets by https://quaternius.itch.io/ (CC0 license)
