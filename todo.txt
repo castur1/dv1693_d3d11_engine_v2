@@ -10,12 +10,6 @@
 
     Everything done :D
 
-* Things I must fix before handing in:
-
-    * Construct a better demo scene?
-
-    * Probably add more options to the debug overlay rather than relying on buttons (e.g. scene changing)
-
 * Bind enums
 
     * This can be semi-solved manually by circumventing BIND, like in Transform, but still only int in editor

@@ -509,181 +509,199 @@ entity 0000-0000-0000-0021
 entity 0000-0000-0000-0022
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
-        rotation: [0.0, 0.0, 0.0]
+        position: [-6.4, 0.78, -20.2]
+        rotation: [0.0, -90.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: ce4b-64f3-f900-5100
         isReflective: false
 
 entity 0000-0000-0000-0023
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [-12.1, 1.78, -25.3]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 87de-34a4-007f-52af
         isReflective: false
 
 entity 0000-0000-0000-0024
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [12.2, 1.67, -22.2]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 8d1b-1dd4-279b-567f
         isReflective: false
 
 entity 0000-0000-0000-0025
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [10.8, 0.59, -17.6]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 9f84-eace-36db-80c6
         isReflective: false
 
 entity 0000-0000-0000-0026
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [13.5, 1.95, -11.46]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: ce4b-64f3-f900-5100
         isReflective: false
 
 entity 0000-0000-0000-0027
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [-10.7, 1.35, -24.1]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: eb67-4a4b-ed42-9fb2
         isReflective: false
 
 entity 0000-0000-0000-0028
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [4.6, 0.22, -12.7]
         rotation: [0.0, 0.0, 0.0]
-        scale: [1.0, 1.0, 1.0]
+        scale: [0.8, 0.8, 0.8]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 831c-8754-5fef-830d
         isReflective: false
 
 entity 0000-0000-0000-0029
-    name: "plant"
+    name: "rock"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
-        rotation: [0.0, 0.0, 0.0]
+        position: [-10.3, 1.75, -3.8]
+        rotation: [0.0, 180.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 6b57-8676-94ec-77b6
         isReflective: false
 
 entity 0000-0000-0000-0030
-    name: "plant"
+    name: "rock"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [-9.8, 1.13, -5.1]
         rotation: [0.0, 0.0, 0.0]
-        scale: [1.0, 1.0, 1.0]
+        scale: [0.5, 0.5, 0.5]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 6b57-8676-94ec-77b6
         isReflective: false
 
 entity 0000-0000-0000-0031
     name: "plant"
     isActive: true
-    isStatic: false
+    isStatic: true
     parent: "0000-0000-0000-0001"
 
     component Transform
         isActive: true
-        position: [0.0, 0.0, 0.0]
+        position: [-8.9, 1.97, -1.4]
         rotation: [0.0, 0.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
-        modelID: none
+        modelID: 4790-a860-9917-01c7
+        isReflective: false
+
+entity 0000-0000-0000-0032
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [12.33, 2.49, -22.21]
+        rotation: [0.0, 45.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 9bf4-9b48-f002-4757
         isReflective: false
 
 assets:
