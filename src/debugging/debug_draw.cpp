@@ -15,7 +15,7 @@ ID3D11PixelShader *DebugDraw::pixelShader   = nullptr;
 
 ID3D11Buffer *DebugDraw::constantBuffer = nullptr;
 
-const UINT DebugDraw::MAX_VERTEX_COUNT = 16384;
+const UINT DebugDraw::MAX_VERTEX_COUNT = 65535;
 std::vector<Debug_vertex> DebugDraw::vertices;
 
 static bool LoadShaderBytecode(const std::string &path, std::vector<uint8_t> &out) {

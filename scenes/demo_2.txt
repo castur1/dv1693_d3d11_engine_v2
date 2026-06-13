@@ -9,14 +9,14 @@ entity a1b2-c3d4-e5f6-0123
 
     component Transform
         isActive: true
-        position: [-1.0, 1.75, -17.0]
-        rotation: [0.0, 0.0, 0.0]
+        position: [1.4, 1.5, -28]
+        rotation: [0.0, -5.0, 0.0]
         scale: [1.0, 1.0, 1.0]
         pivot: [0.0, 0.0, 0.0]
 
     component CameraController
         isActive: true
-        fieldOfView: 75.0
+        fieldOfView: 60.0
         nearPlane: 0.1
         farPlane: 512.0
         shadowDistance: 40.0
@@ -76,8 +76,8 @@ entity faff-6543-8755-014a
     component DirectionalLight
         isActive: true
         colour: [1.0, 0.95, 0.8]
-        intensity: 4.0
-        ambient: [0.05, 0.08, 0.12]
+        intensity: 3.0
+        ambient: [0.05, 0.08, 0.3]
         castsShadows: true
 
 entity 5674-ad45-980e-cd34
@@ -90,12 +90,600 @@ entity 5674-ad45-980e-cd34
         isActive: true
         position: [0.0, 0.0, 0.0]
         rotation: [0.0, 0.0, 0.0]
-        scale: [1.0, 1.0, 1.0]
+        scale: [1.5, 1.5, 1.5]
         pivot: [0.0, 0.0, 0.0]
 
     component ModelRenderer
         isActive: true
         modelID: "9d6a-5630-703c-c35c"
+        isReflective: false
+
+entity 0000-0000-0000-0001
+    name: "foliage"
+    isActive: true
+    isStatic: true
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+entity 0000-0000-0000-0002
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-4.9, 0.77, -28.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 9705-89ec-82a3-b857
+        isReflective: false
+
+entity 0000-0000-0000-0003
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [9.0, 0.9, -26.0]
+        rotation: [0.0, -25.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: d6f5-a003-d5bb-4a86
+        isReflective: false
+
+entity 0000-0000-0000-0004
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-7.5, 0.8, -26.0]
+        rotation: [0.0, -115.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 8178-b74a-3c68-6462
+        isReflective: false
+
+entity 0000-0000-0000-0005
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [12.5, 1.3, -27.7]
+        rotation: [0.0, -75.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 87de-34a4-007f-52af
+        isReflective: false
+
+entity 0000-0000-0000-0006
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [7.8, 0.0, -23.5]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: ce4b-64f3-f900-5100
+        isReflective: false
+
+entity 0000-0000-0000-0007
+    name: "dragon"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-8.6, 3.5, 14.2]
+        rotation: [-1.0, -135.0, 11.0]
+        scale: [0.1, 0.1, 0.1]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 5488-7f75-fd77-3eb3
+        isReflective: false
+
+
+entity 687f-facc-2365-009a
+    name: "particle_emitter"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [-4.47, 9.67, 10.38]
+        rotation: [90.0, 110.0, 0.0]
+        scale: [0.5, 0.5, 0.5]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ParticleEmitter
+        isActive: true
+        maxParticleCount: 1000
+        spawnRate: 50.0
+        minLifetime: 1.0
+        maxLifetime: 3.0
+        acceleration: [0.0, 0.0, 0.0]
+        minVelocity: [-1.0, 3.0, -1.0]
+        maxVelocity: [1.0, 5.0, 1.0]
+        startColour: [1.0, 0.7, 0.1, 3.0]
+        endColour: [2.0, 0.0, 0.0, 1.25]
+        startSize: 1.5
+        endSize: 0.4
+        textureID: 67cf-ef4c-9b8a-20ec
+
+entity 0000-0000-0000-0008
+    name: "bricks"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [6.8, 2.4, -14.7]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [2.0, 2.0, 2.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 9424-deb3-3fb2-bb9c
+        isReflective: false
+
+entity 0000-0000-0000-0009
+    name: "sphere"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-8.0, 6.8, 21.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 4429-118e-4188-675f
+        isReflective: true
+
+    component ReflectionProbe
+        isActive: true
+        nearPlane: 0.1
+        farPlane: 100.0
+        radius: 10.0
+
+entity 0000-0000-0000-0010
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-9.5, 3.5, 6.5]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.2, 1.2, 1.2]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 246d-c4ee-8918-d019
+        isReflective: false
+
+entity 0000-0000-0000-0011
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-12.0, 2.8, 1.0]
+        rotation: [0.0, -25.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 5617-d40a-d71a-772c
+        isReflective: false
+
+entity 0000-0000-0000-0012
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-12.4, 2.4, 5.8]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 4c7f-16d9-07ba-0c01
+        isReflective: false
+
+entity 0000-0000-0000-0013
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-15.0, 1.8, -7.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 9f84-eace-36db-80c6
+        isReflective: false
+
+entity 0000-0000-0000-0014
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-11.2, 1.0, -9.4]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 5b41-bfc0-13e7-2b4c
+        isReflective: false
+
+entity 0000-0000-0000-0015
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [11.8, 2.3, 12.0]
+        rotation: [0.0, 75.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: f8e6-2cfb-373e-558f
+        isReflective: false
+
+entity 0000-0000-0000-0016
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [9.4, 4.3, 21.2]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: e306-5f58-becf-e4cb
+        isReflective: false
+
+entity 0000-0000-0000-0017
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [14.0, 3.3, 27.4]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: eb29-1c81-4273-d5be
+        isReflective: false
+
+entity 0000-0000-0000-0018
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-13.9, 4.5, 21.7]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 6fd7-ce10-7bd7-91ac
+        isReflective: false
+
+entity 0000-0000-0000-0019
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-9.4, 4.3, 27.6]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: ba38-1aec-9ff6-954f
+        isReflective: false
+
+entity 0000-0000-0000-0020
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-14.0, 2.0, -19.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 9f84-eace-36db-80c6
+        isReflective: false
+
+entity 0000-0000-0000-0021
+    name: "plant"
+    isActive: true
+    isStatic: true
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [-12.0, 1.6, -16.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: d6f5-a003-d5bb-4a86
+        isReflective: false
+
+entity 0000-0000-0000-0022
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0023
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0024
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0025
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0026
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0027
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0028
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0029
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0030
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
+        isReflective: false
+
+entity 0000-0000-0000-0031
+    name: "plant"
+    isActive: true
+    isStatic: false
+    parent: "0000-0000-0000-0001"
+
+    component Transform
+        isActive: true
+        position: [0.0, 0.0, 0.0]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [1.0, 1.0, 1.0]
+        pivot: [0.0, 0.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: none
         isReflective: false
 
 assets:

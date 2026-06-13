@@ -142,7 +142,7 @@ void Octree::DebugDrawNode(const Node *node, int depth) {
         return;
 
     float colour = (float)(MAX_DEPTH - depth * 0.6f) / MAX_DEPTH;
-    DebugDraw::Box(node->bounds, {colour, colour * colour * 0.6f, colour * colour * 0.8f, 1.0f});
+    DebugDraw::Box(node->bounds, {colour, colour, colour * colour * 0.6f, 1.0f});
 
     if (node->IsLeaf()) {
         for (Component *component : node->components) {

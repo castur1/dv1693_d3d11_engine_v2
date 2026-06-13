@@ -105,7 +105,7 @@ void Application::Run() {
 
         // TODO: Let the editor pause the game! Also frame-by-frame
 
-        if (this->editor.HasCapturedInput())
+        if (this->editor.HasCapturedInput() || (this->window.GetHandle() != GetForegroundWindow()))
             Input::Clear();
         else
             Input::Update();
