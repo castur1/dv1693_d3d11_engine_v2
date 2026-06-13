@@ -10,6 +10,11 @@
 
     Everything done :D
 
+    At least 4 shadow-casting lights
+    Rotating object with normal map
+    Moving object in shadow
+    Spot lights must be marked with a small object (e.g. sphere or apple)
+
 * Bind enums
 
     * This can be semi-solved manually by circumventing BIND, like in Transform, but still only int in editor

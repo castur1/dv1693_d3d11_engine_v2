@@ -64,7 +64,7 @@ entity faff-6543-8755-014a
     name: "sun"
     isActive: true
     isStatic: true
-    parent: null
+    parent: "fe43-de54-5435-dad3"
 
     component Transform
         isActive: true
@@ -218,7 +218,6 @@ entity 0000-0000-0000-0007
         isActive: true
         modelID: 5488-7f75-fd77-3eb3
         isReflective: false
-
 
 entity 687f-facc-2365-009a
     name: "particle_emitter"
@@ -703,6 +702,154 @@ entity 0000-0000-0000-0032
         isActive: true
         modelID: 9bf4-9b48-f002-4757
         isReflective: false
+
+entity deef-ac43-8744-0ae2
+    name: "spot_light_1"
+    isActive: true
+    isStatic: false
+    parent: "fe43-de54-5435-dad3"
+
+    component Transform
+        isActive: true
+        position: [-19.0, 8.0, 25.0]
+        rotation: [22.5, 90.0, 0.0]
+        scale: [0.2, 0.2, 0.2]
+        pivot: [0.0, 0.0, 0.0]
+
+    component SpotLight
+        isActive: true
+        colour: [1.0, 0.2, 0.1]
+        intensity: 25.0
+        range: 20.0
+        innerConeAngle: 20.0
+        outerConeAngle: 30.0
+        castsShadows: true
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+        isReflective: false
+
+    component InterpMove
+        isActive: true
+        startPosition: [-19.0, 8.0, 25.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [-19.0, 5.0, 1.0]
+        endRotation: [0.0, 0.0, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: false
+        shouldIgnoreRotation: true
+        shouldIgnoreScale: true
+        moveDuration: 4.0
+        pauseDuration: 0.0
+        shouldPingPong: true
+        easingFunctionType: 3
+
+entity deef-ac43-8744-9876
+    name: "spot_light_2"
+    isActive: true
+    isStatic: false
+    parent: "fe43-de54-5435-dad3"
+
+    component Transform
+        isActive: true
+        position: [9.1, 1.5, -26.1]
+        rotation: [20.0, 0.0, 0.0]
+        scale: [0.2, 0.2, 0.2]
+        pivot: [0.0, 0.0, 8.0]
+
+    component SpotLight
+        isActive: true
+        colour: [0.5, 0.1, 1.0]
+        intensity: 25.0
+        range: 20.0
+        innerConeAngle: 40.0
+        outerConeAngle: 50.0
+        castsShadows: true
+
+    component ModelRenderer
+        isActive: true
+        modelID: "e679-318b-f448-3109"
+        isReflective: false
+
+    component InterpMove
+        isActive: true
+        startPosition: [0.0, 0.0, 0.0]
+        startRotation: [20.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [0.0, 0.0, 0.0]
+        endRotation: [20.0, 360.0, 0.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
+        moveDuration: 2.0
+        pauseDuration: 0.0
+        shouldPingPong: false
+        easingFunctionType: 0
+
+entity deef-ac43-8744-ac35
+    name: "spot_light_3"
+    isActive: true
+    isStatic: false
+    parent: "fe43-de54-5435-dad3"
+
+    component Transform
+        isActive: true
+        position: [-4.5, 9.7, 10.4]
+        rotation: [0.0, 110.0, 0.0]
+        scale: [0.2, 0.2, 0.2]
+        pivot: [0.0, 0.0, 0.0]
+
+    component SpotLight
+        isActive: true
+        colour: [1.0, 0.7, 0.1]
+        intensity: 25.0
+        range: 10.0
+        innerConeAngle: 30.0
+        outerConeAngle: 70.0
+        castsShadows: true
+
+entity 0000-ad43-0000-6543
+    name: "spinning_dragon"
+    isActive: true
+    isStatic: false
+    parent: null
+
+    component Transform
+        isActive: true
+        position: [3.4, 7.0, 25.3]
+        rotation: [0.0, 0.0, 0.0]
+        scale: [0.02, 0.02, 0.02]
+        pivot: [0.0, 40.0, 0.0]
+
+    component ModelRenderer
+        isActive: true
+        modelID: 5488-7f75-fd77-3eb3
+        isReflective: false
+
+    component InterpMove
+        isActive: true
+        startPosition: [0.0, 0.0, 0.0]
+        startRotation: [0.0, 0.0, 0.0]
+        startScale: [1.0, 1.0, 1.0]
+        endPosition: [0.0, 0.0, 0.0]
+        endRotation: [360.0, 1080.0, 720.0]
+        endScale: [1.0, 1.0, 1.0]
+        shouldIgnorePosition: true
+        shouldIgnoreRotation: false
+        shouldIgnoreScale: true
+        moveDuration: 5.0
+        pauseDuration: 0.0
+        shouldPingPong: false
+        easingFunctionType: 0
+
+entity fe43-de54-5435-dad3
+    name: "lights"
+    isActive: true
+    isStatic: false
+    parent: null
 
 assets:
     3d31-8c5b-00de-2879
